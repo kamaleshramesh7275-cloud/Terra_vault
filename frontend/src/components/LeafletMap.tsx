@@ -38,11 +38,13 @@ export default function LeafletMap({
         zoomControl: true,
       });
 
+      // Clean, free OpenStreetMap tiles with sleek dark mode filter (Zero API key / zero watermark)
       L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
-          attribution: "© OpenStreetMap, © CARTO | Terra_vault Coimbatore Cadastral GIS",
+          attribution: "© OpenStreetMap contributors | Terra_vault Coimbatore Cadastral GIS",
           maxZoom: 19,
+          className: "dark-map-tiles",
         }
       ).addTo(map);
 
