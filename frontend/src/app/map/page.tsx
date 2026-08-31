@@ -37,6 +37,7 @@ const COIMBATORE_TALUKS = [
   { id: "Kinathukadavu", label: "💨 Kinathukadavu (கிணத்துக்கடவு)" },
   { id: "Madukkarai", label: "⛏️ Madukkarai (மடுக்கரை)" },
   { id: "Valparai", label: "⛰️ Valparai (வால்பாறை)" },
+  { id: "Perur", label: "🕉️ Perur (பேரூர்)" },
 ];
 
 const LAND_CATEGORIES = [

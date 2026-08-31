@@ -30,8 +30,13 @@ export default function RecordsPage() {
       if (search) params.q = search;
       if (status) params.status = status;
       const data = await api.listRecords(params);
-      setRecords(data.records);
-      setTotal(data.total);
+      if (Array.isArray(data)) {
+        setRecords(data);
+        setTotal(data.length);
+      } else {
+        setRecords(data?.records || []);
+        setTotal(data?.total || (data?.records ? data.records.length : 0));
+      }
     } finally {
       setLoading(false);
     }

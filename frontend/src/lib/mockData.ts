@@ -1,388 +1,319 @@
-// Terra_vault — High-Fidelity Cadastral & Land Record Seed Data (Client-side & Offline Ready)
+// Terra_vault — Comprehensive Coimbatore District Cadastral Dataset (108 Parcels across 11 Taluks)
+// Populated with bilingual (Tamil + English) metadata, realistic polygons, mutation trees, inheritance genealogy, and blockchain hashes.
 
-export const MOCK_COIMBATORE_PARCELS = [
+export interface CoimbatoreParcel {
+  id: string;
+  survey_no: string;
+  subdivision: string;
+  patta_no: string;
+  owner_name: string;
+  father_name: string;
+  co_owners: string[];
+  village: string;
+  taluk: string;
+  district: string;
+  state: string;
+  village_lgd_code: string;
+  land_type: string;
+  land_category: "Agriculture" | "Residential" | "Commercial" | "Industrial";
+  soil_type: string;
+  area_acres: number;
+  area_cents: number;
+  area_sqm: number;
+  guideline_value_sqft: number;
+  market_value_inr: number;
+  encumbrance_status: string;
+  blockchain_hash: string;
+  polygon: [number, number][];
+  mutation_history: {
+    step: number;
+    date: string;
+    deed_type: string;
+    doc_no: string;
+    transferor: string;
+    transferee: string;
+    extent: string;
+    status: string;
+  }[];
+  inheritance_tree: {
+    root: {
+      name: string;
+      relation: string;
+      generation: string;
+      children: {
+        name: string;
+        relation: string;
+        generation: string;
+        heirs: { name: string; relation: string }[];
+      }[];
+    };
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Generator helper for 108 authentic Coimbatore parcels across 11 Taluks
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TALUK_CONFIGS = [
   {
-    id: "cbe-plot-001",
-    survey_no: "312/1A",
-    subdivision: "1A",
-    patta_no: "5120",
-    owner_name: "P. Natesan / பி. நடேசன்",
-    father_name: "Palanichamy Gounder / பழனிச்சாமி கவுண்டர்",
-    co_owners: ["N. Karpagam (Wife)", "N. Senthil (Son)"],
-    village: "Pollachi South (பொள்ளாச்சி தெற்கு)",
-    taluk: "Pollachi",
-    district: "Coimbatore",
-    state: "Tamil Nadu",
-    village_lgd_code: "641002",
-    land_type: "தோட்டக்கால் (Coconut Plantation / தோட்டம்)",
-    land_category: "Agriculture",
-    soil_type: "Deep Red Loam / செம்மண்",
-    area_acres: 5.20,
-    area_cents: 520,
-    area_sqm: 21043.6,
-    guideline_value_sqft: 1850,
-    market_value_inr: 35000000,
-    encumbrance_status: "Clean / Nil Encumbrance (வில்லங்கம் இல்லை)",
-    blockchain_hash: "0x9f83ab24e18374a2b91834cd981723eabbc09182374928173491827349182734",
-    polygon: [
-      [77.0010, 10.6550],
-      [77.0055, 10.6555],
-      [77.0060, 10.6590],
-      [77.0015, 10.6585],
-      [77.0010, 10.6550]
-    ],
-    mutation_history: [
-      {
-        step: 1,
-        date: "1992-10-15",
-        deed_type: "Ancestral Partition (குடும்ப பாகப்பிரிவினை)",
-        doc_no: "Doc 1540/1992, SRO Pollachi",
-        transferor: "Palanichamy Gounder (Father)",
-        transferee: "P. Natesan",
-        extent: "5.20 Acres",
-        status: "Verified on Cadastral Register"
-      },
-      {
-        step: 2,
-        date: "2023-11-10",
-        deed_type: "Joint Co-ownership Mutation (கூட்டுப் பட்டா சேர்த்தல்)",
-        doc_no: "Mutation Order POL-2023-441",
-        transferor: "P. Natesan",
-        transferee: "P. Natesan, N. Karpagam & N. Senthil",
-        extent: "5.20 Acres",
-        status: "Active Joint Title / Anchored to Polygon Amoy"
-      }
-    ],
-    inheritance_tree: {
-      root: {
-        name: "Palanichamy Gounder (பழனிச்சாமி கவுண்டர்)",
-        relation: "Patriarch (1928 - 1995)",
-        generation: "Gen 1",
-        children: [
-          {
-            name: "P. Natesan (பி. நடேசன்)",
-            relation: "Current Primary Title Holder (Age 56)",
-            generation: "Gen 2",
-            heirs: [
-              { name: "N. Senthil (செந்தில்)", relation: "Son / Co-parcener (Age 30)" },
-              { name: "N. Divya (திவ்யா)", relation: "Daughter (Age 27)" }
-            ]
-          }
-        ]
-      }
-    }
-  },
-  {
-    id: "cbe-plot-002",
-    survey_no: "88/2C",
-    subdivision: "2C",
-    patta_no: "2194",
-    owner_name: "Dr. K. Swaminathan / டாக்டர் கே. சுவாமிநாதன்",
-    father_name: "Kumarasamy Chettiar / குமாரசாமி செட்டியார்",
-    co_owners: ["S. Meenakshi (Wife)"],
-    village: "Saravanampatti (சரவணம்பட்டி IT SEZ)",
     taluk: "Coimbatore North",
-    district: "Coimbatore",
-    state: "Tamil Nadu",
-    village_lgd_code: "641035",
-    land_type: "Commercial IT Park / ஐடி பூங்கா மனை",
-    land_category: "Commercial",
-    soil_type: "Gravel Loam / சரளை மண்",
-    area_acres: 2.85,
-    area_cents: 285,
-    area_sqm: 11533.5,
-    guideline_value_sqft: 6200,
-    market_value_inr: 85000000,
-    encumbrance_status: "Clean / Nil Encumbrance",
-    blockchain_hash: "0x3e18a93bc4182903fe5728192837482910aefc91823749281734918273491827",
-    polygon: [
-      [76.9920, 11.0820],
-      [76.9965, 11.0830],
-      [76.9955, 11.0865],
-      [76.9910, 11.0855],
-      [76.9920, 11.0820]
-    ],
-    mutation_history: [
-      {
-        step: 1,
-        date: "2005-03-20",
-        deed_type: "Agricultural Conversion (நில பயன்பாடு மாற்றம்)",
-        doc_no: "DTCP Approval 42/2005",
-        transferor: "Revenue Dept",
-        transferee: "Dr. K. Swaminathan",
-        extent: "2.85 Acres",
-        status: "Commercial Clearance Granted"
-      },
-      {
-        step: 2,
-        date: "2024-01-15",
-        deed_type: "Digital Title Conversion",
-        doc_no: "TV-2024-CBE-882C",
-        transferor: "Dr. K. Swaminathan",
-        transferee: "Dr. K. Swaminathan & S. Meenakshi",
-        extent: "2.85 Acres",
-        status: "Anchored to Polygon Amoy"
-      }
-    ],
-    inheritance_tree: {
-      root: {
-        name: "Kumarasamy Chettiar (குமாரசாமி செட்டியார்)",
-        relation: "Founder (1935 - 2008)",
-        generation: "Gen 1",
-        children: [
-          {
-            name: "Dr. K. Swaminathan (சுவாமிநாதன்)",
-            relation: "Title Holder",
-            generation: "Gen 2",
-            heirs: [
-              { name: "S. Siddharth (சித்தார்த்)", relation: "Son (Age 24)" }
-            ]
-          }
-        ]
-      }
-    }
+    center: [76.9550, 11.0500],
+    villages: ["Saravanampatti (சரவணம்பட்டி)", "Thudiyalur (துடியலூர்)", "Kalapatti (காளப்பட்டி)", "Vadavalli (வடவள்ளி)", "Ganapathy (கணபதி)", "Periyanaickenpalayam (பெ.நா.பாளையம்)", "Vilankurichi (விளாங்குறிச்சி)"],
+    categories: ["Commercial", "Residential", "Agriculture"],
+    soilTypes: ["Gravelly Red Soil / செம்மண் சரளை", "Red Sandy Loam / செம்மண்", "Clay Loam / களிமண்"],
+    count: 15,
+    prefix: "CBN"
   },
   {
-    id: "cbe-plot-003",
-    survey_no: "415/3",
-    subdivision: "3",
-    patta_no: "8411",
-    owner_name: "R. Shanmugam / ஆர். சண்முகம்",
-    father_name: "Ramasamy / ராமசாமி",
-    co_owners: ["S. Vijaya"],
-    village: "Singanallur (சிங்கநல்லூர் நஞ்சை)",
     taluk: "Coimbatore South",
-    district: "Coimbatore",
-    state: "Tamil Nadu",
-    village_lgd_code: "641005",
-    land_type: "நஞ்சை (Wetland / Paddy Field)",
-    land_category: "Agriculture",
-    soil_type: "Clayey Loam / களிமண்",
-    area_acres: 3.40,
-    area_cents: 340,
-    area_sqm: 13759.3,
-    guideline_value_sqft: 3100,
-    market_value_inr: 45000000,
-    encumbrance_status: "Clean / Nil Encumbrance",
-    blockchain_hash: "0x89ab12cd34ef567890123456789abcdef0123456789abcdef0123456789abcdef0",
-    polygon: [
-      [77.0180, 10.9950],
-      [77.0230, 10.9960],
-      [77.0220, 10.9995],
-      [77.0170, 10.9985],
-      [77.0180, 10.9950]
-    ],
-    mutation_history: [
-      {
-        step: 1,
-        date: "1998-04-12",
-        deed_type: "Sale Deed (கிரைய பத்திரம்)",
-        doc_no: "Doc 882/1998, SRO Singanallur",
-        transferor: "V. Karuppasamy",
-        transferee: "R. Shanmugam",
-        extent: "3.40 Acres",
-        status: "Registered"
-      }
-    ],
-    inheritance_tree: {
-      root: {
-        name: "Ramasamy (ராமசாமி)",
-        relation: "Ancestor",
-        generation: "Gen 1",
-        children: [
-          {
-            name: "R. Shanmugam",
-            relation: "Current Owner",
-            generation: "Gen 2",
-            heirs: [{ name: "S. Karthi", relation: "Son" }]
-          }
-        ]
-      }
-    }
+    center: [76.9750, 10.9850],
+    villages: ["Singanallur (சிங்கநல்லூர்)", "Peelamedu (பீளமேடு)", "Ramanathapuram (இராமநாதபுரம்)", "Race Course (ரேஸ் கோர்ஸ்)", "Sundarapuram (சுந்தராபுரம்)", "Kuniyamuthur (குனியமுத்தூர்)", "Ondipudur (ஒண்டிப்புதூர்)"],
+    categories: ["Residential", "Commercial", "Agriculture"],
+    soilTypes: ["Clayey Loam / களிமண்", "Rich Black Loam / கரிசல் வண்டல்", "Red Loam / செம்மண்"],
+    count: 15,
+    prefix: "CBS"
   },
   {
-    id: "cbe-plot-004",
-    survey_no: "124/4B",
-    subdivision: "4B",
-    patta_no: "3302",
-    owner_name: "M/s Texmo Industries / டெக்ஸ்மோ இண்டஸ்ட்ரீஸ்",
-    father_name: "Authorized Signatory: V. Ramachandran",
-    co_owners: [],
-    village: "Sulur Industrial Estate (சூலூர்)",
+    taluk: "Pollachi",
+    center: [77.0050, 10.6600],
+    villages: ["Pollachi South (பொள்ளாச்சி தெற்கு)", "Pollachi North (பொள்ளாச்சி வடக்கு)", "Anaimalai Road (ஆனைமலை ரோடு)", "Samathur (சமத்தூர்)", "Negamam (நேகமம்)", "Kottur (கோட்டூர்)", "Zamin Uthukuli (ஜமீன் உத்துகுளி)"],
+    categories: ["Agriculture", "Residential"],
+    soilTypes: ["Deep Red Loam / செம்மண்", "River Alluvium / ஆற்று வண்டல்", "Fertile Clay Loam / களி வண்டல்"],
+    count: 15,
+    prefix: "POL"
+  },
+  {
     taluk: "Sulur",
-    district: "Coimbatore",
-    state: "Tamil Nadu",
-    village_lgd_code: "641402",
-    land_type: "Industrial Foundry & Mills / தொழில் மனை",
-    land_category: "Industrial",
-    soil_type: "Black Cotton Soil / கரிசல் மண்",
-    area_acres: 8.50,
-    area_cents: 850,
-    area_sqm: 34398.2,
-    guideline_value_sqft: 2800,
-    market_value_inr: 120000000,
-    encumbrance_status: "Hypothecated to Canara Bank (Secured Working Capital)",
-    blockchain_hash: "0x77ab12fe9988aa55112233445566778899aabbccddeeff001122334455667788",
-    polygon: [
-      [77.1200, 11.0250],
-      [77.1260, 11.0260],
-      [77.1250, 11.0310],
-      [77.1190, 11.0300],
-      [77.1200, 11.0250]
-    ],
-    mutation_history: [
-      {
-        step: 1,
-        date: "2010-08-01",
-        deed_type: "SIPCOT Industrial Allotment",
-        doc_no: "Allotment #SUL-IND-102",
-        transferor: "SIPCOT Govt of TN",
-        transferee: "Texmo Industries",
-        extent: "8.50 Acres",
-        status: "Industrial Leasehold to Freehold"
-      }
-    ],
-    inheritance_tree: {
-      root: {
-        name: "Corporate Entity",
-        relation: "Registered Enterprise",
-        generation: "Gen 1",
-        children: []
-      }
-    }
+    center: [77.1250, 11.0250],
+    villages: ["Sulur Town (சூலூர் நகரம்)", "Irugur (இருவூர்)", "Pallapalayam (பல்லபாளையம்)", "Rasipalayam (ராசிபாளையம்)", "Sultanpet (சுல்தான்பேட்டை)", "Kaniyur (கணியூர்)", "Kannampalayam (கண்ணம்பாளையம்)"],
+    categories: ["Industrial", "Agriculture", "Residential"],
+    soilTypes: ["Black Cotton Soil / கரிசல் மண்", "Red Gravel Loam / செம்மண் சரளை", "Coarse Sandy Loam / மணல் மண்"],
+    count: 12,
+    prefix: "SUL"
   },
   {
-    id: "cbe-plot-005",
-    survey_no: "56/1",
-    subdivision: "1",
-    patta_no: "1908",
-    owner_name: "K. Subramaniam / கே. சுப்பிரமணியம்",
-    father_name: "Kandasamy / கந்தசாமி",
-    co_owners: ["S. Saraswathi"],
-    village: "Sirumugai / சிறுமுகை",
     taluk: "Mettupalayam",
-    district: "Coimbatore",
-    state: "Tamil Nadu",
-    village_lgd_code: "641302",
-    land_type: "புஞ்சை வாழைத் தோட்டம் (Banana Plantation / புஞ்சை)",
-    land_category: "Agriculture",
-    soil_type: "River Alluvial / வண்டல் மண்",
-    area_acres: 4.10,
-    area_cents: 410,
-    area_sqm: 16592.1,
-    guideline_value_sqft: 1400,
-    market_value_inr: 28000000,
-    encumbrance_status: "Clean / Nil Encumbrance",
-    blockchain_hash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-    polygon: [
-      [76.9400, 11.3100],
-      [76.9450, 11.3110],
-      [76.9440, 11.3150],
-      [76.9390, 11.3140],
-      [76.9400, 11.3100]
-    ],
-    mutation_history: [
-      {
-        step: 1,
-        date: "2001-02-14",
-        deed_type: "Inheritance Mutation",
-        doc_no: "Pattadar Order 55/2001",
-        transferor: "Kandasamy",
-        transferee: "K. Subramaniam",
-        extent: "4.10 Acres",
-        status: "Verified"
-      }
-    ],
-    inheritance_tree: {
-      root: {
-        name: "Kandasamy",
-        relation: "Patriarch",
-        generation: "Gen 1",
-        children: [
-          {
-            name: "K. Subramaniam",
-            relation: "Owner",
-            generation: "Gen 2",
-            heirs: [{ name: "S. Rajesh", relation: "Son" }]
-          }
-        ]
-      }
-    }
+    center: [76.9450, 11.3000],
+    villages: ["Sirumugai (சிறுமுகை)", "Karamadai (காரமடை)", "Thekkampatti (தெக்கம்பட்டி)", "Odanthurai (ஓடந்துறை)", "Bellathi (பெள்ளாதி)", "Nellithurai (நெல்லித்துறை)"],
+    categories: ["Agriculture", "Residential", "Commercial"],
+    soilTypes: ["Bhavani River Alluvium / பவானி ஆற்று வண்டல்", "Deep Red Clay Loam / செம்மண்", "Forest Edge Soil / காடு மண்"],
+    count: 10,
+    prefix: "MTP"
   },
   {
-    id: "cbe-plot-006",
-    survey_no: "205/3A",
-    subdivision: "3A",
-    patta_no: "4419",
-    owner_name: "T. Annadurai / டி. அண்ணாதுரை",
-    father_name: "Thangavelu / தங்கவேலு",
-    co_owners: [],
-    village: "Kinathukadavu West (கிணத்துக்கடவு)",
+    taluk: "Annur",
+    center: [77.1000, 11.2300],
+    villages: ["Annur Town (அன்னூர் நகரம்)", "Kunnathur (குன்னத்தூர்)", "Pogalur (போகலூர்)", "Kariampalayam (காரியம்பாளையம்)", "Pasur (பாசூர்)", "Kanuvakkarai (கணுவாக்கரை)"],
+    categories: ["Agriculture", "Industrial", "Residential"],
+    soilTypes: ["Red Cotton Soil / செம்மண் கரிசல்", "Gravel Loam / சரளை மண்", "Deep Clay / களிமண்"],
+    count: 10,
+    prefix: "ANR"
+  },
+  {
     taluk: "Kinathukadavu",
-    district: "Coimbatore",
-    state: "Tamil Nadu",
-    village_lgd_code: "642109",
-    land_type: "தென்னை & காற்றாலை நிலம் (Windmill & Farm)",
-    land_category: "Agriculture",
-    soil_type: "Red Gravel / செம்மண்",
-    area_acres: 6.75,
-    area_cents: 675,
-    area_sqm: 27316.3,
-    guideline_value_sqft: 1250,
-    market_value_inr: 42000000,
-    encumbrance_status: "Clean / Nil Encumbrance",
-    blockchain_hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-    polygon: [
-      [77.0150, 10.8200],
-      [77.0210, 10.8210],
-      [77.0200, 10.8260],
-      [77.0140, 10.8250],
-      [77.0150, 10.8200]
-    ],
-    mutation_history: [],
-    inheritance_tree: {
-      root: {
-        name: "Thangavelu",
-        relation: "Founder",
-        generation: "Gen 1",
-        children: [{ name: "T. Annadurai", relation: "Current Owner", generation: "Gen 2", heirs: [] }]
-      }
-    }
+    center: [77.0200, 10.8200],
+    villages: ["Kinathukadavu West (கிணத்துக்கடவு மேற்கு)", "Kinathukadavu East (கிணத்துக்கடவு கிழக்கு)", "Vadachithur (வடசித்துர்)", "Sokkanur (சொக்கனூர்)", "Koduvai Road (கொடுவாய் ரோடு)"],
+    categories: ["Agriculture", "Industrial"],
+    soilTypes: ["Red Gravel / செம்மண் சரளை", "Deep Red Loam / செம்மண்", "Black Soil / கரிசல் மண்"],
+    count: 8,
+    prefix: "KND"
   },
   {
-    id: "cbe-plot-007",
-    survey_no: "19/2",
-    subdivision: "2",
-    patta_no: "6710",
-    owner_name: "Tata Coffee Estates / டாடா காபி",
-    father_name: "Authorized Officer: S. Chandrasekar",
-    co_owners: [],
-    village: "Valparai Tea Belt (வால்பாறை)",
+    taluk: "Madukkarai",
+    center: [76.9600, 10.9000],
+    villages: ["Madukkarai Town (மடுக்கரை நகரம்)", "Ettimadai (எட்டிமடை)", "Thirumalayampalayam (திருமலையம்பாளையம்)", "Chettipalayam (செட்டிபாளையம்)", "Myleripalayam (மயிலேரிபாளையம்)"],
+    categories: ["Industrial", "Commercial", "Residential"],
+    soilTypes: ["Limestone Calcareous Soil / சுண்ணாம்பு மண்", "Red Gravel / செம்மண்", "Rocky Loam / பாறை சரளை"],
+    count: 8,
+    prefix: "MDK"
+  },
+  {
     taluk: "Valparai",
-    district: "Coimbatore",
-    state: "Tamil Nadu",
-    village_lgd_code: "642127",
-    land_type: "தேயிலைத் தோட்டம் (Tea Plantation)",
-    land_category: "Agriculture",
-    soil_type: "Forest Peat Loam / மலை மண்",
-    area_acres: 24.50,
-    area_cents: 2450,
-    area_sqm: 99148.0,
-    guideline_value_sqft: 950,
-    market_value_inr: 180000000,
-    encumbrance_status: "Clean / Nil Encumbrance",
-    blockchain_hash: "0x445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233",
-    polygon: [
-      [76.9500, 10.3200],
-      [76.9600, 10.3220],
-      [76.9580, 10.3300],
-      [76.9480, 10.3280],
-      [76.9500, 10.3200]
-    ],
-    mutation_history: [],
-    inheritance_tree: { root: { name: "Estate Entity", relation: "Corporate", generation: "Gen 1", children: [] } }
+    center: [76.9550, 10.3250],
+    villages: ["Valparai Town (வால்பாறை)", "Waterfall Estate (வாட்டர்பால்)", "Iyerpadi (அய்யர்பாடி)", "Sholayar Dam (சோலையார்)", "Mudis Estate (முடிஸ்)", "Rotikadai (ரொட்டிக்கடை)"],
+    categories: ["Agriculture", "Commercial"],
+    soilTypes: ["High Altitude Hill Peat / மலை மண்", "Humus Forest Loam / மட்கு மண்", "Laterite Loam / செம்பாறை மண்"],
+    count: 8,
+    prefix: "VLP"
+  },
+  {
+    taluk: "Perur",
+    center: [76.9150, 10.9750],
+    villages: ["Perur Town (பேரூர் கோயில் வட்டம்)", "Vedapatti (வேடபட்டி)", "Alandurai (ஆலந்துறை)", "Pooluvapatti (பூளுவபட்டி)", "Thondamuthur (தொண்டாமுத்தூர்)"],
+    categories: ["Agriculture", "Residential"],
+    soilTypes: ["Noyyal River Basin Alluvium / நொய்யல் வண்டல்", "Deep Red Soil / செம்மண்", "Clay Loam / களிமண்"],
+    count: 7,
+    prefix: "PRR"
   }
 ];
+
+const TAMIL_NAMES = [
+  { en: "P. Natesan", ta: "பி. நடேசன்", f_en: "Palanichamy Gounder", f_ta: "பழனிச்சாமி கவுண்டர்" },
+  { en: "Dr. K. Swaminathan", ta: "டாக்டர் கே. சுவாமிநாதன்", f_en: "Kumarasamy Chettiar", f_ta: "குமாரசாமி செட்டியார்" },
+  { en: "R. Shanmugam", ta: "ஆர். சண்முகம்", f_en: "Ramasamy Gounder", f_ta: "ராமசாமி கவுண்டர்" },
+  { en: "S. K. Murugesan", ta: "எஸ். கே. முருகேசன்", f_en: "Kandasamy", f_ta: "கந்தசாமி" },
+  { en: "M. Palanisamy", ta: "எம். பழனிசாமி", f_en: "Muthusamy", f_ta: "முத்துசாமி" },
+  { en: "K. Subramaniam", ta: "கே. சுப்பிரமணியம்", f_en: "Karuppanna Gounder", f_ta: "கருப்பண்ண கவுண்டர்" },
+  { en: "T. Annadurai", ta: "டி. அண்ணாதுரை", f_en: "Thangavelu", f_ta: "தங்கவேலு" },
+  { en: "A. Velusamy", ta: "ஏ. வேலுசாமி", f_en: "Arumugam", f_ta: "ஆறுமுகம்" },
+  { en: "V. Ramachandran", ta: "வி. ராமச்சந்திரன்", f_en: "Venkatachalam", f_ta: "வெங்கடாசலம்" },
+  { en: "S. Manikandan", ta: "எஸ். மணிகண்டன்", f_en: "Sadasivam Pillai", f_ta: "சதாசிவம் பிள்ளை" },
+  { en: "C. Nachimuthu", ta: "சி. நாச்சிமுத்து", f_en: "Chinnasamy", f_ta: "சின்னசாமி" },
+  { en: "G. Soundararajan", ta: "ஜி. சௌந்தரராஜன்", f_en: "Govindarajulu Naidu", f_ta: "கோவிந்தராஜுலு நாயுடு" },
+  { en: "K. Boopathi", ta: "கே. பூபதி", f_en: "Krishnasamy Gounder", f_ta: "கிருஷ்ணசாமி கவுண்டர்" },
+  { en: "N. Selvaraj", ta: "என். செல்வராஜ்", f_en: "Natarajan", f_ta: "நடராஜன்" },
+  { en: "S. Thangavel", ta: "எஸ். தங்கவேல்", f_en: "Subramanian", f_ta: "சுப்பிரமணியன்" },
+  { en: "M/s Kovai Agro Farms", ta: "கோவை அக்ரோ ஃபார்ம்ஸ்", f_en: "Managing Director: K. Marimuthu", f_ta: "மேலாண் இயக்குநர்: கே. மாரிமுத்து" },
+  { en: "Texmo Foundations", ta: "டெக்ஸ்மோ ஃபவுண்டேஷன்ஸ்", f_en: "Authorised Trustee: R. Ramasamy", f_ta: "அங்கீகரிக்கப்பட்ட அறங்காவலர்" },
+  { en: "LMW Spinning Mills", ta: "எல்.எம்.டபிள்யூ நூற்பாலை", f_en: "Corporate Entity", f_ta: "கார்ப்பரேட் நிறுவனம்" },
+  { en: "Roots Industries India", ta: "ரூட்ஸ் இண்டஸ்ட்ரீஸ்", f_en: "Director: K. Ramasamy", f_ta: "இயக்குநர்: கே. ராமசாமி" },
+  { en: "Tata Tea & Coffee Estate", ta: "டாடா காபி எஸ்டேட்", f_en: "General Manager: S. Chandran", f_ta: "பொது மேலாளர்: எஸ். சந்திரன்" }
+];
+
+function generate108Parcels(): CoimbatoreParcel[] {
+  const parcels: CoimbatoreParcel[] = [];
+  let globalIndex = 1;
+
+  TALUK_CONFIGS.forEach((tConfig) => {
+    for (let i = 0; i < tConfig.count; i++) {
+      const nameObj = TAMIL_NAMES[(globalIndex - 1) % TAMIL_NAMES.length];
+      const village = tConfig.villages[i % tConfig.villages.length];
+      const category = tConfig.categories[i % tConfig.categories.length] as any;
+      const soilType = tConfig.soilTypes[i % tConfig.soilTypes.length];
+      
+      const surveyMain = 50 + (globalIndex * 7) % 450;
+      const subDivLetters = ["1A", "2B", "3C", "1B", "4A", "2", "3", "5B", "1", "2A"];
+      const subDiv = subDivLetters[i % subDivLetters.length];
+      const surveyNo = `${surveyMain}/${subDiv}`;
+      const pattaNo = `${1000 + (globalIndex * 73) % 8900}`;
+      
+      // Calculate realistic area based on category
+      let areaAcres = 0;
+      let guidelineSqft = 0;
+      let landType = "";
+      
+      if (category === "Agriculture") {
+        areaAcres = Number((1.5 + (globalIndex % 8) * 0.85).toFixed(2));
+        guidelineSqft = 950 + (globalIndex % 5) * 250;
+        landType = i % 2 === 0 ? "தோட்டக்கால் (Coconut Plantation / தோட்டம்)" : "நஞ்சை (Wetland / Paddy & Sugarcane)";
+      } else if (category === "Commercial") {
+        areaAcres = Number((0.8 + (globalIndex % 4) * 0.75).toFixed(2));
+        guidelineSqft = 4500 + (globalIndex % 6) * 600;
+        landType = "வணிக வளாகம் / IT SEZ (Commercial & IT Park)";
+      } else if (category === "Industrial") {
+        areaAcres = Number((3.0 + (globalIndex % 6) * 1.5).toFixed(2));
+        guidelineSqft = 2200 + (globalIndex % 4) * 350;
+        landType = "தொழில் பேட்டை மனை / Foundry & Mills";
+      } else {
+        areaAcres = Number((0.25 + (globalIndex % 5) * 0.35).toFixed(2));
+        guidelineSqft = 3200 + (globalIndex % 5) * 450;
+        landType = "அங்கீகரிக்கப்பட்ட வீட்டு மனை (Approved Residential Layout)";
+      }
+
+      const areaCents = Math.round(areaAcres * 100);
+      const areaSqm = Number((areaAcres * 4046.86).toFixed(1));
+      const marketValue = Math.round(areaAcres * 43560 * guidelineSqft * 1.35);
+
+      // Generate polygon around taluk center
+      const [lngCenter, latCenter] = tConfig.center;
+      const angle = (i / tConfig.count) * 2 * Math.PI;
+      const radius = 0.015 + (i % 5) * 0.008;
+      const pLng = Number((lngCenter + Math.cos(angle) * radius).toFixed(4));
+      const pLat = Number((latCenter + Math.sin(angle) * radius).toFixed(4));
+      const dLng = 0.0035;
+      const dLat = 0.0030;
+
+      const polygon: [number, number][] = [
+        [pLng, pLat],
+        [Number((pLng + dLng).toFixed(4)), Number((pLat + 0.0005).toFixed(4))],
+        [Number((pLng + dLng - 0.0005).toFixed(4)), Number((pLat + dLat).toFixed(4))],
+        [Number((pLng - 0.0005).toFixed(4)), Number((pLat + dLat - 0.0005).toFixed(4))],
+        [pLng, pLat]
+      ];
+
+      const hashBytes = `0x${((globalIndex * 192837465) % 0xffffffff).toString(16).padStart(8, "0")}` +
+        `a9b8c7d6e5f41029384756${((globalIndex * 837461) % 0xffffffff).toString(16).padStart(8, "0")}` +
+        `1234567890abcdef1234567890abcdef`;
+
+      const encumbrance = i % 6 === 0
+        ? "Hypothecated to Canara Bank / SBI (Secured Agri/MSME Loan)"
+        : "Clean / Nil Encumbrance (வில்லங்கம் இல்லை)";
+
+      const parcel: CoimbatoreParcel = {
+        id: `cbe-plot-${String(globalIndex).padStart(3, "0")}`,
+        survey_no: surveyNo,
+        subdivision: subDiv,
+        patta_no: pattaNo,
+        owner_name: `${nameObj.en} / ${nameObj.ta}`,
+        father_name: `${nameObj.f_en} / ${nameObj.f_ta}`,
+        co_owners: i % 3 === 0 ? [`${nameObj.en.split(" ")[0]}. Karpagam (Wife)`, `${nameObj.en.split(" ")[0]}. Senthil (Son)`] : [],
+        village: village,
+        taluk: tConfig.taluk,
+        district: "Coimbatore",
+        state: "Tamil Nadu",
+        village_lgd_code: `6410${String((globalIndex % 90) + 10)}`,
+        land_type: landType,
+        land_category: category,
+        soil_type: soilType,
+        area_acres: areaAcres,
+        area_cents: areaCents,
+        area_sqm: areaSqm,
+        guideline_value_sqft: guidelineSqft,
+        market_value_inr: marketValue,
+        encumbrance_status: encumbrance,
+        blockchain_hash: hashBytes,
+        polygon: polygon,
+        mutation_history: [
+          {
+            step: 1,
+            date: "1994-06-12",
+            deed_type: "Ancestral Partition / Settlement (குடும்ப பாகப்பிரிவினை)",
+            doc_no: `Doc ${1200 + globalIndex}/1994, SRO ${tConfig.taluk}`,
+            transferor: `${nameObj.f_en} (Ancestor)`,
+            transferee: nameObj.en,
+            extent: `${areaAcres} Acres`,
+            status: "Verified on Revenue Register"
+          },
+          {
+            step: 2,
+            date: "2023-11-20",
+            deed_type: "Digital RoR Patta Conversion & Blockchain Anchor",
+            doc_no: `TV-2023-TN-CBE-${surveyMain}`,
+            transferor: "Revenue Dept / e-Pattadar Portal",
+            transferee: nameObj.en,
+            extent: `${areaAcres} Acres`,
+            status: "Anchored to Polygon Amoy Testnet (RecordRegistry.sol)"
+          }
+        ],
+        inheritance_tree: {
+          root: {
+            name: `${nameObj.f_en} (${nameObj.f_ta})`,
+            relation: "Patriarch / Ancestral Origin (1930 - 2002)",
+            generation: "Gen 1",
+            children: [
+              {
+                name: `${nameObj.en} (${nameObj.ta})`,
+                relation: "Current Primary Title Holder (Age 54)",
+                generation: "Gen 2",
+                heirs: [
+                  { name: "S. Karthi / கார்த்தி", relation: "Elder Son / Co-parcener" },
+                  { name: "S. Divya / திவ்யா", relation: "Daughter" }
+                ]
+              }
+            ]
+          }
+        }
+      };
+
+      parcels.push(parcel);
+      globalIndex++;
+    }
+  });
+
+  return parcels;
+}
+
+export const MOCK_COIMBATORE_PARCELS: CoimbatoreParcel[] = generate108Parcels();
 
 export function getMockGeoJSON(options?: { taluk?: string; land_type?: string; q?: string }) {
   let filtered = MOCK_COIMBATORE_PARCELS;
@@ -398,7 +329,8 @@ export function getMockGeoJSON(options?: { taluk?: string; land_type?: string; q
       p.survey_no.toLowerCase().includes(query) ||
       p.owner_name.toLowerCase().includes(query) ||
       p.patta_no.toLowerCase().includes(query) ||
-      p.village.toLowerCase().includes(query)
+      p.village.toLowerCase().includes(query) ||
+      p.taluk.toLowerCase().includes(query)
     );
   }
 
@@ -419,92 +351,27 @@ export function getMockGeoJSON(options?: { taluk?: string; land_type?: string; q
   };
 }
 
-export const MOCK_RECORDS = [
-  {
-    id: "rec-cbe-001",
-    owner_name: "P. Natesan / பி. நடேசன்",
-    father_name: "Palanichamy Gounder",
-    khasra_no: "312/1A",
-    khata_no: "5120",
-    survey_no: "312/1A",
-    state: "Tamil Nadu",
-    district: "Coimbatore",
-    tehsil: "Pollachi",
-    village: "Pollachi South",
-    area_value: "5.20",
-    area_unit: "Acres",
-    land_type: "தோட்டக்கால் (Coconut Plantation)",
-    status: "verified",
-    verification_status: "VERIFIED_ON_CHAIN",
-    blockchain_hash: "0x9f83ab24e18374a2b91834cd981723eabbc09182374928173491827349182734",
-    overall_confidence: 0.96,
-    doc_sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    created_at: "2026-08-28T10:15:00Z"
-  },
-  {
-    id: "rec-cbe-002",
-    owner_name: "Dr. K. Swaminathan",
-    father_name: "Kumarasamy Chettiar",
-    khasra_no: "88/2C",
-    khata_no: "2194",
-    survey_no: "88/2C",
-    state: "Tamil Nadu",
-    district: "Coimbatore",
-    tehsil: "Coimbatore North",
-    village: "Saravanampatti",
-    area_value: "2.85",
-    area_unit: "Acres",
-    land_type: "Commercial IT Park",
-    status: "verified",
-    verification_status: "VERIFIED_ON_CHAIN",
-    blockchain_hash: "0x3e18a93bc4182903fe5728192837482910aefc91823749281734918273491827",
-    overall_confidence: 0.98,
-    doc_sha256: "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0",
-    created_at: "2026-08-29T14:20:00Z"
-  },
-  {
-    id: "rec-cbe-003",
-    owner_name: "R. Shanmugam",
-    father_name: "Ramasamy",
-    khasra_no: "415/3",
-    khata_no: "8411",
-    survey_no: "415/3",
-    state: "Tamil Nadu",
-    district: "Coimbatore",
-    tehsil: "Coimbatore South",
-    village: "Singanallur",
-    area_value: "3.40",
-    area_unit: "Acres",
-    land_type: "நஞ்சை (Wetland)",
-    status: "verified",
-    verification_status: "VERIFIED_ON_CHAIN",
-    blockchain_hash: "0x89ab12cd34ef567890123456789abcdef0123456789abcdef0123456789abcdef0",
-    overall_confidence: 0.94,
-    doc_sha256: "c4ca4238a0b923820dcc509a6f75849b282c0e8a7dd65f6f3630f9a941f71a17",
-    created_at: "2026-08-30T09:00:00Z"
-  },
-  {
-    id: "rec-cbe-004",
-    owner_name: "M/s Texmo Industries",
-    father_name: "V. Ramachandran (Signatory)",
-    khasra_no: "124/4B",
-    khata_no: "3302",
-    survey_no: "124/4B",
-    state: "Tamil Nadu",
-    district: "Coimbatore",
-    tehsil: "Sulur",
-    village: "Sulur Industrial Area",
-    area_value: "8.50",
-    area_unit: "Acres",
-    land_type: "Industrial Foundry & Mills",
-    status: "verified",
-    verification_status: "VERIFIED_ON_CHAIN",
-    blockchain_hash: "0x77ab12fe9988aa55112233445566778899aabbccddeeff001122334455667788",
-    overall_confidence: 0.99,
-    doc_sha256: "8b1a9953c4611296a827abf8c47804d7",
-    created_at: "2026-08-30T16:45:00Z"
-  }
-];
+export const MOCK_RECORDS = MOCK_COIMBATORE_PARCELS.slice(0, 25).map((p, idx) => ({
+  id: `rec-cbe-${String(idx + 1).padStart(3, "0")}`,
+  owner_name: p.owner_name,
+  father_name: p.father_name,
+  khasra_no: p.survey_no,
+  khata_no: p.patta_no,
+  survey_no: p.survey_no,
+  state: p.state,
+  district: p.district,
+  tehsil: p.taluk,
+  village: p.village,
+  area_value: String(p.area_acres),
+  area_unit: "Acres",
+  land_type: p.land_type,
+  status: "verified",
+  verification_status: "VERIFIED_ON_CHAIN",
+  blockchain_hash: p.blockchain_hash,
+  overall_confidence: 0.94 + (idx % 6) * 0.01,
+  doc_sha256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b${String(idx).padStart(2, "0")}`,
+  created_at: `2026-08-${String(20 + (idx % 10)).padStart(2, "0")}T10:15:00Z`
+}));
 
 export const MOCK_REVIEW_QUEUE = [
   {
@@ -556,17 +423,15 @@ export const MOCK_REVIEW_QUEUE = [
 ];
 
 export const MOCK_MATURITY_SUMMARY = {
-  overall_score: 88.4,
-  total_records: 12480,
-  verified_records: 11120,
-  pending_review: 42,
-  dispute_count: 14,
-  taluk_breakdown: [
-    { taluk: "Pollachi", score: 94.2, records: 2840, verified: 2790 },
-    { taluk: "Coimbatore North", score: 91.5, records: 3100, verified: 2950 },
-    { taluk: "Coimbatore South", score: 89.0, records: 2400, verified: 2200 },
-    { taluk: "Sulur", score: 86.8, records: 1800, verified: 1610 },
-    { taluk: "Mettupalayam", score: 85.0, records: 1240, verified: 1090 },
-    { taluk: "Annur", score: 82.4, records: 1100, verified: 980 }
-  ]
+  overall_score: 91.2,
+  total_records: 108,
+  verified_records: 108,
+  pending_review: 2,
+  dispute_count: 3,
+  taluk_breakdown: TALUK_CONFIGS.map(tc => ({
+    taluk: tc.taluk,
+    score: 85.0 + (tc.count % 10) * 1.2,
+    records: tc.count,
+    verified: tc.count
+  }))
 };
