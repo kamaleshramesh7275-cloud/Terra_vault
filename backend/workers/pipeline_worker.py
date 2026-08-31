@@ -1,0 +1,322 @@
+"""
+Terra_vault — Celery Application + Full Ingestion Pipeline Worker
+Orchestrates: Restoration → Script Classify → OCR → Field Extract → Validate → Fraud Check
+"""
+import asyncio
+import hashlib
+import structlog
+import os
+from pathlib import Path
+
+from celery import Celery
+from celery.schedules import crontab
+
+from core.config import settings
+
+log = structlog.get_logger(__name__)
+
+# ── Celery app ────────────────────────────────────────────────────────────────
+celery_app = Celery("terravault", broker=settings.REDIS_URL, backend=settings.REDIS_URL)
+
+task_always_eager = False
+try:
+    import redis
+    r = redis.Redis.from_url(settings.REDIS_URL, socket_connect_timeout=1)
+    r.ping()
+except Exception:
+    print("[WARN] Redis is offline. Setting Celery task_always_eager = True to run pipeline inline.")
+    task_always_eager = True
+
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="Asia/Kolkata",
+    enable_utc=True,
+    task_track_started=True,
+    task_acks_late=True,
+    worker_prefetch_multiplier=1,
+    task_always_eager=task_always_eager,
+    beat_schedule={
+        # Nightly maturity score computation at 02:00 IST
+        "compute-maturity-scores": {
+            "task": "workers.pipeline_worker.compute_maturity_scores",
+            "schedule": crontab(hour=2, minute=0),
+        },
+        # Weekly fraud scan
+        "fraud-graph-scan": {
+            "task": "workers.pipeline_worker.run_fraud_scan",
+            "schedule": crontab(hour=3, minute=0, day_of_week=0),  # Monday 03:00
+        },
+    },
+)
+
+
+# ── Helper: compute file SHA256 ───────────────────────────────────────────────
+def _sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+# ── Main pipeline task ────────────────────────────────────────────────────────
+@celery_app.task(bind=True, name="workers.pipeline_worker.process_document",
+                 max_retries=3, default_retry_delay=30)
+def process_document(self, record_id: str, file_path: str):
+    """
+    Full pipeline for a single uploaded document:
+      1. Image restoration
+      2. Script classification
+      3. OCR (EasyOCR / PaddleOCR / Tesseract / TrOCR)
+      4. Field extraction (spaCy NER + regex)
+      5. Business rule validation
+      6. OSS cross-validation
+      7. Graph fraud detection
+      8. DB update + review queue routing
+    """
+    if self:
+        orig_update = self.update_state
+        def safe_update(state, meta=None):
+            if self.request and self.request.id:
+                return orig_update(state=state, meta=meta)
+        self.update_state = safe_update
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from ml_pipeline.restoration import ImageRestorationPipeline
+    from ml_pipeline.script_classifier import ScriptClassifier
+    from ocr_engine.recognizer import OCRRouter
+    from ocr_engine.field_extractor import FieldExtractor
+    from validation.rules_engine import RulesEngine, DatabaseValidator
+    from core.models import LandRecord, FieldConfidence, ReviewTask
+    from core.config import settings as cfg
+
+    engine = create_engine(cfg.SYNC_DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        record = session.get(LandRecord, record_id)
+        if not record:
+            log.error("pipeline.record_not_found", record_id=record_id)
+            return
+
+        record.status = "processing"
+        session.commit()
+
+        # ── Step 1: Image Restoration ─────────────────────────────────────────
+        self.update_state(state="PROGRESS", meta={"step": "restoration", "pct": 10})
+        pipeline = ImageRestorationPipeline(
+            model_dir=cfg.ML_MODELS_DIR,
+            output_dir=str(Path(cfg.DATA_DIR) / "enhanced"),
+        )
+        restoration_result = pipeline.process(file_path)
+        record.quality_score = restoration_result.quality_before
+
+        # Upload enhanced image to MinIO
+        from core.minio_client import upload_file_sync
+        enhanced_url = upload_file_sync(restoration_result.enhanced_path, f"enhanced/{record_id}.png")
+        record.enhanced_doc_url = enhanced_url
+        record.doc_sha256 = _sha256_file(file_path)
+        session.commit()
+
+        # ── Step 2: Script Classification ─────────────────────────────────────
+        self.update_state(state="PROGRESS", meta={"step": "script_classify", "pct": 25})
+        classifier = ScriptClassifier(model_dir=cfg.ML_MODELS_DIR)
+        script_result = classifier.classify(restoration_result.enhanced_path)
+        record.detected_script = script_result.script
+        session.commit()
+
+        # ── Step 3: OCR ───────────────────────────────────────────────────────
+        self.update_state(state="PROGRESS", meta={"step": "ocr", "pct": 45})
+        router = OCRRouter()
+        ocr_result = router.recognize(
+            restoration_result.enhanced_path,
+            ocr_config=script_result.ocr_config,
+            is_handwriting=False,
+        )
+
+        # ── Step 4: Field Extraction ──────────────────────────────────────────
+        self.update_state(state="PROGRESS", meta={"step": "field_extraction", "pct": 65})
+        extractor = FieldExtractor()
+        fields = extractor.extract(ocr_result.full_text, ocr_result.avg_confidence)
+
+        # Write extracted fields to record
+        record.owner_name       = fields.owner_name.value
+        record.father_name      = fields.father_name.value
+        record.khasra_no        = fields.khasra_no.value
+        record.khata_no         = fields.khata_no.value
+        record.survey_no        = fields.survey_no.value
+        record.village          = fields.village.value
+        record.tehsil           = fields.tehsil.value
+        record.district         = fields.district.value
+        record.state            = fields.state.value
+        record.village_lgd_code = fields.village_lgd_code.value
+        record.area_value       = float(fields.area_value.value) if fields.area_value.value else None
+        record.area_unit        = fields.area_unit.value
+        record.land_type        = fields.land_type.value
+        record.mutation_no      = fields.mutation_no.value
+        record.transaction_type = fields.transaction_type.value
+        record.overall_confidence = fields.overall_confidence
+        session.commit()
+
+        # Save per-field confidence records
+        for fname in ["owner_name", "khasra_no", "khata_no", "survey_no",
+                      "village", "tehsil", "district", "area_value",
+                      "mutation_no", "mutation_date", "land_type", "transaction_type"]:
+            ef = getattr(fields, fname)
+            fc = FieldConfidence(
+                record_id=record_id,
+                field_name=fname,
+                raw_ocr_value=ef.value,
+                confidence=ef.confidence,
+                flags=ef.flags,
+                is_corrected=False,
+            )
+            session.add(fc)
+        session.commit()
+
+        # ── Step 5: Business Rule Validation ──────────────────────────────────
+        self.update_state(state="PROGRESS", meta={"step": "validation", "pct": 78})
+        rules = RulesEngine()
+        fields_dict = {
+            "owner_name": record.owner_name,
+            "khasra_no": record.khasra_no,
+            "village": record.village,
+            "district": record.district,
+            "area_value": str(record.area_value) if record.area_value else None,
+            "area_unit": record.area_unit,
+            "mutation_date": str(record.mutation_date) if record.mutation_date else None,
+        }
+        validation_report = rules.validate(fields_dict, state=record.state or "default")
+
+        # ── Step 6: OSS Cross-Validation ──────────────────────────────────────
+        db_validator = DatabaseValidator(data_dir=str(Path(cfg.DATA_DIR) / "open_datasets"))
+        village_result = db_validator.validate_village(record.village or "")
+        if not village_result["found"]:
+            record.overall_confidence *= 0.90
+
+        # ── Step 7: Review Queue Routing ──────────────────────────────────────
+        self.update_state(state="PROGRESS", meta={"step": "review_routing", "pct": 90})
+        needs_review = (
+            record.overall_confidence < cfg.CONFIDENCE_THRESHOLD
+            or not validation_report.is_valid
+        )
+
+        if needs_review:
+            record.status = "review"
+            priority = 1.0 - (record.overall_confidence or 0.5)
+            flags = [{"field": i.field, "message": i.message, "severity": i.severity}
+                     for i in validation_report.issues]
+            task = ReviewTask(
+                record_id=record_id,
+                priority=priority,
+                flags=flags,
+                status="pending",
+            )
+            session.add(task)
+        else:
+            record.status = "verified"
+
+        record.overall_confidence *= validation_report.confidence_adjustment
+        session.commit()
+
+        self.update_state(state="SUCCESS", meta={"step": "done", "pct": 100, "status": record.status})
+        log.info("pipeline.complete", record_id=record_id, status=record.status,
+                 confidence=record.overall_confidence)
+
+    except Exception as exc:
+        log.error("pipeline.failed", record_id=record_id, error=str(exc))
+        if session:
+            record = session.get(LandRecord, record_id)
+            if record:
+                record.status = "processing"  # will retry
+                session.commit()
+        raise self.retry(exc=exc)
+    finally:
+        session.close()
+
+
+@celery_app.task(name="workers.pipeline_worker.compute_maturity_scores")
+def compute_maturity_scores():
+    """Nightly task: compute digitization maturity score per village/tehsil/district."""
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.orm import sessionmaker
+    from core.models import MaturityScore
+    from core.config import settings as cfg
+    from datetime import datetime
+
+    engine = create_engine(cfg.SYNC_DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        rows = session.execute(text("""
+            SELECT
+                village AS geo_name, village_lgd_code AS lgd_code,
+                COUNT(*) AS total,
+                AVG(overall_confidence) AS avg_conf,
+                SUM(CASE WHEN status='verified' THEN 1 ELSE 0 END)::float / COUNT(*) AS pct_verified,
+                SUM(CASE WHEN status='disputed' THEN 1 ELSE 0 END)::float / COUNT(*) AS dispute_rate
+            FROM land_records
+            WHERE village IS NOT NULL
+            GROUP BY village, village_lgd_code
+        """)).fetchall()
+
+        for row in rows:
+            pct_v = float(row.pct_verified or 0)
+            avg_c = float(row.avg_conf or 0)
+            d_rate = float(row.dispute_rate or 0)
+            score = round(0.40 * pct_v + 0.30 * avg_c + 0.15 * (1 - d_rate) + 0.15, 4)
+
+            ms = MaturityScore(
+                geo_level="village",
+                geo_name=row.geo_name,
+                lgd_code=row.lgd_code,
+                pct_verified=pct_v,
+                avg_confidence=avg_c,
+                error_rate=0.0,
+                dispute_rate=d_rate,
+                maturity_score=score,
+                total_records=row.total,
+                computed_at=datetime.utcnow(),
+            )
+            session.add(ms)
+        session.commit()
+        log.info("maturity.computed", villages=len(rows))
+    finally:
+        session.close()
+
+
+@celery_app.task(name="workers.pipeline_worker.run_fraud_scan")
+def run_fraud_scan():
+    """Weekly task: rebuild fraud graph from all records and detect patterns."""
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.orm import sessionmaker
+    from validation.graph_fraud_detector import FraudGraph
+    from core.config import settings as cfg
+
+    engine = create_engine(cfg.SYNC_DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        records = session.execute(text(
+            "SELECT id, owner_name, khasra_no, village_lgd_code, village, mutation_no "
+            "FROM land_records WHERE status IN ('verified', 'review')"
+        )).fetchall()
+
+        graph = FraudGraph()
+        for r in records:
+            graph.add_record({
+                "id": str(r.id), "owner_name": r.owner_name,
+                "khasra_no": r.khasra_no, "village_lgd_code": r.village_lgd_code,
+                "village": r.village, "mutation_no": r.mutation_no,
+            })
+
+        alerts = graph.detect_fraud()
+        log.info("fraud_scan.complete", alerts=len(alerts), records=len(records))
+        return {"alerts": len(alerts)}
+    finally:
+        session.close()

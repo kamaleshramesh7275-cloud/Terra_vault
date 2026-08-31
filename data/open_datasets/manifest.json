@@ -1,0 +1,29 @@
+{
+  "datasets": [
+    {
+      "name": "LGD States",
+      "file": "lgd_states.csv",
+      "status": "ready"
+    },
+    {
+      "name": "LGD Districts",
+      "file": "lgd_districts.csv",
+      "status": "ready"
+    },
+    {
+      "name": "Indian Names",
+      "file": "indian_names_corpus.json",
+      "status": "ready"
+    },
+    {
+      "name": "Field Patterns",
+      "file": "field_patterns.json",
+      "status": "ready"
+    }
+  ],
+  "notes": [
+    "LGD village-level data: download from https://lgdirectory.gov.in -> save as lgd_villages.csv",
+    "Census 2011 village list: download from https://censusindia.gov.in",
+    "Bhu-Naksha GeoJSON: import via POST /api/gis/import-geojson"
+  ]
+}

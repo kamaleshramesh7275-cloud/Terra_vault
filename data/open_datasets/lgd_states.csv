@@ -1,0 +1,31 @@
+state_name,state_code,lgd_code
+Uttar Pradesh,UP,09
+Maharashtra,MH,27
+Rajasthan,RJ,08
+Bihar,BR,10
+Gujarat,GJ,24
+Tamil Nadu,TN,33
+Karnataka,KA,29
+Andhra Pradesh,AP,28
+Madhya Pradesh,MP,23
+West Bengal,WB,19
+Telangana,TG,36
+Odisha,OD,21
+Jharkhand,JH,20
+Haryana,HR,06
+Punjab,PB,03
+Chhattisgarh,CG,22
+Kerala,KL,32
+Assam,AS,18
+Delhi,DL,07
+Uttarakhand,UK,05
+Himachal Pradesh,HP,02
+Goa,GA,30
+Tripura,TR,16
+Manipur,MN,14
+Nagaland,NL,13
+Arunachal Pradesh,AR,12
+Meghalaya,ML,17
+Mizoram,MZ,15
+Sikkim,SK,11
+Other,OT,99

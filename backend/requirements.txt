@@ -1,0 +1,69 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+httpx==0.27.0
+
+# Database
+sqlalchemy[asyncio]==2.0.29
+alembic==1.13.1
+
+# Task queue
+celery==5.3.6
+redis==5.0.3
+flower==2.0.1
+
+# Object storage
+minio==7.2.5
+
+# Search
+elasticsearch[async]==8.12.0
+
+# Graph
+neo4j==5.19.0
+networkx==3.3
+
+# ML / Image Processing
+torch==2.3.0
+torchvision==0.18.0
+torchaudio==2.3.0
+opencv-python-headless==4.9.0.80
+Pillow==10.3.0
+numpy==1.26.4
+scikit-image==0.23.2
+scipy==1.13.0
+basicsr==1.4.2          # Real-ESRGAN dependency
+realesrgan==0.3.0
+
+# OCR
+easyocr==1.7.1
+paddlepaddle==2.6.1
+paddleocr==2.7.3
+pytesseract==0.3.10
+transformers==4.41.0    # TrOCR (HuggingFace)
+craft-text-detector==0.4.2
+
+# NLP
+spacy==3.7.4
+indic-nlp-library==0.92
+IndicTransToolkit==1.0.0
+
+# Blockchain
+web3==6.19.0
+
+# Validation / Utils
+pydantic==2.7.1
+pydantic-settings==2.3.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.1
+tenacity==8.3.0
+structlog==24.1.0
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.25.0
+phonetics==1.0.5
+
+# Testing
+pytest==8.2.0
+pytest-asyncio==0.23.7
+pytest-cov==5.0.0
+httpx==0.27.0
