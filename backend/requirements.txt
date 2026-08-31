@@ -30,17 +30,16 @@ scikit-image>=0.21.0
 scipy>=1.11.0
 
 # OCR
-easyocr==1.7.1
-paddlepaddle==2.6.1
-paddleocr==2.7.3
-pytesseract==0.3.10
-transformers==4.41.0    # TrOCR (HuggingFace)
-craft-text-detector==0.4.2
+easyocr>=1.7.0
+paddlepaddle>=2.6.2
+paddleocr>=2.7.3
+pytesseract>=0.3.10
+transformers>=4.40.0    # TrOCR (HuggingFace)
+craft-text-detector>=0.4.0
 
 # NLP
-spacy==3.7.4
-indic-nlp-library==0.92
-IndicTransToolkit==1.0.0
+spacy>=3.7.0
+indic-nlp-library>=0.90
 
 # Blockchain
 web3==6.19.0
