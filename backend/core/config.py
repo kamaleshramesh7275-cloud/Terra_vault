@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change_me"
     LOG_LEVEL: str = "INFO"
 
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://terravault:terravault_secret@localhost:5432/terravault"
-    SYNC_DATABASE_URL: str = "postgresql://terravault:terravault_secret@localhost:5432/terravault"
+    # Database (Defaults to SQLite; will use PostgreSQL if DATABASE_URL env var is provided)
+    DATABASE_URL: str = "sqlite+aiosqlite:////app/data/terravault.db"
+    SYNC_DATABASE_URL: str = "sqlite:////app/data/terravault.db"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
