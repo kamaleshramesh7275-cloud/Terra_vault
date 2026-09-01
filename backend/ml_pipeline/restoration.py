@@ -367,11 +367,46 @@ def binarize_sauvola(img: np.ndarray, window_size: int = 25, k: float = 0.2) -> 
     Sauvola adaptive thresholding — superior to Otsu for non-uniform lighting.
     Returns binarized single-channel image.
     """
-    from skimage.filters import threshold_sauvola
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
-    thresh = threshold_sauvola(gray, window_size=window_size, k=k)
-    binary = (gray > thresh).astype(np.uint8) * 255
-    return binary
+    try:
+        from skimage.filters import threshold_sauvola
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
+        thresh = threshold_sauvola(gray, window_size=window_size, k=k)
+        binary = (gray > thresh).astype(np.uint8) * 255
+        return binary
+    except Exception:
+        # Fallback to adaptive Gaussian thresholding if skimage threshold_sauvola fails
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
+        return cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, window_size, 5)
+
+
+def suppress_ink_bleed(img: np.ndarray) -> np.ndarray:
+    """
+    Suppress back-page ink bleed-through and water stains using morphological opening and bilateral filtering.
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+    # Bilateral filter preserves sharp character edges while blurring background bleed-through
+    filtered = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
+    # Morphological background subtraction
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
+    background = cv2.morphologyEx(filtered, cv2.MORPH_CLOSE, kernel)
+    division = cv2.divide(filtered, background, scale=255)
+    if len(img.shape) == 3:
+        return cv2.cvtColor(division, cv2.COLOR_GRAY2BGR)
+    return division
+
+
+def inpaint_stains(img: np.ndarray) -> np.ndarray:
+    """
+    Inpaint torn edges, water spots, and ink blobs using Telea Navier-Stokes inpainting.
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+    # Detect severe dark ink blobs or water stains
+    _, stain_mask = cv2.threshold(gray, 40, 255, cv2.THRESH_BINARY_INV)
+    # Filter small text components out of stain mask so only large smudges are inpainted
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+    stain_mask = cv2.morphologyEx(stain_mask, cv2.MORPH_OPEN, kernel)
+    inpainted = cv2.inpaint(img, stain_mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
+    return inpainted
 
 
 # ─────────────────────────────────────────────────────────────────────────────

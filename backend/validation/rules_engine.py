@@ -84,14 +84,22 @@ class RulesEngine:
                 issues.append(ValidationIssue("area_value", "error",
                     f"Area value '{area_val}' is not numeric"))
 
-        # Date ordering
+        # Date ordering / sanity
+        from datetime import datetime as dt_type
         mut_date = fields.get("mutation_date")
-        if mut_date and isinstance(mut_date, str):
-            # Basic sanity: year should be between 1900 and 2030
-            year_match = re.search(r"\b(19|20)\d{2}\b", mut_date)
-            if not year_match:
+        if mut_date:
+            if isinstance(mut_date, dt_type):
+                year = mut_date.year
+            else:
+                m = re.search(r"\b(19|20)\d{2}\b", str(mut_date))
+                year = int(m.group()) if m else None
+
+            if year and not (1900 <= year <= 2030):
                 issues.append(ValidationIssue("mutation_date", "warning",
-                    f"Mutation date '{mut_date}' has no recognizable year"))
+                    f"Mutation year {year} is outside expected range 1900–2030"))
+            elif not year:
+                issues.append(ValidationIssue("mutation_date", "warning",
+                    "Mutation date has no recognizable year"))
 
         confidence_adj = 1.0 - (0.05 * len([i for i in issues if i.severity == "error"]))
         confidence_adj = max(0.3, confidence_adj)

@@ -7,6 +7,7 @@ import re
 import json
 import structlog
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -55,6 +56,61 @@ PATTERNS = {
     "mutation_date":[r"\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})\b",
                      r"\b(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b"],
 }
+
+# ── Indian relationship-prefix patterns for owner name extraction ──────────────
+# Matches: "Ram Kumar S/O Shyam", "Sita W/O Ram", "पुत्र:", "पिता:", etc.
+OWNER_NAME_PATTERNS = [
+    # English: capture name before the S/O / D/O / W/O token
+    r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})\s+(?:S/O|D/O|W/O|s/o|d/o|w/o|Son of|Daughter of|Wife of)",
+    # English: capture name after "Name:" / "Owner:" label
+    r"(?:owner|name|khatedar|pattadar|holder)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,50}?)(?=\s*(?:S/O|D/O|W/O|Village|Khasra|$))",
+    # Hindi: name before पुत्र / पुत्री / पत्नी
+    r"([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,3})\s+(?:पुत्र|पुत्री|पत्नी|पिता)\s*[:\-]?",
+    # Hindi: after खातेदार / नाम label
+    r"(?:खातेदार|नाम)\s*[:\-]\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){1,4})",
+]
+
+# ── Village / location label-hint patterns ────────────────────────────────────
+VILLAGE_PATTERNS = [
+    r"(?:village|vill\.?|gram|gaon)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,40}?)(?=\s*(?:Tehsil|Taluka|District|$))",
+    r"(?:ग्राम|गाँव|मौजा)\s*[:\-]?\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,3})",
+    r"(?:Revenue Village|R\.V\.)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,40}?)(?=[,\n]|$)",
+]
+
+TEHSIL_PATTERNS = [
+    r"(?:tehsil|taluka|taluk|mandal)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,30}?)(?=\s*(?:District|$))",
+    r"(?:तहसील|तालुका|मंडल)\s*[:\-]?\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,2})",
+]
+
+DISTRICT_PATTERNS = [
+    r"(?:district|dist\.?)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,30}?)(?=[,\n]|$)",
+    r"(?:जिला|जिल्ला)\s*[:\-]?\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,2})",
+]
+
+
+def parse_mutation_date(raw: str) -> Optional[datetime]:
+    """Convert raw OCR date string to a datetime object.
+
+    Handles formats: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, DD Month YYYY,
+    as well as 2-digit years (assumed 20xx if <= current year, else 19xx).
+    Returns None if parsing fails.
+    """
+    if not raw:
+        return None
+    raw = raw.strip()
+    FMTS = [
+        "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y",
+        "%d/%m/%y", "%d-%m-%y", "%d.%m.%y",
+        "%d %B %Y", "%d %b %Y",
+        "%Y/%m/%d", "%Y-%m-%d",
+    ]
+    for fmt in FMTS:
+        try:
+            return datetime.strptime(raw, fmt)
+        except ValueError:
+            continue
+    log.warning("field_extractor.date_parse_failed", raw=raw)
+    return None
 
 AREA_UNITS = {"bigha", "acre", "hectare", "are", "guntha", "cent",
               "sq.ft", "sq.m", "sqft", "sqm", "sq ft", "sq m", "sq yard"}
@@ -162,6 +218,34 @@ class FieldExtractor:
                 result.area_value.value = area_match.group(1)
                 result.area_unit.value = area_match.group(2).lower().replace(" ", "")
                 result.area_unit.confidence = avg_ocr_confidence * 0.9
+
+        # ── 1b. Label-hint regex for village, tehsil, district ────────────────
+        # These run before NER so NER can override with higher confidence if found
+        for patterns, field_name in [
+            (VILLAGE_PATTERNS,  "village"),
+            (TEHSIL_PATTERNS,   "tehsil"),
+            (DISTRICT_PATTERNS, "district"),
+        ]:
+            if getattr(result, field_name).value is None:
+                for pattern in patterns:
+                    m = re.search(pattern, ocr_text, re.IGNORECASE | re.UNICODE)
+                    if m:
+                        value = m.group(1).strip()
+                        ef = ExtractedField(value=value, confidence=avg_ocr_confidence * 0.80,
+                                            method="regex", flags=[])
+                        setattr(result, field_name, ef)
+                        break
+
+        # ── 1c. Relationship-prefix regex for owner_name ──────────────────────
+        if result.owner_name.value is None:
+            for pattern in OWNER_NAME_PATTERNS:
+                m = re.search(pattern, ocr_text, re.IGNORECASE | re.UNICODE)
+                if m:
+                    value = m.group(1).strip()
+                    result.owner_name = ExtractedField(
+                        value=value, confidence=avg_ocr_confidence * 0.82,
+                        method="regex", flags=[])
+                    break
 
         # ── 2. spaCy NER for persons and locations ────────────────────────────
         self._load_spacy()

@@ -186,3 +186,33 @@ class User(Base):
     role = Column(String(20), default="viewer")   # admin|reviewer|viewer|citizen
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class FraudAlert(Base):
+    """Stores alerts produced by the weekly FraudGraph scan."""
+    __tablename__ = "fraud_alerts"
+
+    id             = Column(UUID(as_uuid=False), primary_key=True, default=new_uuid)
+    alert_type     = Column(String(60), nullable=False)
+    # "duplicate_claim" | "circular_mutation" | "orphaned_mutation" | "area_expansion"
+    severity       = Column(String(20), nullable=False)
+    # "critical" | "high" | "medium"
+    record_ids     = Column(JSON, default=list)    # List[str]
+    description    = Column(Text)
+    subgraph_nodes = Column(JSON, default=list)    # List[str] — for UI graph view
+    detected_at    = Column(DateTime, default=datetime.utcnow)
+    resolved       = Column(Boolean, default=False)
+    resolved_by    = Column(String(100))
+    resolved_at    = Column(DateTime)
+
+
+class SystemConfig(Base):
+    """Key-value runtime configuration store. Mirrors DATA_DIR/config.json."""
+    __tablename__ = "system_config"
+
+    key        = Column(String(100), primary_key=True)
+    value      = Column(Text, nullable=False)
+    value_type = Column(String(20), default="string")
+    # "string" | "float" | "int" | "bool"
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = Column(String(100))

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Terra_vault — AI Land Record Digitization",
@@ -13,8 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Sidebar />
-        <main className="main-content">{children}</main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

@@ -1,3 +1,8 @@
+# System dependencies (must be installed separately at OS level):
+#   poppler-utils          -> required by pdf2image  (apt: poppler-utils)
+#   tesseract-ocr          -> required by pytesseract (apt: tesseract-ocr)
+#   tesseract-ocr-hin tesseract-ocr-tam tesseract-ocr-tel tesseract-ocr-kan tesseract-ocr-ben
+
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
 python-multipart==0.0.9
@@ -33,6 +38,7 @@ easyocr>=1.7.0
 paddlepaddle>=2.6.2
 paddleocr>=2.7.3
 pytesseract>=0.3.10
+pdf2image>=1.17.0          # PDF → PNG conversion (requires poppler-utils)
 transformers>=4.40.0    # TrOCR (HuggingFace)
 
 # NLP
@@ -47,12 +53,14 @@ pydantic==2.7.1
 pydantic-settings==2.3.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt>=4.0.0              # passlib bcrypt compatibility on Python 3.12+
 python-dotenv==1.0.1
 tenacity==8.3.0
 structlog==24.1.0
 fuzzywuzzy==0.18.0
 python-Levenshtein==0.25.0
 phonetics==1.0.5
+reportlab>=4.1.0           # PDF Report generation for 30-Year Title Search
 
 # Testing
 pytest==8.2.0

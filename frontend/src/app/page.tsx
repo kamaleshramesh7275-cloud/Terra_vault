@@ -81,6 +81,43 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* ── AI Feature Capabilities Spotlight Banner ── */}
+      <div className="glass-card animate-fade-up" style={{ padding: 24, borderRadius: 16, marginBottom: 36, border: "1px solid rgba(99,102,241,0.3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "#818cf8", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+              <Zap size={14} color="#818cf8" /> Master AI Feature Suite • 13 Production Modules Active
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginTop: 4, color: "white" }}>
+              Explore Terra_vault AI Capabilities & "How It Works" Visualizers
+            </h2>
+          </div>
+          <Link href="/features" className="btn btn-primary" style={{ gap: 8, fontSize: 12, fontWeight: 700, padding: "8px 18px" }}>
+            Explore All 13 Features <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {[
+            { title: "📄 Advanced OCR v2", desc: "Heatmaps, Cross-Val, Signatures, Ink, 6D Clusters", href: "/review", color: "#818cf8" },
+            { title: "🌐 GeoAI & 3D Twin", desc: "Sentinel-2 NDVI, NDBI, 16x16 DEM Mesh, 6-Tier Terrain", href: "/map", color: "#10b981" },
+            { title: "🔒 ZK Blockchain", desc: "Groth16 ZK-SNARK Privacy, Poseidon Hash, 24h TTL", href: "/blockchain", color: "#6366f1" },
+            { title: "📊 Temporal Graph AI", desc: "Benami Ring, Circular Flips, Witness Syndicate", href: "/analytics", color: "#f59e0b" },
+          ].map((f) => (
+            <Link key={f.title} href={f.href} style={{ textDecoration: "none" }}>
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: 14, borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", height: "100%", transition: "all 0.2s" }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: f.color, marginBottom: 4 }}>
+                  {f.title}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.4 }}>
+                  {f.desc}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* ── Stats grid ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginBottom: 36 }}>
         {stats.map((s, i) => (
@@ -156,6 +193,68 @@ export default function DashboardPage() {
                   <span style={{ color: "var(--color-text-muted)" }}>{d.name}</span>
                 </div>
                 <span style={{ color: d.color, fontWeight: 600 }}>{d.value}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── State-wise & District-wise DILRMP Digitization Progress ── */}
+      <div className="glass-card animate-fade-up" style={{ padding: 24, borderRadius: 16, marginBottom: 36, border: "1px solid rgba(16,185,129,0.3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "#34d399", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>🇮🇳</span> DILRMP Mandate • State & District Digitization Progress
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 800, marginTop: 4, color: "white" }}>
+              Digital India Land Records Modernization Programme Status
+            </h2>
+          </div>
+          <span className="badge badge-verified" style={{ fontSize: 11, padding: "6px 12px" }}>
+            Overall: 91.2% Digitized
+          </span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {/* State-wise Progress Bars */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#a5b4fc", marginBottom: 10 }}>State-wise Vectorization & OCR Index</div>
+            {[
+              { state: "Tamil Nadu (TN)", pct: 96.4, docs: "4,820 / 5,000", color: "#10b981" },
+              { state: "Maharashtra (MH)", pct: 92.1, docs: "3,680 / 4,000", color: "#38bdf8" },
+              { state: "Uttar Pradesh (UP)", pct: 88.5, docs: "3,540 / 4,000", color: "#818cf8" },
+              { state: "Karnataka (KA)", pct: 84.0, docs: "2,240 / 2,670", color: "#f59e0b" },
+            ].map(st => (
+              <div key={st.state} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600 }}>{st.state}</span>
+                  <span style={{ color: st.color, fontWeight: 700 }}>{st.pct}% ({st.docs})</span>
+                </div>
+                <div style={{ width: "100%", height: 7, borderRadius: 4, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                  <div style={{ width: `${st.pct}%`, height: "100%", background: st.color, borderRadius: 4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* District Breakdown: Coimbatore Taluks */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#38bdf8", marginBottom: 10 }}>Coimbatore Pilot District Taluk Progress</div>
+            {[
+              { taluk: "Pollachi (பொள்ளாச்சி)", pct: 98.5, status: "NEAR COMPLETE" },
+              { taluk: "Coimbatore North (வடக்கு)", pct: 94.2, status: "ON TRACK" },
+              { taluk: "Sulur (சூலூர்)", pct: 91.0, status: "ON TRACK" },
+              { taluk: "Mettupalayam (மேட்டுப்பாளையம்)", pct: 86.8, status: "IN PROGRESS" },
+            ].map(tk => (
+              <div key={tk.taluk} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.03)", padding: "8px 12px", borderRadius: 8, marginBottom: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "white" }}>{tk.taluk}</div>
+                  <div style={{ fontSize: 10, color: "var(--color-text-muted)" }}>FMB Cadastral Mesh Aligned</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#34d399" }}>{tk.pct}%</span>
+                  <div style={{ fontSize: 9, color: "var(--color-text-muted)" }}>{tk.status}</div>
+                </div>
               </div>
             ))}
           </div>

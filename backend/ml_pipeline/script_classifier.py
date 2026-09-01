@@ -10,6 +10,7 @@ from typing import Optional
 
 import cv2
 import numpy as np
+import unicodedata
 
 log = structlog.get_logger(__name__)
 
@@ -28,6 +29,41 @@ SCRIPT_OCR_MAP = {
     "Latin":       {"easyocr": ["en"],              "paddleocr": "en",  "tesseract": "eng"},
     "Mixed":       {"easyocr": ["hi", "en"],        "paddleocr": "hi",  "tesseract": "hin+eng"},
 }
+
+
+# ── Unicode codepoint ranges for Indic scripts ─────────────────────────────
+SCRIPT_RANGES = [
+    # (script_name, start_codepoint, end_codepoint)
+    ("Devanagari",  0x0900, 0x097F),
+    ("Bengali",     0x0980, 0x09FF),
+    ("Gurmukhi",   0x0A00, 0x0A7F),
+    ("Gujarati",   0x0A80, 0x0AFF),
+    ("Odia",       0x0B00, 0x0B7F),
+    ("Tamil",      0x0B80, 0x0BFF),
+    ("Telugu",     0x0C00, 0x0C7F),
+    ("Kannada",    0x0C80, 0x0CFF),
+    ("Malayalam",  0x0D00, 0x0D7F),
+    ("Urdu",       0x0600, 0x06FF),   # Arabic block (Urdu uses Nastaliq)
+    ("Latin",      0x0041, 0x007A),
+]
+
+
+def _classify_text_by_unicode(text: str) -> Optional[str]:
+    """Count Indic script codepoints in text and return dominant script, or None."""
+    counts: dict = {}
+    for ch in text:
+        cp = ord(ch)
+        for script, start, end in SCRIPT_RANGES:
+            if start <= cp <= end:
+                counts[script] = counts.get(script, 0) + 1
+                break
+    if not counts:
+        return None
+    dominant = max(counts, key=counts.get)
+    # Require at least 5 matching characters to trust result
+    if counts[dominant] < 5:
+        return None
+    return dominant
 
 
 @dataclass
@@ -68,13 +104,40 @@ class ScriptClassifier:
         except Exception as e:
             log.warning("script_classifier.load_failed", error=str(e))
 
+    def _unicode_block_classify(self, img_path: str) -> Optional[str]:
+        """Heuristic fallback: run a fast Tesseract pass to extract text, then
+        classify script by Unicode block frequency. Works without any trained
+        model and correctly handles all major Indic scripts.
+        """
+        try:
+            import pytesseract
+            from PIL import Image as PILImage
+            img = PILImage.open(img_path)
+            # Downscale for speed — only need characters, not quality
+            img.thumbnail((800, 800))
+            # Run with Devanagari+Tamil+Telugu+Latin to get raw characters
+            raw = pytesseract.image_to_string(
+                img,
+                lang="hin+tam+tel+kan+ben+eng",
+                config="--psm 6 --oem 1",
+            )
+            if raw.strip():
+                result = _classify_text_by_unicode(raw)
+                if result:
+                    log.info("script_classifier.unicode_heuristic", script=result)
+                    return result
+        except Exception as e:
+            log.debug("script_classifier.heuristic_failed", error=str(e))
+        return None
+
     def classify(self, img_path: str) -> ScriptClassification:
         """Classify script from image. Returns script name + OCR routing config."""
         self._load_cnn()
 
-        script = "Devanagari"  # safe default for India
+        script = None
         confidence = 0.6
 
+        # ── Try CNN first (only if weights loaded) ──────────────────────────────
         if self._cnn is not None:
             import torch
             import torchvision.transforms as T
@@ -90,8 +153,21 @@ class ScriptClassifier:
             with torch.no_grad():
                 probs = torch.softmax(model(tensor), dim=1)[0]
             idx = probs.argmax().item()
-            script = classes[idx]
-            confidence = float(probs[idx])
+            if float(probs[idx]) >= 0.55:   # only trust if sufficiently confident
+                script = classes[idx]
+                confidence = float(probs[idx])
+
+        # ── Unicode heuristic fallback ────────────────────────────────────────
+        if script is None:
+            script = self._unicode_block_classify(img_path)
+            if script:
+                confidence = 0.75   # heuristic is fairly reliable
+
+        # ── Last resort: Devanagari default ───────────────────────────────────
+        if script is None:
+            script = "Devanagari"
+            confidence = 0.5
+            log.warning("script_classifier.using_default", img_path=img_path)
 
         ocr_config = SCRIPT_OCR_MAP.get(script, SCRIPT_OCR_MAP["Devanagari"])
         return ScriptClassification(

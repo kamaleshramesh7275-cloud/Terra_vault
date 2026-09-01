@@ -85,13 +85,25 @@ async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
     return Token(access_token=token, token_type="bearer", role=user.role)
 
 
-@router.post("/register")
-async def register(username: str, email: str, password: str, role: str = "viewer",
-                   db: AsyncSession = Depends(get_db)):
-    existing = (await db.execute(select(User).where(User.username == username))).scalar_one_or_none()
-    if existing:
-        raise HTTPException(status_code=400, detail="Username already exists")
-    user = User(username=username, email=email, hashed_password=_hash_password(password), role=role)
-    db.add(user)
-    await db.commit()
-    return {"message": "User created", "username": username, "role": role}
+@router.post("/persona-token")
+async def get_persona_token(role: str = "TAHSILDAR", username: Optional[str] = None):
+    """Generates JWT token with territorial claims for demo persona testing."""
+    role_upper = role.upper()
+    role_map = {
+        "CITIZEN": {"sub": username or "pattadar_citizen", "district": "Coimbatore", "taluk": "Kinathukadavu", "village_code": "630401"},
+        "VAO": {"sub": username or "vao_kinathukadavu", "district": "Coimbatore", "taluk": "Kinathukadavu", "firka": "Kinathukadavu Firka", "village_code": "630401"},
+        "RI": {"sub": username or "ri_kinathukadavu", "district": "Coimbatore", "taluk": "Kinathukadavu", "firka": "Kinathukadavu Firka"},
+        "TAHSILDAR": {"sub": username or "tahsildar_kinathukadavu", "district": "Coimbatore", "taluk": "Kinathukadavu"},
+        "RDO": {"sub": username or "rdo_pollachi", "district": "Coimbatore", "division": "Pollachi Division"},
+        "DISTRICT_COLLECTOR": {"sub": username or "collector_coimbatore", "district": "Coimbatore"},
+    }
+    claims = role_map.get(role_upper, role_map["TAHSILDAR"])
+    claims["role"] = role_upper
+    
+    token = _create_token(claims, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "role": role_upper,
+        "claims": claims
+    }

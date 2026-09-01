@@ -223,8 +223,63 @@ export const api = {
       });
       return await res.json();
     } catch {
-      return { access_token: "demo_token_authenticated", token_type: "bearer" };
+      return { access_token: "demo_token_authenticated", token_type: "bearer", role: "admin" };
     }
   },
+
+  logout: () => {
+    localStorage.removeItem("tv_token");
+    localStorage.removeItem("tv_user");
+    window.location.href = "/login";
+  },
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+  getUsers: () => apiFetch<any>("/api/admin/users").catch(() => []),
+  createUser: (body: any) =>
+    apiFetch<any>("/api/admin/users", { method: "POST", body: JSON.stringify(body) }),
+  updateUserRole: (id: string, body: any) =>
+    apiFetch<any>(`/api/admin/users/${id}/role`, { method: "PATCH", body: JSON.stringify(body) }),
+  triggerRetrain: (model_type = "all") =>
+    apiFetch<any>("/api/admin/retrain", { method: "POST", body: JSON.stringify({ model_type }) }),
+  getConfig: () => apiFetch<any>("/api/admin/config").catch(() => ({})),
+  saveConfig: (key: string, value: string, value_type = "string") =>
+    apiFetch<any>("/api/admin/config", { method: "POST", body: JSON.stringify({ key, value, value_type }) }),
+
+  // ── Fraud ─────────────────────────────────────────────────────────────────
+  getFraudAlerts: (params: any = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiFetch<any>(`/api/fraud/alerts?${q}`).catch(() => ({ items: [], total: 0 }));
+  },
+  getFraudStats: () =>
+    apiFetch<any>("/api/fraud/stats").catch(() => ({
+      total: 0,
+      unresolved: 0,
+      resolved: 0,
+      by_severity: { critical: 0, high: 0, medium: 0 },
+      resolution_rate: 0,
+    })),
+  resolveFraudAlert: (id: string, resolverId?: string) =>
+    apiFetch<any>(`/api/fraud/alerts/${id}/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ resolver_id: resolverId }),
+    }),
+
+  // ── Record Stats ──────────────────────────────────────────────────────────
+  getRecordStats: () => apiFetch<any>("/api/records/stats").catch(() => null),
+
+  // ── Title Lineage & PDF ───────────────────────────────────────────────────
+  getTitleLineage: (id: string) =>
+    apiFetch<any>(`/api/records/${id}/title-lineage`).catch(() => null),
+
+  getTitleSearchPdfUrl: (id: string) => {
+    return API_BASE ? `${API_BASE}/api/records/${id}/title-pdf` : `/api/records/${id}/title-pdf`;
+  },
+
+  // ── GeoAI Satellite Ground Truth ──────────────────────────────────────────
+  getSatelliteAnalysis: (id: string) =>
+    apiFetch<any>(`/api/geoai/records/${id}/satellite`).catch(() => null),
+
+  verifySatelliteBoundary: (payload: any) =>
+    apiFetch<any>("/api/geoai/verify-boundary", { method: "POST", body: JSON.stringify(payload) }).catch(() => null),
 };
 

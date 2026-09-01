@@ -112,10 +112,10 @@ const TALUK_CONFIGS = [
   {
     taluk: "Kinathukadavu",
     center: [77.0200, 10.8200],
-    villages: ["Kinathukadavu West (கிணத்துக்கடவு மேற்கு)", "Kinathukadavu East (கிணத்துக்கடவு கிழக்கு)", "Vadachithur (வடசித்துர்)", "Sokkanur (சொக்கனூர்)", "Koduvai Road (கொடுவாய் ரோடு)"],
-    categories: ["Agriculture", "Industrial"],
+    villages: ["Kinathukadavu Town (கிணத்துக்கடவு)", "Solavampalayam (சோளவம்பாளையம்)", "Arasampalayam (அரசம்பாளையம்)", "Kondampatti (கொண்டம்பட்டி)", "Nallattipalayam (நல்லட்டிபாளையம்)", "Singayanputhur (சிங்காயன்புதூர்)", "Kothavadi (கொத்தவாடி)", "Vadachittor (வடசித்தூர்)"],
+    categories: ["Agriculture", "Industrial", "Residential", "Commercial"],
     soilTypes: ["Red Gravel / செம்மண் சரளை", "Deep Red Loam / செம்மண்", "Black Soil / கரிசல் மண்"],
-    count: 8,
+    count: 900,
     prefix: "KND"
   },
   {
@@ -214,22 +214,23 @@ function generate108Parcels(): CoimbatoreParcel[] {
       const areaSqm = Number((areaAcres * 4046.86).toFixed(1));
       const marketValue = Math.round(areaAcres * 43560 * guidelineSqft * 1.35);
 
-      // Generate polygon around taluk center
+      // Realistic Organic Irregular FMB Cadastral Polygon Generation
       const [lngCenter, latCenter] = tConfig.center;
-      const angle = (i / tConfig.count) * 2 * Math.PI;
-      const radius = 0.015 + (i % 5) * 0.008;
-      const pLng = Number((lngCenter + Math.cos(angle) * radius).toFixed(4));
-      const pLat = Number((latCenter + Math.sin(angle) * radius).toFixed(4));
-      const dLng = 0.0035;
-      const dLat = 0.0030;
-
-      const polygon: [number, number][] = [
-        [pLng, pLat],
-        [Number((pLng + dLng).toFixed(4)), Number((pLat + 0.0005).toFixed(4))],
-        [Number((pLng + dLng - 0.0005).toFixed(4)), Number((pLat + dLat).toFixed(4))],
-        [Number((pLng - 0.0005).toFixed(4)), Number((pLat + dLat - 0.0005).toFixed(4))],
-        [pLng, pLat]
-      ];
+      const angleStep = (i / tConfig.count) * 2 * Math.PI;
+      const dist = 0.001 + ((i % 15) * 0.0012);
+      const cLng = lngCenter + Math.cos(angleStep) * dist;
+      const cLat = latCenter + Math.sin(angleStep) * dist;
+      
+      const numSides = 6;
+      const polygon: [number, number][] = [];
+      for (let s = 0; s < numSides; s++) {
+        const a = (s / numSides) * 2 * Math.PI + ((i * 17 + s * 3) % 10) * 0.05;
+        const r = 0.0022 * (0.7 + ((i * 13 + s * 7) % 10) * 0.06);
+        const dLng = (r * Math.cos(a)) / Math.cos(cLat * (Math.PI / 180));
+        const dLat = r * Math.sin(a);
+        polygon.push([Number((cLng + dLng).toFixed(5)), Number((cLat + dLat).toFixed(5))]);
+      }
+      polygon.push(polygon[0]);
 
       const hashBytes = `0x${((globalIndex * 192837465) % 0xffffffff).toString(16).padStart(8, "0")}` +
         `a9b8c7d6e5f41029384756${((globalIndex * 837461) % 0xffffffff).toString(16).padStart(8, "0")}` +

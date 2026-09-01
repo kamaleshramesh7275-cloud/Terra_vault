@@ -18,7 +18,7 @@ async def list_plots(
     land_type: Optional[str] = None,
     q: Optional[str] = None,
     state: Optional[str] = "Tamil Nadu",
-    limit: int = 150,
+    limit: int = 5000,
     db: AsyncSession = Depends(get_db)
 ):
     """Returns GeoJSON FeatureCollection of cadastral plots with full parcel attributes."""

@@ -7,6 +7,7 @@ import hashlib
 import structlog
 import os
 from pathlib import Path
+from typing import List
 
 from celery import Celery
 from celery.schedules import crontab
@@ -48,8 +49,19 @@ celery_app.conf.update(
             "task": "workers.pipeline_worker.run_fraud_scan",
             "schedule": crontab(hour=3, minute=0, day_of_week=0),  # Monday 03:00
         },
+        # Weekly active learning export
+        "export-corrections-weekly": {
+            "task": "workers.active_learning_worker.export_corrections",
+            "schedule": crontab(hour=1, minute=0, day_of_week=0),  # Sunday 01:00 UTC
+        },
     },
 )
+
+# Register active learning worker shared tasks
+try:
+    import workers.active_learning_worker  # noqa: F401
+except ImportError:
+    pass
 
 
 # ── Helper: compute file SHA256 ───────────────────────────────────────────────
@@ -59,6 +71,31 @@ def _sha256_file(path: str) -> str:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+# ── Helper: convert PDF pages to image files ──────────────────────────────
+def _pdf_to_images(pdf_path: str, output_dir: str, record_id: str) -> List[str]:
+    """Convert each page of a PDF to a PNG file and return the list of paths.
+    Falls back to treating the PDF as-is if pdf2image is not installed.
+    """
+    try:
+        from pdf2image import convert_from_path  # requires poppler
+        pages = convert_from_path(pdf_path, dpi=250, fmt="png")
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        paths = []
+        for i, page in enumerate(pages):
+            img_path = str(out / f"{record_id}_page{i+1}.png")
+            page.save(img_path, "PNG")
+            paths.append(img_path)
+        log.info("pdf_to_images.done", pages=len(paths), record_id=record_id)
+        return paths
+    except ImportError:
+        log.warning("pdf_to_images.pdf2image_missing", record_id=record_id)
+        return [pdf_path]   # fall back — OCR engines will handle or fail gracefully
+    except Exception as e:
+        log.error("pdf_to_images.failed", error=str(e), record_id=record_id)
+        return [pdf_path]
 
 
 # ── Main pipeline task ────────────────────────────────────────────────────────
@@ -89,7 +126,7 @@ def process_document(self, record_id: str, file_path: str):
     from ml_pipeline.restoration import ImageRestorationPipeline
     from ml_pipeline.script_classifier import ScriptClassifier
     from ocr_engine.recognizer import OCRRouter
-    from ocr_engine.field_extractor import FieldExtractor
+    from ocr_engine.field_extractor import FieldExtractor, parse_mutation_date
     from validation.rules_engine import RulesEngine, DatabaseValidator
     from core.models import LandRecord, FieldConfidence, ReviewTask
     from core.config import settings as cfg
@@ -107,14 +144,23 @@ def process_document(self, record_id: str, file_path: str):
         record.status = "processing"
         session.commit()
 
-        # ── Step 1: Image Restoration ─────────────────────────────────────────
+        # ── Step 1: Upload Gatekeeper Quality Triage & Inpainting ─────────────────────
         self.update_state(state="PROGRESS", meta={"step": "restoration", "pct": 10})
+        from ml_pipeline.upload_gatekeeper import UploadGatekeeper
+        from ml_pipeline.generative_inpainter import GenerativeInpainter
+
+        gatekeeper = UploadGatekeeper()
+        health_report = gatekeeper.assess_and_enhance(file_path)
+
+        inpainter = GenerativeInpainter()
+        inpaint_report = inpainter.reconstruct_missing_parts(file_path)
+
         pipeline = ImageRestorationPipeline(
             model_dir=cfg.ML_MODELS_DIR,
             output_dir=str(Path(cfg.DATA_DIR) / "enhanced"),
         )
-        restoration_result = pipeline.process(file_path)
-        record.quality_score = restoration_result.quality_before
+        restoration_result = pipeline.process(inpaint_report.inpainted_path)
+        record.quality_score = health_report.health_score / 100.0
 
         # Upload enhanced image to MinIO
         from core.minio_client import upload_file_sync
@@ -132,17 +178,34 @@ def process_document(self, record_id: str, file_path: str):
 
         # ── Step 3: OCR ───────────────────────────────────────────────────────
         self.update_state(state="PROGRESS", meta={"step": "ocr", "pct": 45})
+        
+        # Check if file is PDF
+        img_paths = [restoration_result.enhanced_path]
+        if file_path.lower().endswith(".pdf"):
+            img_paths = _pdf_to_images(restoration_result.enhanced_path, str(Path(cfg.DATA_DIR) / "pages"), record_id)
+
         router = OCRRouter()
-        ocr_result = router.recognize(
-            restoration_result.enhanced_path,
-            ocr_config=script_result.ocr_config,
-            is_handwriting=False,
-        )
+        # For simplicity, combine texts from multiple pages if PDF
+        full_text = ""
+        words = []
+        avg_conf = 0.0
+        
+        for img_path in img_paths:
+            ocr_result = router.recognize(
+                img_path,
+                ocr_config=script_result.ocr_config,
+                is_handwriting=False,
+            )
+            full_text += ocr_result.full_text + "\n"
+            words.extend(ocr_result.words)
+            avg_conf = max(avg_conf, ocr_result.avg_confidence)
+
+        record.page_count = len(img_paths)
 
         # ── Step 4: Field Extraction ──────────────────────────────────────────
         self.update_state(state="PROGRESS", meta={"step": "field_extraction", "pct": 65})
         extractor = FieldExtractor()
-        fields = extractor.extract(ocr_result.full_text, ocr_result.avg_confidence)
+        fields = extractor.extract(full_text, avg_conf)
 
         # Write extracted fields to record
         record.owner_name       = fields.owner_name.value
@@ -159,21 +222,34 @@ def process_document(self, record_id: str, file_path: str):
         record.area_unit        = fields.area_unit.value
         record.land_type        = fields.land_type.value
         record.mutation_no      = fields.mutation_no.value
+        # Parse mutation_date string → datetime to satisfy the DateTime column
+        record.mutation_date    = parse_mutation_date(fields.mutation_date.value) if fields.mutation_date.value else None
         record.transaction_type = fields.transaction_type.value
         record.overall_confidence = fields.overall_confidence
         session.commit()
 
-        # Save per-field confidence records
+        # Save per-field confidence records (with bounding box when available)
         for fname in ["owner_name", "khasra_no", "khata_no", "survey_no",
                       "village", "tehsil", "district", "area_value",
                       "mutation_no", "mutation_date", "land_type", "transaction_type"]:
             ef = getattr(fields, fname)
+            # Try to find the best-matching OCR word for bounding box
+            bbox = None
+            if ef.value and words:
+                matched = [
+                    w for w in words
+                    if ef.value.lower() in w.text.lower() or w.text.lower() in ef.value.lower()
+                ]
+                if matched:
+                    best = max(matched, key=lambda w: w.confidence)
+                    bbox = best.bbox   # [x, y, w, h]
             fc = FieldConfidence(
                 record_id=record_id,
                 field_name=fname,
                 raw_ocr_value=ef.value,
                 confidence=ef.confidence,
                 flags=ef.flags,
+                bounding_box=bbox,
                 is_corrected=False,
             )
             session.add(fc)
@@ -316,6 +392,17 @@ def run_fraud_scan():
             })
 
         alerts = graph.detect_fraud()
+        from core.models import FraudAlert
+        for alert in alerts:
+            fa = FraudAlert(
+                alert_type=alert.alert_type,
+                severity=alert.severity,
+                record_ids=alert.record_ids,
+                description=alert.description,
+                subgraph_nodes=alert.subgraph_nodes,
+            )
+            session.add(fa)
+        session.commit()
         log.info("fraud_scan.complete", alerts=len(alerts), records=len(records))
         return {"alerts": len(alerts)}
     finally:
