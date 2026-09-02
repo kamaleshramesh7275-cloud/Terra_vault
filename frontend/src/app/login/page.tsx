@@ -1,14 +1,18 @@
-﻿"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+"use client";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { api } from "../../lib/api";
 import {
   ShieldCheck, Lock, User, Key, ArrowRight, CheckCircle2,
   Building2, Globe, Loader2, Shield, CreditCard, Landmark, Sprout, Search, FileCheck, Scale
 } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextRoute = searchParams ? searchParams.get("next") : null;
+
   const [username, setUsername] = useState("tahsildar_kinathukadavu");
   const [password, setPassword] = useState("••••••••••••");
   const [selectedRole, setSelectedRole] = useState("tahsildar");
@@ -24,28 +28,40 @@ export default function LoginPage() {
     collector: { title: "District Collector Desk", route: "/portal/collector", color: "#dc2626", desc: "Apex District Command Center, Emergency Fraud Override & Audit Logs", scope: "Coimbatore District" },
   };
 
-  const handleLogin = (e?: React.FormEvent, overrideRole?: string) => {
+  const handleLogin = async (e?: React.FormEvent, overrideRole?: string) => {
     if (e) e.preventDefault();
     setLoading(true);
     const roleToUse = overrideRole || selectedRole;
     setActivePersona(roleToUse);
 
-    fetch(`/api/auth/persona-token?role=${encodeURIComponent(roleToUse.toUpperCase())}`, { method: "POST" })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.access_token) {
-          localStorage.setItem("tv_token", d.access_token);
-        }
-        localStorage.setItem("tv_role", roleToUse);
-        const targetRoute = ROLE_MAP[roleToUse]?.route || "/";
-        window.location.href = targetRoute;
-      })
-      .catch((err) => {
-        console.error("Login error", err);
-        localStorage.setItem("tv_role", roleToUse);
-        window.location.href = ROLE_MAP[roleToUse]?.route || "/";
-      })
-      .finally(() => setLoading(false));
+    try {
+      const res = await api.getPersonaToken(roleToUse);
+      const token = res.access_token || `tv_token_persona_${roleToUse.toLowerCase()}_${Date.now()}`;
+      localStorage.setItem("tv_token", token);
+      localStorage.setItem("tv_role", roleToUse);
+      localStorage.setItem("tv_user", JSON.stringify({
+        username: `${roleToUse}_official`,
+        role: roleToUse
+      }));
+
+      const defaultRoute = ROLE_MAP[roleToUse]?.route || "/";
+      const targetRoute = nextRoute || defaultRoute;
+      window.location.href = targetRoute;
+    } catch (err) {
+      console.error("Login error", err);
+      const token = `tv_token_persona_${roleToUse.toLowerCase()}_${Date.now()}`;
+      localStorage.setItem("tv_token", token);
+      localStorage.setItem("tv_role", roleToUse);
+      localStorage.setItem("tv_user", JSON.stringify({
+        username: `${roleToUse}_official`,
+        role: roleToUse
+      }));
+      const defaultRoute = ROLE_MAP[roleToUse]?.route || "/";
+      const targetRoute = nextRoute || defaultRoute;
+      window.location.href = targetRoute;
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -227,5 +243,18 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ textAlign: "center", padding: "50px 0" }}>
+        <Loader2 className="spin" size={32} color="#0f2942" />
+        <div style={{ fontSize: 14, marginTop: 12, color: "#475569" }}>Loading Revenue Portal Single Sign-On...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -20,6 +20,13 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("tv_token");
+      const currentPath = window.location.pathname;
+      if (currentPath !== "/login") {
+        window.location.href = `/login?next=${encodeURIComponent(currentPath)}`;
+      }
+    }
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || "API error");
   }
@@ -212,6 +219,23 @@ export const api = {
   },
 
   // ── Auth ──────────────────────────────────────────────────────────────────
+  getPersonaToken: async (role: string) => {
+    try {
+      const url = API_BASE
+        ? `${API_BASE}/api/auth/persona-token?role=${encodeURIComponent(role.toUpperCase())}`
+        : `/api/auth/persona-token?role=${encodeURIComponent(role.toUpperCase())}`;
+      const res = await fetch(url, { method: "POST" });
+      if (!res.ok) throw new Error("Token request failed");
+      return await res.json();
+    } catch {
+      return {
+        access_token: `tv_token_persona_${role.toLowerCase()}_${Date.now()}`,
+        token_type: "bearer",
+        role: role.toLowerCase()
+      };
+    }
+  },
+
   login: async (username: string, password: string) => {
     try {
       const form = new URLSearchParams({ username, password });
