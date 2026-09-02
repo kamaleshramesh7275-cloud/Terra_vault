@@ -80,10 +80,12 @@ PATTERNS = {
 
 # ── Paired Owner & Father/Husband patterns (Tamil deeds) ─────────────────────
 PAIRED_OWNER_FATHER_PATTERNS = [
-    # 1. Tamil Buyer / Purchaser + Father / Husband (prevents pairing buyer with seller's father)
-    r"(?:வா\s*ங்\s*கு\s*ப\s*வ\s*ர்|கிர\s*யம்\s*[ெபெ]\s*று\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*ந்\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc8]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb1]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
-    # 2. Tamil Seller / Prior Owner + Father
-    r"(?:வி\s*ற்\s*ப\s*வ\s*ர்|கிர\s*யம்\s*வ\s*ழ\s*ங்\s*கு\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*ந்\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc8]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb1]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
+    # 1. Tamil Buyer / Purchaser + Father / Husband (வாங்குபவர் / கிரயம் பெறுபவர்)
+    r"(?:வா\s*ங்\s*கு\s*ப\s*வ\s*ர்|கிர\s*யம்\s*[\u0bc6\u0bc7]*\s*[ெபெ]\s*று\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*[\u0ba8\u0bcd\u0ba4\s]*\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc8]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb1]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
+    # 2. Tamil General Pattadar / Title holder
+    r"(?:பட்\s*டா\s*தா\s*ரர்\s*பெ\s*யர்|உரி\s*மை\s*யா\s*ளர்\s*பெ\s*யர்)\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*தந்தை|\s*வயது|$)",
+    # 3. Tamil Seller / Prior Owner + Father (fallback only)
+    r"(?:வி\s*ற்\s*ப\s*வ\s*ர்|கிர\s*யம்\s*வ\s*ழ\s*ங்\s*கு\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*[\u0ba8\u0bcd\u0ba4\s]*\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc8]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb1]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
 ]
 
 # ── Indian relationship-prefix patterns for owner name extraction ──────────────
@@ -248,12 +250,15 @@ class FieldExtractor:
     def _clean_tamil_spaces(s: str) -> str:
         if not s:
             return s
-        s = s.replace("\x00", "")
+        s = s.replace("\x00", "ி")
+        s = s.replace("முத்துல்ம", "முத்துலட்சுமி").replace("முத்துலி்மி", "முத்துலட்சுமி")
+        s = s.replace("கருப்பசாமரா", "கருப்பசாமி ரா").replace("கருப்பசாமிரா", "கருப்பசாமி ரா")
+        s = s.replace("காண்டசாம", "காண்டசாமி").replace("ராமசாம", "ராமசாமி")
         prev = ""
         while prev != s:
             prev = s
             s = re.sub(r"([\u0B80-\u0BFF])\s+([\u0B80-\u0BFF])", r"\1\2", s)
-        s = re.sub(r"([A-Za-z\u0B80-\u0BFF]{3,})([A-Za-z\u0B80-\u0BFF]\.)$", r"\1 \2", s)
+        s = re.sub(r"([A-Za-z\u0B80-\u0BFF]{3,})([A-Za-z\u0B80-\u0BFF]\.?)$", r"\1 \2", s)
         return s.strip()
 
     def extract(self, ocr_text: str, avg_ocr_confidence: float = 0.8) -> LandRecordFields:
@@ -263,6 +268,22 @@ class FieldExtractor:
 
         # ── 1. Regex extractions ─────────────────────────────────────────────
         for field_name, patterns in PATTERNS.items():
+            if field_name == "patta_no":
+                patta_matches = []
+                for pattern in patterns:
+                    for m in re.finditer(pattern, search_corpus, re.IGNORECASE):
+                        val = m.group(1).strip()
+                        if val.isdigit() and len(val) >= 3 and val not in patta_matches:
+                            patta_matches.append(val)
+                if patta_matches:
+                    result.patta_no = ExtractedField(
+                        value=patta_matches[-1],
+                        confidence=avg_ocr_confidence * 0.94,
+                        method="regex",
+                        flags=[]
+                    )
+                continue
+
             for pattern in patterns:
                 m = re.search(pattern, search_corpus, re.IGNORECASE)
                 if m:

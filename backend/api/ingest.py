@@ -4,6 +4,7 @@ import os
 import shutil
 import uuid
 from pathlib import Path
+import structlog
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +14,7 @@ from core.models import LandRecord
 from core.config import settings
 from workers.pipeline_worker import process_document
 
+log = structlog.get_logger()
 router = APIRouter()
 
 

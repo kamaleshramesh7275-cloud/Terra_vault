@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
     const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://127.0.0.1:8000";
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
 
       const fwdFormData = new FormData();
       const fileBlob = new Blob([buffer], { type: file.type || "application/pdf" });
