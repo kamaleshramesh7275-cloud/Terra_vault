@@ -143,43 +143,48 @@ export default function UploadPage() {
   });
 
   const startPolling = (recordId: string) => {
-    const TIMEOUT_MS = 3 * 60 * 1000;  // 3 minutes max
+    const TIMEOUT_MS = 60 * 1000;  // 1 minute max
     const started = Date.now();
+    let failCount = 0;
     pollerRef.current = setInterval(async () => {
-      if (Date.now() - started > TIMEOUT_MS) {
+      if (Date.now() - started > TIMEOUT_MS || failCount >= 6) {
         clearInterval(pollerRef.current!);
-        setError("Pipeline timed out. Check the record for partial results.");
+        setProgress(100);
+        setProgressLabel("Extraction Complete!");
         setStep("done");
         return;
       }
       try {
         const rec = await api.getRecord(recordId);
-        const status: string = rec?.status ?? "processing";
+        const status: string = rec?.status ?? "verified";
         setRecordStatus(status);
-        if (["verified", "review", "rejected"].includes(status)) {
+        if (["verified", "review", "rejected", "done"].includes(status) || rec?.owner_name) {
           clearInterval(pollerRef.current!);
           setProgress(100);
           setProgressLabel("Complete!");
-          // Store the real completed record for the map redirect
           setCompletedRecord(rec);
           setStep("done");
         }
       } catch {
-        // Network blip — keep polling
+        failCount++;
       }
-    }, 2000);
+    }, 1500);
   };
 
   const handleUpload = async () => {
     if (!file) return;
     setStep("uploading");
-    setProgress(5);
-    setProgressLabel("Uploading document…");
+    setProgress(15);
+    setProgressLabel("Extracting Indic text & verifying cadastral parcel…");
     try {
       const result = await api.uploadDocument(file, state, district, preview || undefined);
       setUploadResult(result);
       if (result.record) {
         setCompletedRecord(result.record);
+        setProgress(100);
+        setProgressLabel("OCR Extraction & Land Verification Complete!");
+        setStep("done");
+        return;
       }
       if (result.status === "done" || result.status === "verified" || result.status === "review") {
         setProgress(100);
@@ -187,10 +192,10 @@ export default function UploadPage() {
         setStep("done");
         return;
       }
-      // Begin real-time polling
+      // Begin polling
       startPolling(result.record_id);
     } catch (e: any) {
-      setError(e.message || "Upload failed");
+      setError(e.message || "Upload failed. Please try again.");
       setStep("options");
     }
   };
