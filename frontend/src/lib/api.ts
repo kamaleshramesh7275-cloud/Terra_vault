@@ -404,16 +404,10 @@ export const api = {
         }
         return data;
       }
-      throw new Error(`Upload returned status ${res.status}`);
-    } catch {
-      const dynamicRec = buildDynamicRecordFromFile(file, state, district, previewDataUrl);
-      return {
-        status: "success",
-        record_id: dynamicRec.id,
-        message: "Document uploaded and processed successfully",
-        task_id: `task-${dynamicRec.id}`,
-        record: dynamicRec
-      };
+      const errData = await res.json().catch(() => ({ error: `Upload error: ${res.status}` }));
+      throw new Error(errData.error || errData.detail || `Upload failed with HTTP ${res.status}`);
+    } catch (err: any) {
+      throw err;
     }
   },
 
