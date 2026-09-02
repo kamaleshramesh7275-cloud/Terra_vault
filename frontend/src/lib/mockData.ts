@@ -115,7 +115,7 @@ const TALUK_CONFIGS = [
     villages: ["Kinathukadavu Town (கிணத்துக்கடவு)", "Solavampalayam (சோளவம்பாளையம்)", "Arasampalayam (அரசம்பாளையம்)", "Kondampatti (கொண்டம்பட்டி)", "Nallattipalayam (நல்லட்டிபாளையம்)", "Singayanputhur (சிங்காயன்புதூர்)", "Kothavadi (கொத்தவாடி)", "Vadachittor (வடசித்தூர்)"],
     categories: ["Agriculture", "Industrial", "Residential", "Commercial"],
     soilTypes: ["Red Gravel / செம்மண் சரளை", "Deep Red Loam / செம்மண்", "Black Soil / கரிசல் மண்"],
-    count: 900,
+    count: 16,
     prefix: "KND"
   },
   {
@@ -214,18 +214,23 @@ function generate108Parcels(): CoimbatoreParcel[] {
       const areaSqm = Number((areaAcres * 4046.86).toFixed(1));
       const marketValue = Math.round(areaAcres * 43560 * guidelineSqft * 1.35);
 
-      // Realistic Organic Irregular FMB Cadastral Polygon Generation
+      // Clean non-overlapping FMB grid coordinates across villages
       const [lngCenter, latCenter] = tConfig.center;
-      const angleStep = (i / tConfig.count) * 2 * Math.PI;
-      const dist = 0.001 + ((i % 15) * 0.0012);
-      const cLng = lngCenter + Math.cos(angleStep) * dist;
-      const cLat = latCenter + Math.sin(angleStep) * dist;
-      
-      const numSides = 6;
+      const cols = 4;
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const spacingLng = 0.0075;
+      const spacingLat = 0.0065;
+      const cLng = lngCenter + (col - (cols - 1) / 2) * spacingLng + ((row * 7) % 3) * 0.0006;
+      const cLat = latCenter + (row - (Math.ceil(tConfig.count / cols) - 1) / 2) * spacingLat + ((col * 5) % 3) * 0.0006;
+
+      const numSides = 5;
       const polygon: [number, number][] = [];
+      const baseRadius = 0.0022;
       for (let s = 0; s < numSides; s++) {
-        const a = (s / numSides) * 2 * Math.PI + ((i * 17 + s * 3) % 10) * 0.05;
-        const r = 0.0022 * (0.7 + ((i * 13 + s * 7) % 10) * 0.06);
+        const a = (s / numSides) * 2 * Math.PI;
+        const jitter = 0.85 + (((i * 11 + s * 7) % 10) * 0.03);
+        const r = baseRadius * jitter;
         const dLng = (r * Math.cos(a)) / Math.cos(cLat * (Math.PI / 180));
         const dLat = r * Math.sin(a);
         polygon.push([Number((cLng + dLng).toFixed(5)), Number((cLat + dLat).toFixed(5))]);

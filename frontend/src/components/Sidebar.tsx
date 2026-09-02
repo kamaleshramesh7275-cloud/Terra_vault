@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/components/AuthGuard";
 
 const NAV = [
+  { href: "/citizen", icon: User, label: "Citizen / Pattadar Desk" },
   { href: "/map", icon: Map, label: "Cadastral GIS Map" },
   { href: "/records", icon: FileText, label: "Land Records RoR" },
   { href: "/business", icon: Building2, label: "G2B Commercial & Banks" },
@@ -25,12 +26,100 @@ const NAV = [
   { href: "/admin", icon: Landmark, label: "System Admin" },
 ];
 
+const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
+  citizen: [
+    "/citizen",
+    "/map",
+    "/records",
+    "/blockchain",
+  ],
+  vao: [
+    "/portal/vao",
+    "/map",
+    "/records",
+    "/map/digital-twin",
+    "/upload",
+    "/blockchain",
+  ],
+  ri: [
+    "/portal/ri",
+    "/portal/vao",
+    "/map",
+    "/records",
+    "/review",
+    "/map/digital-twin",
+    "/upload",
+    "/blockchain",
+  ],
+  tahsildar: [
+    "/portal/tahsildar",
+    "/portal/ri",
+    "/portal/vao",
+    "/map",
+    "/records",
+    "/review",
+    "/analytics",
+    "/blockchain",
+    "/map/digital-twin",
+    "/upload",
+  ],
+  rdo: [
+    "/portal/rdo",
+    "/portal/tahsildar",
+    "/map",
+    "/records",
+    "/review",
+    "/analytics",
+    "/blockchain",
+    "/map/digital-twin",
+  ],
+  collector: [
+    "/portal/collector",
+    "/portal/rdo",
+    "/portal/tahsildar",
+    "/portal/ri",
+    "/portal/vao",
+    "/map",
+    "/records",
+    "/review",
+    "/analytics",
+    "/blockchain",
+    "/map/digital-twin",
+    "/upload",
+    "/admin",
+  ],
+  business: [
+    "/business",
+    "/map",
+    "/records",
+    "/blockchain",
+  ],
+  admin: [
+    "/portal/collector",
+    "/portal/rdo",
+    "/portal/tahsildar",
+    "/portal/ri",
+    "/portal/vao",
+    "/map",
+    "/records",
+    "/review",
+    "/analytics",
+    "/blockchain",
+    "/map/digital-twin",
+    "/upload",
+    "/admin",
+    "/business",
+    "/citizen",
+  ],
+};
 
 export function Sidebar() {
   const path = usePathname();
   const { role, username, logout } = useAuth();
 
-  const filteredNav = NAV.filter((item) => item.href !== "/admin" || role === "admin" || role === "collector");
+  const userRole = role?.toLowerCase() || "citizen";
+  const allowed = ROLE_ALLOWED_ROUTES[userRole] || ROLE_ALLOWED_ROUTES.citizen;
+  const filteredNav = NAV.filter((item) => allowed.includes(item.href));
 
   const ROLE_REDIRECT_MAP: Record<string, string> = {
     citizen: "/citizen",

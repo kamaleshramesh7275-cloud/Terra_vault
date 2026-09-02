@@ -26,6 +26,26 @@ const AuthContext = createContext<UserContextType>({
   logout: () => {},
 });
 
+const ROLE_HOME_MAP: Record<string, string> = {
+  citizen: "/citizen",
+  vao: "/portal/vao",
+  ri: "/portal/ri",
+  tahsildar: "/portal/tahsildar",
+  rdo: "/portal/rdo",
+  collector: "/portal/collector",
+  admin: "/portal/collector",
+  business: "/business",
+};
+
+const ROLE_RESTRICTED_PREFIXES: Record<string, string[]> = {
+  citizen: ["/portal", "/admin", "/review", "/upload", "/analytics"],
+  vao: ["/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin", "/analytics"],
+  ri: ["/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin", "/analytics"],
+  tahsildar: ["/portal/rdo", "/portal/collector", "/admin"],
+  rdo: ["/portal/collector", "/admin"],
+  business: ["/portal", "/admin", "/review", "/upload", "/analytics"],
+};
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -48,7 +68,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
 
     const token = localStorage.getItem("tv_token");
-    const storedRole = localStorage.getItem("tv_role") || "viewer";
+    const storedRole = (localStorage.getItem("tv_role") || "citizen").toLowerCase();
     const storedUser = localStorage.getItem("tv_user");
     let activeUser = { username: "guest", role: storedRole };
 
@@ -56,16 +76,26 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       try {
         activeUser = JSON.parse(storedUser);
       } catch {}
-    } else if (storedRole && storedRole !== "viewer") {
+    } else if (storedRole) {
       activeUser = { username: `${storedRole}_official`, role: storedRole };
     }
     setUser(activeUser);
 
     if (!isPublic && !token) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-    } else {
-      setReady(true);
+      return;
     }
+
+    // Role-based route guard
+    const restricted = ROLE_RESTRICTED_PREFIXES[storedRole] || [];
+    const isRestricted = restricted.some(pfx => pathname === pfx || pathname.startsWith(`${pfx}/`));
+    if (isRestricted) {
+      const home = ROLE_HOME_MAP[storedRole] || "/citizen";
+      router.replace(home);
+      return;
+    }
+
+    setReady(true);
   }, [pathname, router]);
 
   if (!ready) {
