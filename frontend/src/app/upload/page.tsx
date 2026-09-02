@@ -176,7 +176,7 @@ export default function UploadPage() {
     setProgress(5);
     setProgressLabel("Uploading document…");
     try {
-      const result = await api.uploadDocument(file, state, district);
+      const result = await api.uploadDocument(file, state, district, preview || undefined);
       setUploadResult(result);
       if (result.record) {
         setCompletedRecord(result.record);

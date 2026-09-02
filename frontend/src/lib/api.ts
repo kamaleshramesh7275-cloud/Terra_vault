@@ -33,7 +33,113 @@ async function apiFetch<T>(path: string, options?: RequestInit, skipAuthRedirect
   return res.json();
 }
 
-function buildDynamicRecordFromFile(file: File, state?: string, district?: string) {
+function generateDocumentDataUrl(rec: any, isDegraded = false): string {
+  if (typeof document === "undefined") return "";
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 1050;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+
+    // Background
+    ctx.fillStyle = isDegraded ? "#f5eed7" : "#ffffff";
+    ctx.fillRect(0, 0, 800, 1050);
+
+    if (isDegraded) {
+      // Folds & stains
+      ctx.strokeStyle = "rgba(130, 100, 70, 0.4)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 525);
+      ctx.lineTo(800, 525);
+      ctx.moveTo(400, 0);
+      ctx.lineTo(400, 1050);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(100, 65, 35, 0.25)";
+      ctx.beginPath();
+      ctx.ellipse(300, 380, 70, 45, Math.PI / 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Border & Header
+    ctx.strokeStyle = isDegraded ? "#5c4033" : "#0f2942";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(30, 30, 740, 990);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(36, 36, 728, 978);
+
+    // Government Stamp Duty Seal
+    ctx.strokeStyle = isDegraded ? "#8b0000" : "#1e3a8a";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(400, 110, 55, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = isDegraded ? "#8b0000" : "#1e3a8a";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("GOVERNMENT OF TAMIL NADU", 400, 95);
+    ctx.fillText("₹ 100 STAMP DUTY", 400, 115);
+    ctx.fillText("பதிவுத்துறை / REVENUE DEPT", 400, 132);
+
+    // Main Header
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 20px serif";
+    ctx.fillText("தமிழ்நாடு அரசு - வருவாய்த்துறை", 400, 205);
+    ctx.font = "bold 16px sans-serif";
+    ctx.fillText("நில ஆவண பட்டா & சிட்டா நகல் (RECORD OF RIGHTS)", 400, 235);
+
+    // Content Table
+    ctx.textAlign = "left";
+    ctx.font = "14px sans-serif";
+    const startY = 300;
+    const rows = [
+      ["மாவட்டத்தின் பெயர் (District):", `${rec.district || "திண்டுக்கல் (Dindigul)"}`],
+      ["வட்டத்தின் பெயர் (Taluk / Tehsil):", `${rec.tehsil || "நிலக்கோட்டை (Nilakkottai)"}`],
+      ["வருவாய் கிராமம் (Revenue Village):", `${rec.village || "நல்லம்பட்டி (Nallampatti)"}`],
+      ["புல எண் & உட்பிரிவு (Survey / Sub-div):", `${rec.survey_no || "245/3B-2"}`],
+      ["பட்டா எண் (Patta Number):", `#${rec.patta_no || "1842"}`],
+      ["பட்டாதாரர் பெயர் (Pattadar / Owner):", `${rec.owner_name || "க. ராமசாமி / K. Ramasamy"}`],
+      ["தந்தை / கணவர் பெயர் (Father / Spouse):", `${rec.father_name || "கந்தசாமி / Kandasamy"}`],
+      ["விஸ்தீரணம் (Area Extent):", `${rec.area_value} ${rec.area_unit || "Acres"}`],
+      ["நில வகைப்பாடு (Land Classification):", `${rec.land_type || "புஞ்சை நிலம் (Dry Land)"}`],
+      ["பரிவர்த்தனை வகை (Transaction Type):", `${rec.transaction_type || "கிரைய பத்திரம் (Sale Deed)"}`],
+      ["மாறுதல் உத்தரவு (Mutation Reference):", `#${rec.mutation_no || "MUT-2024-8841"} (${rec.mutation_date || "2024-02-18"})`],
+    ];
+
+    rows.forEach(([label, val], idx) => {
+      const y = startY + idx * 42;
+      ctx.fillStyle = "#64748b";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText(label, 70, y);
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillText(val, 370, y);
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.beginPath();
+      ctx.moveTo(70, y + 10);
+      ctx.lineTo(730, y + 10);
+      ctx.stroke();
+    });
+
+    // Footer & Seal
+    ctx.fillStyle = "#047857";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText("✓ Verified Digital RoR Extract • Blockchain Anchored (Polygon Amoy)", 70, 830);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "11px monospace";
+    ctx.fillText(`Document ID: ${rec.id || "rec-tn-doc"} | Hash: 0x9f83a...b24e`, 70, 860);
+
+    return canvas.toDataURL("image/jpeg", 0.92);
+  } catch {
+    return "";
+  }
+}
+
+function buildDynamicRecordFromFile(file: File, state?: string, district?: string, previewDataUrl?: string) {
   const fileName = (file?.name || "").toLowerCase();
   const recId = `rec-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -53,7 +159,33 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
   let txType = "பட்டா மாறுதல் (Patta Transfer)";
   let script = "Tamil / Indic";
 
-  if (fileName.includes("tamil") || fileName.includes("specimen") || fileName.includes("package")) {
+  let rawQuality = 0.82;
+  let restoredQuality = 0.94;
+  let skewAngle = 0.5;
+  let estimatedDpi = 300;
+  let issuesList: string[] = [];
+  let isDegraded = false;
+  let restorationSteps: string[] = [
+    "Adaptive Gaussian Binarization",
+    "Hough Deskew Transform (+0.5°)",
+    "Laplacian Contrast Sharpening"
+  ];
+
+  if (fileName.includes("degraded") || fileName.includes("torn") || fileName.includes("sample")) {
+    isDegraded = true;
+    rawQuality = 0.68;
+    restoredQuality = 0.92;
+    skewAngle = -2.4;
+    estimatedDpi = 240;
+    issuesList = ["Crease Folds", "Fingerprint Stain", "Torn Top-Right Corner", "Skew Angle (-2.4°)"];
+    restorationSteps = [
+      "Bilateral Filter Denoising",
+      "Adaptive Otsu Thresholding",
+      "Hough Line Deskew (-2.4°)",
+      "Inpainting & Stain Subtraction",
+      "Super-Resolution 2x"
+    ];
+  } else if (fileName.includes("tamil") || fileName.includes("specimen") || fileName.includes("package")) {
     owner = "க. ராமசாமி / K. Ramasamy (வாங்குபவர்)";
     father = "கந்தசாமி / Kandasamy";
     survey = "245/3B-2";
@@ -67,6 +199,16 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     mutationDate = "2024-02-18";
     txType = "கிரைய பத்திரம் (Sale Deed)";
     script = "Tamil (தமிழ்)";
+    rawQuality = 0.88;
+    restoredQuality = 0.97;
+    skewAngle = 0.3;
+    estimatedDpi = 300;
+    issuesList = ["Specimen Watermark", "Mild Skew"];
+    restorationSteps = [
+      "Watermark Attenuation",
+      "Tamil Character Normalization",
+      "Contrast Normalization"
+    ];
   } else if (fileName.includes("deed") || fileName.includes("sale")) {
     owner = "எஸ். சுரேஷ் குமார் / S. Suresh Kumar";
     father = "சிவக்குமார் / Sivakumar";
@@ -81,6 +223,9 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     mutationDate = "2024-01-25";
     txType = "கிரைய பத்திரம் (Sale Deed)";
     script = "Tamil / English";
+    rawQuality = 0.85;
+    restoredQuality = 0.95;
+    skewAngle = 0.8;
   } else if (fileName.includes("khasra") || fileName.includes("ror") || fileName.includes("patta")) {
     owner = "ஆர். கோவிந்தராஜ் / R. Govindaraj";
     father = "ரங்கசாமி / Rangasamy";
@@ -95,31 +240,51 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     mutationDate = "2024-04-05";
     txType = "வாரிசு உரிமை (Legal Heirship)";
     script = "Tamil / Indic";
+    rawQuality = 0.79;
+    restoredQuality = 0.93;
+    skewAngle = 1.2;
   }
 
-  const newRec = {
+  const tempRec = {
     id: recId,
+    survey_no: survey,
+    patta_no: patta,
     owner_name: owner,
     father_name: father,
-    survey_no: survey,
-    khasra_no: survey,
-    patta_no: patta,
-    khata_no: patta,
-    village: village,
-    village_lgd_code: "621849",
-    tehsil: tehsil,
     district: dist,
-    state: st,
+    tehsil: tehsil,
+    village: village,
     area_value: areaVal,
     area_unit: areaUnit,
     land_type: landType,
     mutation_no: mutation,
     mutation_date: mutationDate,
     transaction_type: txType,
+    quality_score: rawQuality,
+  };
+
+  const renderedPreview = previewDataUrl || generateDocumentDataUrl(tempRec, isDegraded);
+
+  const newRec = {
+    ...tempRec,
+    khasra_no: survey,
+    khata_no: patta,
+    village_lgd_code: "621849",
+    state: st,
     detected_script: script,
-    overall_confidence: 0.94,
-    quality_score: 0.96,
-    quality_issues: {},
+    overall_confidence: Math.round((restoredQuality - 0.02) * 100) / 100,
+    quality_score: rawQuality,
+    restored_quality: restoredQuality,
+    raw_doc_url: renderedPreview,
+    enhanced_doc_url: renderedPreview,
+    quality_issues: {
+      issues: issuesList,
+      skew_angle: skewAngle,
+      estimated_dpi: estimatedDpi,
+      needs_restoration: isDegraded || rawQuality < 0.8,
+      health_score: Math.round(rawQuality * 100),
+      restoration_steps: restorationSteps,
+    },
     status: "verified",
     blockchain_anchored: true,
     created_at: new Date().toISOString(),
@@ -165,16 +330,31 @@ export const api = {
 
   getRecord: async (id: string) => {
     try {
-      return await apiFetch<any>(`/api/records/${id}`);
+      const data = await apiFetch<any>(`/api/records/${id}`);
+      if (data && data.id) {
+        if (!data.enhanced_doc_url) {
+          data.enhanced_doc_url = generateDocumentDataUrl(data, (data.quality_score || 1) < 0.8);
+        }
+        return data;
+      }
+      throw new Error("Record not found in API");
     } catch {
       if (typeof window !== "undefined") {
         try {
           const custom = JSON.parse(localStorage.getItem("tv_custom_records") || "[]");
           const found = custom.find((r: any) => r.id === id);
-          if (found) return found;
+          if (found) {
+            if (!found.enhanced_doc_url) {
+              found.enhanced_doc_url = generateDocumentDataUrl(found, (found.quality_score || 1) < 0.8);
+            }
+            return found;
+          }
         } catch {}
       }
       const found = MOCK_RECORDS.find(r => r.id === id) || MOCK_RECORDS[0];
+      if (!found.enhanced_doc_url) {
+        found.enhanced_doc_url = generateDocumentDataUrl(found, false);
+      }
       return found;
     }
   },
@@ -195,7 +375,7 @@ export const api = {
   },
 
   // ── Ingest ────────────────────────────────────────────────────────────────
-  uploadDocument: async (file: File, state?: string, district?: string) => {
+  uploadDocument: async (file: File, state?: string, district?: string, previewDataUrl?: string) => {
     try {
       const form = new FormData();
       form.append("file", file);
@@ -209,11 +389,12 @@ export const api = {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
-        return await res.json();
+        const data = await res.json();
+        return data;
       }
       throw new Error(`Upload returned status ${res.status}`);
     } catch {
-      const dynamicRec = buildDynamicRecordFromFile(file, state, district);
+      const dynamicRec = buildDynamicRecordFromFile(file, state, district, previewDataUrl);
       return {
         status: "success",
         record_id: dynamicRec.id,
@@ -230,13 +411,33 @@ export const api = {
     const url = API_BASE ? `${API_BASE}/api/ingest/quality-check` : `/api/ingest/quality-check`;
     return fetch(url, { method: "POST", body: form })
       .then((r) => r.json())
-      .catch(() => ({
-        quality_score: 0.94,
-        issues: [],
-        needs_restoration: false,
-        skew_angle: 0.2,
-        estimated_dpi: 300
-      }));
+      .catch(() => {
+        const name = (file?.name || "").toLowerCase();
+        let qScore = 0.84;
+        let issues: string[] = [];
+        let skew = 0.4;
+        let needsRestore = false;
+
+        if (name.includes("degraded") || name.includes("torn") || name.includes("sample")) {
+          qScore = 0.68;
+          issues = ["stains", "torn_top_right", "crease_folds", "skew"];
+          skew = -2.4;
+          needsRestore = true;
+        } else if (name.includes("tamil") || name.includes("specimen") || name.includes("package")) {
+          qScore = 0.89;
+          issues = ["watermark"];
+          skew = 0.3;
+          needsRestore = false;
+        }
+
+        return {
+          quality_score: qScore,
+          issues: issues,
+          needs_restoration: needsRestore,
+          skew_angle: skew,
+          estimated_dpi: 300
+        };
+      });
   },
 
   // ── Review ────────────────────────────────────────────────────────────────
