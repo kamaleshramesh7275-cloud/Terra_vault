@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from "next/link";
 import {
   Landmark, ArrowRight, Activity, Globe, FileText, Layers, Building2, Phone
@@ -105,11 +105,23 @@ export default function NationalGatewayPage() {
                   </span>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 12, color: "#475569", margin: "14px 0" }}>
-                  <div><strong>📜 Land Records Terminology:</strong> {st.terminology}</div>
-                  <div><strong>🌐 Supported Languages:</strong> {st.languages.join(" • ")}</div>
-                  <div><strong>🏛️ Officer Hierarchy:</strong> {st.hierarchy.join(" ➔ ")}</div>
-                  <div><strong>📞 Toll-Free Helpline:</strong> {st.helpline}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 12, color: "#475569", margin: "14px 0" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <FileText size={15} color="#0f2942" style={{ flexShrink: 0 }} />
+                    <span><strong>Land Records Terminology:</strong> {st.terminology}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Globe size={15} color="#0f2942" style={{ flexShrink: 0 }} />
+                    <span><strong>Supported Languages:</strong> {st.languages.join(" • ")}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Building2 size={15} color="#0f2942" style={{ flexShrink: 0 }} />
+                    <span><strong>Officer Hierarchy:</strong> {st.hierarchy.join(" → ")}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Phone size={15} color="#0f2942" style={{ flexShrink: 0 }} />
+                    <span><strong>Toll-Free Helpline:</strong> {st.helpline}</span>
+                  </div>
                 </div>
               </div>
 
