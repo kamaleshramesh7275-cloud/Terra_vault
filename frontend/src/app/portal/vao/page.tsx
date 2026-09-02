@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import {
   FileText, ShieldCheck, MapPin, CheckCircle2, AlertTriangle,
@@ -44,23 +44,39 @@ export default function VAOPortalPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        {[
-          { id: "queue", label: "Field Verification Queue (3 Pending)", icon: FileText },
-          { id: "adangal", label: "Season Adangal Crop Register", icon: Trees },
-          { id: "enquiry", label: "Upload Ground Enquiry & Photos", icon: Camera },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id as any)}
-            className={`btn ${activeTab === t.id ? "btn-primary" : "btn-secondary"}`}
-            style={{ padding: "10px 18px", fontSize: 13 }}
-          >
-            <t.icon size={15} />
-            {t.label}
-          </button>
-        ))}
+      {/* Tabs & Export Hub */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", gap: 12 }}>
+          {[
+            { id: "queue", label: "Field Verification Queue (3 Pending)", icon: FileText },
+            { id: "adangal", label: "Season Adangal Crop Register", icon: Trees },
+            { id: "enquiry", label: "Upload Ground Enquiry & Photos", icon: Camera },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id as any)}
+              className={`btn ${activeTab === t.id ? "btn-primary" : "btn-secondary"}`}
+              style={{ padding: "10px 18px", fontSize: 13 }}
+            >
+              <t.icon size={15} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tabular Ledger Downloads (Format 3) */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <a href="/api/export/village/Kinathukadavu/excel" download style={{ textDecoration: "none" }}>
+            <button className="btn btn-secondary" style={{ padding: "8px 14px", fontSize: 12, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
+              📊 Download Jamabandi Ledger (.xlsx)
+            </button>
+          </a>
+          <a href="/api/export/village/Kinathukadavu/csv" download style={{ textDecoration: "none" }}>
+            <button className="btn btn-secondary" style={{ padding: "8px 14px", fontSize: 12, background: "rgba(56,189,248,0.1)", border: "1px solid rgba(56,189,248,0.3)", color: "#38bdf8", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
+              📑 Export CSV
+            </button>
+          </a>
+        </div>
       </div>
 
       {/* Tab Content */}

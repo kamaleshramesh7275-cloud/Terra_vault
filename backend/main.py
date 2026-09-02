@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
-from api import ingest, records, review, gis_sync, maturity, blockchain, auth, ocr, fraud, admin, geoai, graph_fraud, digital_twin
+from api import ingest, records, review, gis_sync, maturity, blockchain, auth, ocr, fraud, admin, geoai, graph_fraud, digital_twin, export
 from core.config import settings
 from core.database import engine, Base
 from core.elasticsearch_client import es_client
@@ -80,6 +80,7 @@ app.include_router(admin.router,      prefix="/api/admin",      tags=["admin"])
 app.include_router(geoai.router,      prefix="/api/geoai",      tags=["geoai"])
 app.include_router(graph_fraud.router,  prefix="/api/graph",        tags=["graph"])
 app.include_router(digital_twin.router, prefix="/api/digital-twin", tags=["digital-twin"])
+app.include_router(export.router,       prefix="/api/export",       tags=["export"])
 
 
 @app.get("/health", tags=["health"])

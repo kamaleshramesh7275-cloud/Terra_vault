@@ -144,6 +144,25 @@ export default function RecordDetailPage() {
               🗺️ View 3D Digital Twin
             </button>
           </a>
+
+          {/* ── CAD & GIS Survey Interoperability Formats ────────────────── */}
+          <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <a href={`/api/export/record/${record.id}/geojson`} download style={{ textDecoration: "none" }}>
+              <button className="btn btn-secondary" style={{ fontSize: 11, padding: "4px 8px", background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", borderRadius: 4 }}>
+                🗺️ GeoJSON
+              </button>
+            </a>
+            <a href={`/api/export/record/${record.id}/kml`} download style={{ textDecoration: "none" }}>
+              <button className="btn btn-secondary" style={{ fontSize: 11, padding: "4px 8px", background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.3)", color: "#38bdf8", borderRadius: 4 }}>
+                🌍 Earth KML
+              </button>
+            </a>
+            <a href={`/api/export/record/${record.id}/landxml`} download style={{ textDecoration: "none" }}>
+              <button className="btn btn-secondary" style={{ fontSize: 11, padding: "4px 8px", background: "rgba(168,85,247,0.10)", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc", borderRadius: 4 }}>
+                📐 LandXML (CAD)
+              </button>
+            </a>
+          </div>
         </div>
       </div>
 
