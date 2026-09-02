@@ -257,6 +257,23 @@ export default function LeafletMap({
     };
   }, [isSplitMode, selectedPlotId, plotsData, onParcelSplit]);
 
+  // 5. Expose global plot selector for popup buttons
+  useEffect(() => {
+    (window as any).__selectPlot = (idOrSurvey: string) => {
+      const feat = plotsData?.features?.find((f: any) =>
+        f.properties?.id === idOrSurvey ||
+        f.properties?.survey_no === idOrSurvey ||
+        f.properties?.patta_no === idOrSurvey
+      );
+      if (feat) {
+        onPlotClick(feat.properties);
+      }
+    };
+    return () => {
+      delete (window as any).__selectPlot;
+    };
+  }, [plotsData, onPlotClick]);
+
   // Track bounds initialized state
   const boundsInitializedRef = useRef<boolean>(false);
 
@@ -333,10 +350,10 @@ export default function LeafletMap({
 
           // Tooltip on hover
           layerItem.bindTooltip(
-            `<div style="font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:2px 4px;">
-              📌 SF No. ${p.survey_no} (${p.district || 'Coimbatore'})<br/>
-              <span style="font-size:11px;font-weight:normal;color:#94a3b8;">${p.owner_name?.split('/')[0] || ''}</span>
-              ${p.is_ocr_ingested ? `<br/><span style="font-size:11px;font-weight:bold;color:#10b981;">✨ Verified OCR Parcel</span>` : showFraudHeatmap ? `<br/><span style="font-size:11px;font-weight:bold;color:${getFraudRiskColor(riskScore)}">🚨 Risk Score: ${riskScore}%</span>` : ""}
+            `<div style="font-family:Inter,sans-serif;font-weight:700;font-size:11px;color:#0f172a;">
+              <strong>SF. ${p.survey_no}</strong> (Patta #${p.patta_no})<br/>
+              <span style="font-weight:500;color:#334155;">${p.owner_name?.split('/')[0]}</span><br/>
+              <span style="font-size:10px;color:#059669;font-weight:700;">${p.area_acres} Acres • ${p.taluk || "Kinathukadavu"}</span>
             </div>`,
             { permanent: false, direction: "top", className: "cadastral-tooltip" }
           );
@@ -345,6 +362,8 @@ export default function LeafletMap({
           const latestMutation = p.mutation_history && p.mutation_history.length > 0 
             ? p.mutation_history[p.mutation_history.length - 1] 
             : null;
+
+          const plotIdentifier = p.id || p.survey_no || p.patta_no;
 
           // Popup on click
           if (p.is_ocr_ingested) {
@@ -364,8 +383,8 @@ export default function LeafletMap({
 
                 <div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;">
                   <div style="font-size:10px;font-weight:800;color:#0f2942;text-transform:uppercase;margin-bottom:4px;display:flex;justify-content:space-between;">
-                    <span>📜 நில உரிமை மாற்றம் (Transfer)</span>
-                    <span style="color:#16a34a;font-weight:700;">Certified</span>
+                    <span>📜 நில உரிமை மாற்றம் (TRANSFER)</span>
+                    <span style="color:#16a34a;font-weight:700;">CERTIFIED</span>
                   </div>
                   <div style="font-size:11px;color:#0f172a;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-weight:600;">
                     <span style="color:#b91c1c;background:#fee2e2;padding:1px 5px;border-radius:3px;">${latestMutation?.transferor?.split('/')[0] || 'முந்தையவர்'}</span>
@@ -377,11 +396,13 @@ export default function LeafletMap({
                   </div>
                 </div>
 
-                <div style="margin-top:8px;text-align:center;">
-                  <div style="background:#0f2942;color:#ffffff;padding:6px 10px;border-radius:5px;font-size:11px;font-weight:700;display:block;">
-                    📜 View Full Transfer History in Drawer →
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onclick="if(window.__selectPlot){window.__selectPlot('${plotIdentifier}');}"
+                  style="width:100%;margin-top:10px;background:linear-gradient(135deg, #0a192f, #1d4ed8);color:#ffffff;padding:8px 12px;border-radius:6px;font-size:11px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(29,78,216,0.35);"
+                >
+                  📜 View Full Transfer History in Drawer →
+                </button>
               </div>
             `);
           } else {
@@ -396,7 +417,7 @@ export default function LeafletMap({
 
                 <div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;">
                   <div style="font-size:10px;font-weight:800;color:#0f2942;text-transform:uppercase;margin-bottom:4px;">
-                    📜 நில உரிமை பரிமாற்றம் (Transfer)
+                    📜 நில உரிமை பரிமாற்றம் (TRANSFER)
                   </div>
                   <div style="font-size:11px;color:#0f172a;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-weight:600;">
                     <span style="color:#b91c1c;background:#fee2e2;padding:1px 5px;border-radius:3px;">${latestMutation?.transferor?.split('/')[0] || 'முந்தையவர்'}</span>
@@ -408,11 +429,13 @@ export default function LeafletMap({
                   </div>
                 </div>
 
-                <div style="margin-top:8px;text-align:center;">
-                  <div style="background:#0f2942;color:#ffffff;padding:6px 10px;border-radius:5px;font-size:11px;font-weight:700;display:block;">
-                    📜 View Full Transfer History in Drawer →
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onclick="if(window.__selectPlot){window.__selectPlot('${plotIdentifier}');}"
+                  style="width:100%;margin-top:10px;background:linear-gradient(135deg, #0a192f, #1d4ed8);color:#ffffff;padding:8px 12px;border-radius:6px;font-size:11px;font-weight:800;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(29,78,216,0.35);"
+                >
+                  📜 View Full Transfer History in Drawer →
+                </button>
               </div>
             `);
           }
