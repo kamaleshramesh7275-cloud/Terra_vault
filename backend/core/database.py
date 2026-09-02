@@ -28,16 +28,37 @@ else:
     if "?" in db_url and db_url.startswith("postgresql+asyncpg://"):
         db_url = db_url.split("?")[0]
     _is_sqlite = False
+
+    # Check if host is internal (Render private networking e.g. terravault-db or docker container)
+    # Internal Render connections do NOT support SSL and will fail if SSL is required
+    is_internal_host = (
+        "localhost" in db_url
+        or "127.0.0.1" in db_url
+        or "terravault-db" in db_url
+        or ("@" in db_url and "." not in db_url.split("@")[1].split("/")[0].split(":")[0])
+    )
+
+    connect_args = {"timeout": 10}
+    if not is_internal_host:
+        connect_args["ssl"] = "require"
+
     engine_kwargs = {
         "echo": False,
         "pool_pre_ping": True,
         "pool_size": 5,
         "max_overflow": 10,
-        "connect_args": {"ssl": "require", "timeout": 10},
+        "connect_args": connect_args,
     }
-    sync_engine = create_engine(settings.SYNC_DATABASE_URL)
+    sync_url = settings.SYNC_DATABASE_URL
+    if sync_url.startswith("postgres://"):
+        sync_url = sync_url.replace("postgres://", "postgresql://", 1)
+    sync_engine = create_engine(sync_url)
 
-engine = create_async_engine(db_url, **engine_kwargs)
+try:
+    engine = create_async_engine(db_url, **engine_kwargs)
+except Exception:
+    # Graceful fallback to SQLite
+    engine = create_async_engine("sqlite+aiosqlite:///./terravault_local.db", echo=False)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
