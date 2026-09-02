@@ -5,12 +5,12 @@ import {
   Layers, Mountain, Satellite, ZoomIn, ZoomOut, RotateCcw,
   Compass, Eye, ShieldCheck, Ruler, Activity, CheckCircle2,
   AlertTriangle, Info, MapPin, Building, Sprout, Sparkles, Navigation2,
-  Search, X, ExternalLink, Copy, Check, Scissors, ChevronRight, History
+  Search, X, ExternalLink, Copy, Check, Scissors, ChevronRight, History, Maximize2
 } from "lucide-react";
 import { MOCK_COIMBATORE_PARCELS, CoimbatoreParcel } from "@/lib/mockData";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-// ── Basemap Configurations ───────────────────────────────────────────────────
+// ── Basemap Definitions ───────────────────────────────────────────────────────
 const BASEMAPS = [
   {
     id: "satellite",
@@ -35,9 +35,8 @@ const BASEMAPS = [
   }
 ];
 
-// ── Haversine Calculation Helper ─────────────────────────────────────────────
 function calculateDistanceMeters(coord1: [number, number], coord2: [number, number]): number {
-  const R = 6371000; // Earth radius in meters
+  const R = 6371000;
   const lat1 = (coord1[1] * Math.PI) / 180;
   const lat2 = (coord2[1] * Math.PI) / 180;
   const dLat = ((coord2[1] - coord1[1]) * Math.PI) / 180;
@@ -57,9 +56,9 @@ function DigitalTwinContent() {
   const mapInstanceRef = useRef<any>(null);
 
   const [activeBasemap, setActiveBasemap] = useState("satellite");
-  const [pitch, setPitch] = useState(45);
-  const [bearing, setBearing] = useState(-15);
-  const [zoom, setZoom] = useState(15.5);
+  const [pitch, setPitch] = useState(50);
+  const [bearing, setBearing] = useState(-20);
+  const [zoom, setZoom] = useState(16.5);
 
   const [selectedParcel, setSelectedParcel] = useState<CoimbatoreParcel | null>(null);
   const [showEncroachment, setShowEncroachment] = useState(true);
@@ -70,6 +69,9 @@ function DigitalTwinContent() {
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
   const [measureResult, setMeasureResult] = useState<string | null>(null);
+
+  // Subdivision Simulator State
+  const [isSubdivisionActive, setIsSubdivisionActive] = useState(false);
 
   // Blockchain Modal State
   const [showBlockchainModal, setShowBlockchainModal] = useState(false);
@@ -152,9 +154,9 @@ function DigitalTwinContent() {
           ]
         },
         center: [centerLng, centerLat],
-        zoom: 15.5,
-        pitch: 45,
-        bearing: -15,
+        zoom: 16.5,
+        pitch: 50,
+        bearing: -20,
         maxPitch: 65,
         antialias: true
       });
@@ -179,7 +181,7 @@ function DigitalTwinContent() {
             market_value_inr: p.market_value_inr,
             blockchain_hash: p.blockchain_hash,
             has_encroachment: p.id === "cbe-plot-001" || p.id === "cbe-plot-003",
-            ndvi_score: 0.75 + ((p.id.charCodeAt(p.id.length - 1) % 5) * 0.04)
+            ndvi_score: 0.78 + ((p.id.charCodeAt(p.id.length - 1) % 5) * 0.04)
           },
           geometry: {
             type: "Polygon",
@@ -195,9 +197,9 @@ function DigitalTwinContent() {
           }
         });
 
-        // 2. 1994 Historical Time-Travel GeoJSON Source (shifted ancestral boundaries)
+        // 2. 1994 Historical Time-Travel GeoJSON Source
         const features1994 = MOCK_COIMBATORE_PARCELS.map(p => {
-          const shiftedPoly = p.polygon.map(([lng, lat]) => [lng - 0.0004, lat - 0.0003]);
+          const shiftedPoly = p.polygon.map(([lng, lat]) => [lng - 0.0006, lat - 0.0004]);
           return {
             type: "Feature",
             id: `1994-${p.id}`,
@@ -222,7 +224,7 @@ function DigitalTwinContent() {
           }
         });
 
-        // 3. Cadastral Standard Fill Layer
+        // 3. Cadastral Standard Fill Layer (Bold Saturated Colors)
         map.addLayer({
           id: "parcels-fill",
           type: "fill",
@@ -235,9 +237,9 @@ function DigitalTwinContent() {
               "Commercial", "#d97706",
               "Industrial", "#2563eb",
               "Residential", "#9333ea",
-              "#0f2942"
+              "#0ea5e9"
             ],
-            "fill-opacity": 0.35
+            "fill-opacity": 0.45
           }
         });
 
@@ -252,28 +254,28 @@ function DigitalTwinContent() {
               "interpolate",
               ["linear"],
               ["get", "ndvi_score"],
-              0.6, "#ef4444",
-              0.7, "#eab308",
-              0.8, "#22c55e",
-              0.9, "#15803d"
+              0.65, "#ef4444",
+              0.75, "#eab308",
+              0.82, "#22c55e",
+              0.92, "#15803d"
             ],
-            "fill-opacity": 0.65
+            "fill-opacity": 0.75
           }
         });
 
-        // 5. Cadastral Outline Layer
+        // 5. Cadastral Outline Layer (Bold High-Contrast White)
         map.addLayer({
           id: "parcels-outline",
           type: "line",
           source: "cadastral-parcels",
           paint: {
             "line-color": "#ffffff",
-            "line-width": 2,
-            "line-dasharray": [2, 1]
+            "line-width": 3,
+            "line-dasharray": [3, 1]
           }
         });
 
-        // 6. Encroachment Alert Collision Layer
+        // 6. Encroachment Alert Collision Layer (Flashing Neon Red)
         map.addLayer({
           id: "parcels-encroachment",
           type: "line",
@@ -281,12 +283,11 @@ function DigitalTwinContent() {
           filter: ["==", "has_encroachment", true],
           paint: {
             "line-color": "#ef4444",
-            "line-width": 4,
-            "line-dasharray": [1, 1]
+            "line-width": 5
           }
         });
 
-        // 7. 1994 Historical Ancestral Boundary Layer
+        // 7. 1994 Historical Ancestral Boundary Layer (Dashed Gold)
         map.addLayer({
           id: "parcels-1994-outline",
           type: "line",
@@ -294,24 +295,24 @@ function DigitalTwinContent() {
           layout: { visibility: "none" },
           paint: {
             "line-color": "#f59e0b",
-            "line-width": 3,
-            "line-dasharray": [3, 2]
+            "line-width": 3.5,
+            "line-dasharray": [4, 2]
           }
         });
 
-        // 8. Selected Parcel Highlight Outline
+        // 8. Selected Parcel Glowing Highlight Outline
         map.addLayer({
           id: "parcels-highlight",
           type: "line",
           source: "cadastral-parcels",
           paint: {
-            "line-color": "#eab308",
-            "line-width": 4.5
+            "line-color": "#facc15",
+            "line-width": 6
           },
           filter: ["==", "id", selectedParcel?.id || ""]
         });
 
-        // Click parcel event
+        // Click on parcel
         map.on("click", "parcels-fill", (e: any) => {
           if (e.features && e.features[0]) {
             const featId = e.features[0].properties.id;
@@ -333,7 +334,7 @@ function DigitalTwinContent() {
                 const p1 = updated[updated.length - 2];
                 const p2 = updated[updated.length - 1];
                 const dist = calculateDistanceMeters(p1, p2);
-                setMeasureResult(`Segment: ${dist} m | Total Points: ${updated.length}`);
+                setMeasureResult(`Distance: ${dist} meters (~${Math.round(dist * 3.28)} ft) | Points: ${updated.length}`);
               }
               return updated;
             });
@@ -351,7 +352,7 @@ function DigitalTwinContent() {
           }
         });
 
-        // Track camera state
+        // Track camera orientation
         map.on("move", () => {
           setPitch(Math.round(map.getPitch()));
           setBearing(Math.round(map.getBearing()));
@@ -371,43 +372,47 @@ function DigitalTwinContent() {
   }, []);
 
   // Update basemap layers with instant visibility toggle
-  useEffect(() => {
+  const switchBasemap = (bmId: string) => {
+    setActiveBasemap(bmId);
     if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
     const map = mapInstanceRef.current;
-    map.setLayoutProperty("layer-satellite", "visibility", activeBasemap === "satellite" ? "visible" : "none");
-    map.setLayoutProperty("layer-osm", "visibility", activeBasemap === "osm" ? "visible" : "none");
-    map.setLayoutProperty("layer-topo", "visibility", activeBasemap === "topo" ? "visible" : "none");
-  }, [activeBasemap]);
+    map.setLayoutProperty("layer-satellite", "visibility", bmId === "satellite" ? "visible" : "none");
+    map.setLayoutProperty("layer-osm", "visibility", bmId === "osm" ? "visible" : "none");
+    map.setLayoutProperty("layer-topo", "visibility", bmId === "topo" ? "visible" : "none");
+  };
 
   // Update NDVI layer visibility
-  useEffect(() => {
+  const toggleNdvi = (val: boolean) => {
+    setShowNdvi(val);
     if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
     mapInstanceRef.current.setLayoutProperty(
       "parcels-ndvi-fill",
       "visibility",
-      showNdvi ? "visible" : "none"
+      val ? "visible" : "none"
     );
-  }, [showNdvi]);
+  };
 
   // Update Encroachment layer visibility
-  useEffect(() => {
+  const toggleEncroachment = (val: boolean) => {
+    setShowEncroachment(val);
     if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
     mapInstanceRef.current.setLayoutProperty(
       "parcels-encroachment",
       "visibility",
-      showEncroachment ? "visible" : "none"
+      val ? "visible" : "none"
     );
-  }, [showEncroachment]);
+  };
 
-  // Update Time-Travel historical boundary layer
-  useEffect(() => {
+  // Update Time-Travel baseline
+  const switchTimeTravel = (year: "1994" | "2026") => {
+    setTimeTravelYear(year);
     if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
     mapInstanceRef.current.setLayoutProperty(
       "parcels-1994-outline",
       "visibility",
-      timeTravelYear === "1994" ? "visible" : "none"
+      year === "1994" ? "visible" : "none"
     );
-  }, [timeTravelYear]);
+  };
 
   // Update highlight and fly-to when selectedParcel changes
   useEffect(() => {
@@ -418,7 +423,7 @@ function DigitalTwinContent() {
       mapInstanceRef.current.flyTo({
         center: [lng, lat],
         zoom: 16.5,
-        pitch: pitch > 0 ? pitch : 45,
+        pitch: pitch > 0 ? pitch : 50,
         bearing: bearing,
         speed: 1.2
       });
@@ -431,7 +436,7 @@ function DigitalTwinContent() {
     if (preset === "2d") {
       mapInstanceRef.current.easeTo({ pitch: 0, bearing: 0, zoom: 16 });
     } else if (preset === "3d") {
-      mapInstanceRef.current.easeTo({ pitch: 55, bearing: -25, zoom: 16.5 });
+      mapInstanceRef.current.easeTo({ pitch: 50, bearing: -20, zoom: 16.5 });
     } else if (preset === "drone") {
       mapInstanceRef.current.easeTo({ pitch: 60, bearing: 45, zoom: 17 });
     }
@@ -456,7 +461,7 @@ function DigitalTwinContent() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 60px)", background: "#0a1128", color: "#f8fafc" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 60px)", background: "#0a1128", color: "#f8fafc", position: "relative" }}>
       {/* ── Top Header Controls Bar ────────────────────────────────────────── */}
       <div style={{
         padding: "10px 18px",
@@ -469,22 +474,22 @@ function DigitalTwinContent() {
         gap: 12,
         zIndex: 20
       }}>
-        {/* Title */}
+        {/* Title & Telemetry */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
-            width: 36, height: 36, borderRadius: 8,
+            width: 38, height: 38, borderRadius: 8,
             background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 0 14px rgba(14, 165, 233, 0.4)"
           }}>
-            <Eye size={20} color="#ffffff" />
+            <Eye size={22} color="#ffffff" />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: "#ffffff", letterSpacing: "-0.01em" }}>
+            <div style={{ fontWeight: 900, fontSize: 15, color: "#ffffff", letterSpacing: "-0.01em" }}>
               2D / 3D Cadastral Digital Twin
             </div>
             <div style={{ fontSize: 11, color: "#94a3b8" }}>
-              MapLibre GL Vector GIS • Elevation Pitch {pitch}° • Bearing {bearing}°
+              MapLibre GL Vector GIS • Elevation Pitch <strong>{pitch}°</strong> • Bearing <strong>{bearing}°</strong>
             </div>
           </div>
         </div>
@@ -494,8 +499,8 @@ function DigitalTwinContent() {
           <button
             onClick={() => setCameraPreset("2d")}
             style={{
-              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer",
-              background: pitch === 0 ? "#0ea5e9" : "transparent",
+              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+              background: pitch === 0 ? "linear-gradient(135deg, #0284c7, #0ea5e9)" : "transparent",
               color: pitch === 0 ? "#ffffff" : "#94a3b8",
               border: "none", transition: "all 0.15s"
             }}
@@ -505,8 +510,8 @@ function DigitalTwinContent() {
           <button
             onClick={() => setCameraPreset("3d")}
             style={{
-              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer",
-              background: pitch > 0 && pitch < 60 ? "#0ea5e9" : "transparent",
+              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+              background: pitch > 0 && pitch < 60 ? "linear-gradient(135deg, #0284c7, #0ea5e9)" : "transparent",
               color: pitch > 0 && pitch < 60 ? "#ffffff" : "#94a3b8",
               border: "none", transition: "all 0.15s"
             }}
@@ -516,8 +521,8 @@ function DigitalTwinContent() {
           <button
             onClick={() => setCameraPreset("drone")}
             style={{
-              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer",
-              background: pitch >= 60 ? "#0ea5e9" : "transparent",
+              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+              background: pitch >= 60 ? "linear-gradient(135deg, #0284c7, #0ea5e9)" : "transparent",
               color: pitch >= 60 ? "#ffffff" : "#94a3b8",
               border: "none", transition: "all 0.15s"
             }}
@@ -534,10 +539,10 @@ function DigitalTwinContent() {
             return (
               <button
                 key={bm.id}
-                onClick={() => setActiveBasemap(bm.id)}
+                onClick={() => switchBasemap(bm.id)}
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
-                  padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                  padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
                   background: isSelected ? "linear-gradient(135deg, #0284c7, #0ea5e9)" : "#1e293b",
                   color: isSelected ? "#ffffff" : "#cbd5e1",
                   border: isSelected ? "1px solid #38bdf8" : "1px solid #334155",
@@ -556,7 +561,7 @@ function DigitalTwinContent() {
             onClick={toggleMeasurement}
             style={{
               display: "flex", alignItems: "center", gap: 6,
-              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer",
+              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
               background: isMeasuring ? "#dc2626" : "#1e293b",
               color: "#ffffff",
               border: isMeasuring ? "1px solid #ef4444" : "1px solid #334155",
@@ -565,7 +570,7 @@ function DigitalTwinContent() {
             }}
           >
             <Ruler size={13} />
-            {isMeasuring ? "Stop Measure" : "Measure"}
+            {isMeasuring ? "Stop Measure" : "Measure Tool"}
           </button>
         </div>
       </div>
@@ -585,7 +590,7 @@ function DigitalTwinContent() {
             background: "rgba(15, 23, 42, 0.95)",
             backdropFilter: "blur(8px)",
             border: "1px solid #38bdf8",
-            padding: "8px 16px",
+            padding: "8px 18px",
             borderRadius: 20,
             zIndex: 30,
             display: "flex",
@@ -593,15 +598,15 @@ function DigitalTwinContent() {
             gap: 12,
             boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
           }}>
-            <Ruler size={15} color="#38bdf8" />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#ffffff" }}>
-              {measureResult || "Click points on map to measure boundary distances"}
+            <Ruler size={16} color="#38bdf8" />
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#ffffff" }}>
+              {measureResult || "Click any two points on the map to measure boundary distances"}
             </span>
             <button
               onClick={() => { setMeasurePoints([]); setMeasureResult(null); }}
-              style={{ background: "#334155", border: "none", color: "#ffffff", fontSize: 10, padding: "2px 8px", borderRadius: 4, cursor: "pointer", fontWeight: 700 }}
+              style={{ background: "#334155", border: "none", color: "#ffffff", fontSize: 10, padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontWeight: 800 }}
             >
-              Reset Points
+              Reset
             </button>
           </div>
         )}
@@ -615,53 +620,53 @@ function DigitalTwinContent() {
           flexDirection: "column",
           gap: 10,
           zIndex: 10,
-          background: "rgba(15, 23, 42, 0.92)",
+          background: "rgba(15, 23, 42, 0.94)",
           backdropFilter: "blur(10px)",
-          padding: 12,
+          padding: 14,
           borderRadius: 12,
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          width: 230,
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)"
+          border: "1px solid rgba(255, 255, 255, 0.14)",
+          width: 240,
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)"
         }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             AI Analytics Layers
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#f87171" }}>
-              <AlertTriangle size={14} color="#ef4444" />
+              <AlertTriangle size={15} color="#ef4444" />
               Encroachment Alert
             </span>
             <input
               type="checkbox"
               checked={showEncroachment}
-              onChange={e => setShowEncroachment(e.target.checked)}
-              style={{ cursor: "pointer", width: 16, height: 16, accentColor: "#ef4444" }}
+              onChange={e => toggleEncroachment(e.target.checked)}
+              style={{ cursor: "pointer", width: 17, height: 17, accentColor: "#ef4444" }}
             />
           </label>
 
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80" }}>
-              <Sprout size={14} color="#22c55e" />
+              <Sprout size={15} color="#22c55e" />
               NDVI Crop Health
             </span>
             <input
               type="checkbox"
               checked={showNdvi}
-              onChange={e => setShowNdvi(e.target.checked)}
-              style={{ cursor: "pointer", width: 16, height: 16, accentColor: "#22c55e" }}
+              onChange={e => toggleNdvi(e.target.checked)}
+              style={{ cursor: "pointer", width: 17, height: 17, accentColor: "#22c55e" }}
             />
           </label>
 
-          <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.1)", paddingTop: 10, marginTop: 2 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+          <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.12)", paddingTop: 10, marginTop: 2 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
               Time-Travel Baseline
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
               <button
-                onClick={() => setTimeTravelYear("1994")}
+                onClick={() => switchTimeTravel("1994")}
                 style={{
-                  padding: "6px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                  padding: "7px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
                   background: timeTravelYear === "1994" ? "linear-gradient(135deg, #d97706, #f59e0b)" : "#1e293b",
                   color: "#ffffff", border: timeTravelYear === "1994" ? "1px solid #fde68a" : "1px solid #334155",
                   boxShadow: timeTravelYear === "1994" ? "0 0 10px rgba(217,119,6,0.4)" : "none"
@@ -670,9 +675,9 @@ function DigitalTwinContent() {
                 1994 Ancestral
               </button>
               <button
-                onClick={() => setTimeTravelYear("2026")}
+                onClick={() => switchTimeTravel("2026")}
                 style={{
-                  padding: "6px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                  padding: "7px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
                   background: timeTravelYear === "2026" ? "linear-gradient(135deg, #0284c7, #0ea5e9)" : "#1e293b",
                   color: "#ffffff", border: timeTravelYear === "2026" ? "1px solid #38bdf8" : "1px solid #334155",
                   boxShadow: timeTravelYear === "2026" ? "0 0 10px rgba(14,165,233,0.4)" : "none"
@@ -684,18 +689,18 @@ function DigitalTwinContent() {
           </div>
         </div>
 
-        {/* Right Inspection Property Drawer */}
+        {/* Right Inspection Property Drawer with Scrollable Body */}
         {selectedParcel && (
           <div style={{
             position: "absolute",
             top: 14,
             right: 14,
             bottom: 14,
-            width: 350,
-            background: "rgba(15, 23, 42, 0.95)",
+            width: 360,
+            background: "rgba(15, 23, 42, 0.96)",
             backdropFilter: "blur(14px)",
             borderRadius: 14,
-            border: "1px solid rgba(255, 255, 255, 0.14)",
+            border: "1px solid rgba(255, 255, 255, 0.16)",
             boxShadow: "0 12px 40px rgba(0, 0, 0, 0.6)",
             display: "flex",
             flexDirection: "column",
@@ -704,24 +709,25 @@ function DigitalTwinContent() {
           }}>
             {/* Drawer Header with Parcel Selector */}
             <div style={{
-              padding: "12px 16px",
-              background: "linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(37, 99, 235, 0.25))",
+              padding: "14px 16px",
+              background: "linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(37, 99, 235, 0.3))",
               borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
               display: "flex",
               flexDirection: "column",
-              gap: 8
+              gap: 8,
+              flexShrink: 0
             }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     Kinathukadavu Cadastral Parcel
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: "#ffffff" }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#ffffff" }}>
                     SF {selectedParcel.survey_no} • Patta #{selectedParcel.patta_no}
                   </div>
                 </div>
                 <span style={{
-                  padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 800,
+                  padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 900,
                   background: selectedParcel.land_category === "Agriculture" ? "#064e3b" : "#78350f",
                   color: selectedParcel.land_category === "Agriculture" ? "#4ade80" : "#fbbf24",
                   border: "1px solid rgba(255, 255, 255, 0.15)"
@@ -739,7 +745,7 @@ function DigitalTwinContent() {
                 }}
                 style={{
                   background: "#0b1329", color: "#ffffff", border: "1px solid #334155",
-                  borderRadius: 6, padding: "5px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer", width: "100%"
+                  borderRadius: 6, padding: "6px 10px", fontSize: 11, fontWeight: 800, cursor: "pointer", width: "100%"
                 }}
               >
                 {kinathukadavuParcels.map(p => (
@@ -751,7 +757,7 @@ function DigitalTwinContent() {
             </div>
 
             {/* Drawer Body Scroll */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 30px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
               {/* Registered Pattadar */}
               <div style={{ background: "rgba(30, 41, 59, 0.7)", padding: 12, borderRadius: 10, border: "1px solid rgba(255, 255, 255, 0.08)" }}>
                 <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, textTransform: "uppercase" }}>Registered Pattadar (உரிமையாளர்)</div>
@@ -786,12 +792,12 @@ function DigitalTwinContent() {
 
               {/* Encumbrance Certificate Status */}
               <div style={{
-                background: selectedParcel.encumbrance_status.includes("Clean") ? "rgba(6, 78, 59, 0.4)" : "rgba(127, 29, 29, 0.4)",
+                background: selectedParcel.encumbrance_status.includes("Clean") ? "rgba(6, 78, 59, 0.45)" : "rgba(127, 29, 29, 0.45)",
                 padding: 10, borderRadius: 10,
                 border: selectedParcel.encumbrance_status.includes("Clean") ? "1px solid #059669" : "1px solid #dc2626"
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 800, color: selectedParcel.encumbrance_status.includes("Clean") ? "#4ade80" : "#f87171" }}>
-                  <ShieldCheck size={14} />
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 900, color: selectedParcel.encumbrance_status.includes("Clean") ? "#4ade80" : "#f87171" }}>
+                  <ShieldCheck size={15} />
                   SRO Encumbrance Certificate
                 </div>
                 <div style={{ fontSize: 11, color: "#ffffff", marginTop: 3 }}>
@@ -804,10 +810,11 @@ function DigitalTwinContent() {
                 onClick={() => setShowBlockchainModal(true)}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 14px", borderRadius: 8,
+                  padding: "11px 14px", borderRadius: 8,
                   background: "linear-gradient(135deg, #1e1b4b, #312e81)",
                   border: "1px solid #6366f1",
-                  color: "#ffffff", cursor: "pointer", transition: "all 0.15s"
+                  color: "#ffffff", cursor: "pointer", transition: "all 0.15s",
+                  boxShadow: "0 2px 8px rgba(99,102,241,0.3)"
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -827,8 +834,8 @@ function DigitalTwinContent() {
       {/* ── Polygon Blockchain Verification Modal ──────────────────────────── */}
       {showBlockchainModal && selectedParcel && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.75)",
-          backdropFilter: "blur(6px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+          position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.8)",
+          backdropFilter: "blur(8px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20
         }}>
           <div style={{
             width: "100%", maxWidth: 520, background: "#0f172a", borderRadius: 14,
