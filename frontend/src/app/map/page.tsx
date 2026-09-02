@@ -272,54 +272,54 @@ export default function MapPage() {
       </div>
 
       {/* Coimbatore District KPI Summary Strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginBottom: 16 }}>
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Taluks Covered</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#0f2942", marginTop: 2 }}>9 Taluks (வட்டங்கள்)</div>
-          <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 700 }}>Coimbatore North to Valparai</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 16 }}>
+        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Taluks Covered</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "#0a192f", marginTop: 3 }}>9 Taluks (வட்டங்கள்)</div>
+          <div style={{ fontSize: 11, color: "#059669", fontWeight: 700, marginTop: 1 }}>Coimbatore North to Valparai</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Active Parcels in View</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#0f2942", marginTop: 2 }}>{totalParcels} FMB Parcels</div>
-          <div style={{ fontSize: 10, color: "#475569", fontWeight: 700 }}>Total Extent: {totalAcres.toFixed(1)} Acres</div>
+        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Active Parcels in View</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "#1d4ed8", marginTop: 3 }}>{totalParcels} FMB Parcels</div>
+          <div style={{ fontSize: 11, color: "#334155", fontWeight: 700, marginTop: 1 }}>Total Extent: {totalAcres.toFixed(1)} Acres</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Average Maturity Score</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#16a34a", marginTop: 2 }}>94.2% Verified</div>
-          <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 700 }}>High Digitization Quality</div>
+        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Average Maturity Score</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "#059669", marginTop: 3 }}>94.2% Verified</div>
+          <div style={{ fontSize: 11, color: "#059669", fontWeight: 700, marginTop: 1 }}>High Digitization Quality</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Total Land Asset Value</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#d97706", marginTop: 2 }}>₹{(totalValuation / 10000000).toFixed(1)} Crores</div>
-          <div style={{ fontSize: 10, color: "#475569", fontWeight: 700 }}>Based on Guideline & Fair Market</div>
+        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Total Land Asset Value</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "#d97706", marginTop: 3 }}>₹{(totalValuation / 10000000).toFixed(1)} Crores</div>
+          <div style={{ fontSize: 11, color: "#334155", fontWeight: 700, marginTop: 1 }}>Based on Guideline & Fair Market</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Blockchain Anchor Proof</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a8a", marginTop: 2 }}>100% Anchored</div>
-          <div style={{ fontSize: 10, color: "#1e3a8a", fontWeight: 700 }}>Polygon Amoy Testnet (80002)</div>
+        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Blockchain Anchor Proof</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "#7c3aed", marginTop: 3 }}>100% Anchored</div>
+          <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700, marginTop: 1 }}>Polygon Amoy Testnet (80002)</div>
         </div>
       </div>
 
       {/* 9 Taluks Filter Strip */}
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 12 }}>
         {COIMBATORE_TALUKS.map((t) => (
           <button
             key={t.id}
             onClick={() => setSelectedTaluk(t.id)}
             style={{
-              padding: "6px 12px",
+              padding: "7px 14px",
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 800,
               borderRadius: 8,
               whiteSpace: "nowrap",
-              border: "1px solid",
-              borderColor: selectedTaluk === t.id ? "#0f2942" : "#cbd5e1",
-              background: selectedTaluk === t.id ? "#0f2942" : "#ffffff",
-              color: selectedTaluk === t.id ? "#ffffff" : "#334155",
+              border: selectedTaluk === t.id ? "1.5px solid #1e40af" : "1.5px solid #cbd5e1",
+              background: selectedTaluk === t.id ? "linear-gradient(135deg, #0a192f, #1d4ed8)" : "#ffffff",
+              color: selectedTaluk === t.id ? "#ffffff" : "#0f172a",
+              boxShadow: selectedTaluk === t.id ? "0 2px 8px rgba(29,78,216,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
               cursor: "pointer",
               transition: "all 0.15s"
             }}
@@ -330,7 +330,7 @@ export default function MapPage() {
       </div>
 
       {/* Land Category Filter Strip */}
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 16 }}>
         {LAND_CATEGORIES.map((c) => {
           const Icon = c.icon;
           const isSelected = selectedCategory === c.id;
@@ -339,22 +339,22 @@ export default function MapPage() {
               key={c.id}
               onClick={() => setSelectedCategory(c.id)}
               style={{
-                padding: "5px 12px",
-                fontSize: 11,
-                fontWeight: 700,
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 800,
                 borderRadius: 20,
                 display: "flex",
                 alignItems: "center",
-                gap: 5,
-                border: "1px solid",
-                borderColor: isSelected ? "#0f2942" : "#cbd5e1",
-                background: isSelected ? "#0f2942" : "#ffffff",
-                color: isSelected ? "#ffffff" : "#334155",
+                gap: 6,
+                border: isSelected ? "1.5px solid #1d4ed8" : "1.5px solid #cbd5e1",
+                background: isSelected ? "linear-gradient(135deg, #1d4ed8, #2563eb)" : "#ffffff",
+                color: isSelected ? "#ffffff" : "#0f172a",
+                boxShadow: isSelected ? "0 2px 8px rgba(37,99,235,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
                 cursor: "pointer",
                 transition: "all 0.15s"
               }}
             >
-              <Icon size={13} color={isSelected ? "#ffffff" : "#475569"} />
+              <Icon size={14} color={isSelected ? "#ffffff" : "#1d4ed8"} />
               {c.label}
             </button>
           );
