@@ -341,39 +341,77 @@ export default function LeafletMap({
             { permanent: false, direction: "top", className: "cadastral-tooltip" }
           );
 
+          // Extract latest transfer from mutation history if available
+          const latestMutation = p.mutation_history && p.mutation_history.length > 0 
+            ? p.mutation_history[p.mutation_history.length - 1] 
+            : null;
+
           // Popup on click
           if (p.is_ocr_ingested) {
             layerItem.bindPopup(`
-              <div style="font-family:Inter,sans-serif;min-width:240px;color:#0f172a;line-height:1.4;">
-                <div style="background:#0f2942;color:#fff;padding:6px 10px;border-radius:6px;margin:-8px -8px 8px -8px;font-weight:700;font-size:11px;display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-family:Inter,sans-serif;min-width:270px;color:#0f172a;line-height:1.4;">
+                <div style="background:#0f2942;color:#fff;padding:7px 10px;border-radius:6px;margin:-8px -8px 8px -8px;font-weight:700;font-size:11px;display:flex;justify-content:space-between;align-items:center;">
                   <span>✨ OCR VERIFIED PARCEL</span>
                   <span style="background:#10b981;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;">${Math.round((p.overall_confidence || 0.94) * 100)}% CONF</span>
                 </div>
                 <div style="font-weight:700;font-size:14px;color:#0369a1;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:6px;">
                   புல எண்: ${p.survey_no} (Patta: #${p.patta_no})
                 </div>
-                <div style="font-size:12px;margin-bottom:3px;"><strong>உரிமையாளர் (Pattadar):</strong> ${p.owner_name}</div>
-                ${p.father_name ? `<div style="font-size:12px;margin-bottom:3px;"><strong>தந்தை பெயர்:</strong> ${p.father_name}</div>` : ""}
-                <div style="font-size:12px;margin-bottom:3px;"><strong>கிராமம் & மாவட்டம்:</strong> ${p.village}, ${p.district}</div>
-                <div style="font-size:12px;margin-bottom:3px;"><strong>பரப்பளவு (Extent):</strong> ${p.area_acres} Acres</div>
-                <div style="font-size:12px;margin-bottom:6px;"><strong>Classification:</strong> ${p.land_type}</div>
-                <div style="font-size:11px;background:#ecfdf5;color:#047857;padding:3px 6px;border-radius:4px;font-weight:700;display:block;text-align:center;">
-                  🛡️ RoR Ledger & Cadastral GIS Synchronized
+                <div style="font-size:12px;margin-bottom:3px;"><strong>தற்போதைய உரிமையாளர் (Owner):</strong> ${p.owner_name}</div>
+                ${p.father_name ? `<div style="font-size:12px;margin-bottom:3px;"><strong>தந்தை/கணவர்:</strong> ${p.father_name}</div>` : ""}
+                <div style="font-size:12px;margin-bottom:3px;"><strong>கிராமம் & வட்டம்:</strong> ${p.village}, ${p.taluk || p.district}</div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>விஸ்தீரணம் (Extent):</strong> ${p.area_acres} Acres</div>
+
+                <div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;">
+                  <div style="font-size:10px;font-weight:800;color:#0f2942;text-transform:uppercase;margin-bottom:4px;display:flex;justify-content:space-between;">
+                    <span>📜 நில உரிமை மாற்றம் (Transfer)</span>
+                    <span style="color:#16a34a;font-weight:700;">Certified</span>
+                  </div>
+                  <div style="font-size:11px;color:#0f172a;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-weight:600;">
+                    <span style="color:#b91c1c;background:#fee2e2;padding:1px 5px;border-radius:3px;">${latestMutation?.transferor?.split('/')[0] || 'முந்தையவர்'}</span>
+                    <span style="color:#64748b;font-weight:800;">➔</span>
+                    <span style="color:#15803d;background:#dcfce7;padding:1px 5px;border-radius:3px;">${latestMutation?.transferee?.split('/')[0] || p.owner_name?.split('/')[0]}</span>
+                  </div>
+                  <div style="font-size:10px;color:#475569;margin-top:4px;">
+                    ${latestMutation?.deed_type?.split('(')[0] || 'கிரையப் பத்திரம்'} • ${latestMutation?.date || '2026-02-18'}
+                  </div>
+                </div>
+
+                <div style="margin-top:8px;text-align:center;">
+                  <div style="background:#0f2942;color:#ffffff;padding:6px 10px;border-radius:5px;font-size:11px;font-weight:700;display:block;">
+                    📜 View Full Transfer History in Drawer →
+                  </div>
                 </div>
               </div>
             `);
           } else {
             layerItem.bindPopup(`
-              <div style="font-family:Inter,sans-serif;min-width:220px;color:#0f172a;line-height:1.4;">
+              <div style="font-family:Inter,sans-serif;min-width:260px;color:#0f172a;line-height:1.4;">
                 <div style="font-weight:700;font-size:14px;color:#0369a1;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:6px;">
-                  புல எண்: ${p.survey_no} (Patta: ${p.patta_no || '1084'})
+                  புல எண்: ${p.survey_no} (Patta: #${p.patta_no || '1084'})
                 </div>
                 <div style="font-size:12px;margin-bottom:3px;"><strong>உரிமையாளர்:</strong> ${p.owner_name}</div>
-                <div style="font-size:12px;margin-bottom:3px;"><strong>மாவட்டம்:</strong> ${p.district || 'Coimbatore'} (${p.taluk || 'Pollachi'})</div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>மாவட்டம் & வட்டம்:</strong> ${p.district || 'Coimbatore'} (${p.taluk || 'Pollachi'})</div>
                 <div style="font-size:12px;margin-bottom:3px;"><strong>பரப்பளவு:</strong> ${p.area_acres || '1.0'} ஏக்கர்</div>
-                <div style="font-size:12px;margin-bottom:6px;"><strong>Fraud Risk Index:</strong> <strong style="color:${getFraudRiskColor(riskScore)}">${riskScore}%</strong></div>
-                <div style="font-size:11px;background:${riskScore > 50 ? '#fef2f2' : '#ecfdf5'};color:${riskScore > 50 ? '#dc2626' : '#047857'};padding:3px 6px;border-radius:4px;font-weight:600;display:inline-block;">
-                  ${riskScore > 50 ? '⚠️ High Fraud Risk Flagged' : '🛡️ Title Verified Clean'}
+
+                <div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;">
+                  <div style="font-size:10px;font-weight:800;color:#0f2942;text-transform:uppercase;margin-bottom:4px;">
+                    📜 நில உரிமை பரிமாற்றம் (Transfer)
+                  </div>
+                  <div style="font-size:11px;color:#0f172a;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-weight:600;">
+                    <span style="color:#b91c1c;background:#fee2e2;padding:1px 5px;border-radius:3px;">${latestMutation?.transferor?.split('/')[0] || 'முந்தையவர்'}</span>
+                    <span style="color:#64748b;font-weight:800;">➔</span>
+                    <span style="color:#15803d;background:#dcfce7;padding:1px 5px;border-radius:3px;">${latestMutation?.transferee?.split('/')[0] || p.owner_name?.split('/')[0]}</span>
+                  </div>
+                  <div style="font-size:10px;color:#475569;margin-top:4px;">
+                    ${latestMutation?.deed_type?.split('(')[0] || 'பாகப்பிரிவினை'} • ${latestMutation?.date || '2023-11-20'}
+                  </div>
+                </div>
+
+                <div style="margin-top:8px;text-align:center;">
+                  <div style="background:#0f2942;color:#ffffff;padding:6px 10px;border-radius:5px;font-size:11px;font-weight:700;display:block;">
+                    📜 View Full Transfer History in Drawer →
+                  </div>
                 </div>
               </div>
             `);

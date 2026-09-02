@@ -532,12 +532,78 @@ export const api = {
               co_owners: [],
               mutation_history: [
                 {
-                  mutation_no: target.mutation_no || "MUT-2024-8841",
-                  date: target.mutation_date || "2024-03-12",
-                  type: target.transaction_type || "கிரைய பத்திரம் (Sale Deed)",
-                  transferor: target.father_name || "முந்தைய பட்டாதாரர்",
-                  transferee: target.owner_name,
-                  status: "Approved & Sealed",
+                  step: 1,
+                  date: "1998-04-14",
+                  deed_type: "குடும்ப பாகப்பிரிவினை பத்திரம் (Ancestral Partition Deed)",
+                  doc_no: "Doc No. 1104/1998, SRO Nilakkottai (நிலக்கோட்டை)",
+                  transferor: "மறைந்த காண்டசாமி பிள்ளை (Late Kandasamy Pillai)",
+                  transferor_role: "மூதாதையர் / முந்தைய உரிமையாளர் (Ancestor / Prior Title Holder)",
+                  transferor_patta: "1280",
+                  transferee: "ராமசாமி பிள்ளை (Ramasamy Pillai)",
+                  transferee_role: "பாகஸ்தர் / குடும்ப உறுப்பினர் (Co-parcener / Seller)",
+                  transferee_patta: "3021",
+                  extent: "5.06 Acres (Undivided Ancestral Holding)",
+                  consideration: "குடும்ப பாகப்பிரிவினை / Family Settlement (மதிப்பு: ரூ. 4,50,000)",
+                  stamp_duty: "ரூ. 13,500 (3% Family Concession)",
+                  boundaries: {
+                    north: "SF.245/2 வாய்க்கால் மற்றும் வண்டிப்பாதை (Channel & Cart Track)",
+                    south: "SF.245/4 சுப்பிரமணி மற்றும் சகோதரர்கள் நிலம்",
+                    east: "SF.246 பெரியசாமி கவுண்டர் நஞ்சை நிலம்",
+                    west: "SF.244 முத்தையா பிள்ளை நஞ்சை நிலம்"
+                  },
+                  mutation_order: "RO/1998/PTR-452 (வட்டாட்சியர் உத்தரவு)",
+                  status: "Certified & Registered (பதிவு செய்யப்பட்டது)",
+                  blockchain_status: "Verified On-Chain (Polygon Block #12401)",
+                  verified: true
+                },
+                {
+                  step: 2,
+                  date: "2012-08-22",
+                  deed_type: "வருவாய் உட்பிரிவு மற்றும் எல்லை நிர்ணயம் (Sub-division & Demarcation Order)",
+                  doc_no: "Ni.Mu. 8920/2012/A4, நிலக்கோட்டை வட்டாட்சியர் அலுவலகம்",
+                  transferor: "ராமசாமி பிள்ளை (Ramasamy Pillai - Full Holding SF 245/3B)",
+                  transferor_role: "பட்டாதாரர் (Pattadar)",
+                  transferor_patta: "3021",
+                  transferee: "ராமசாமி பிள்ளை (Sub-divided into 245/3B-1 & 245/3B-2)",
+                  transferee_role: "உட்பிரிவு பட்டாதாரர் (Sub-divided Landowner)",
+                  transferee_patta: "3021 (SF.245/3B-2 Extent: 2.53 Acres)",
+                  extent: "2.53 Acres (1.02.5 Hectares)",
+                  consideration: "அரசு நில அளவை கட்டணம் (Govt Demarcation Fees)",
+                  stamp_duty: "அரசு நிர்ணய கட்டணம் செலுத்தப்பட்டது",
+                  boundaries: {
+                    north: "SF.245/3A வாய்க்கால் மற்றும் பொதுப்பாதை",
+                    south: "SF.245/4 சுப்பிரமணி நிலம்",
+                    east: "SF.246 பெரியசாமி நஞ்சை நிலம்",
+                    west: "SF.245/3B-1 ராமசாமி பிள்ளை மீதி நிலம்"
+                  },
+                  mutation_order: "SD/2012/89 (நில அளவர் FMB வரைபட உட்பிரிவு)",
+                  status: "FMB Field Measurement Demarcated",
+                  blockchain_status: "Verified On-Chain (Polygon Block #13988)",
+                  verified: true
+                },
+                {
+                  step: 3,
+                  date: target.mutation_date || "2026-02-18",
+                  deed_type: target.transaction_type || "கிரையப் பத்திரம் (Registered Absolute Sale Deed)",
+                  doc_no: "Doc No. 412/2026, SRO Nilakkottai (நிலக்கோட்டை சார்பதிவாளர்)",
+                  transferor: target.father_name ? `${target.father_name} (விற்பவர்)` : "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)",
+                  transferor_role: "கிரயம் வழங்குபவர் / விற்பவர் (Seller / Transferor)",
+                  transferor_patta: "3021",
+                  transferee: target.owner_name ? `${target.owner_name} (வாங்குபவர்)` : "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)",
+                  transferee_role: "கிரயம் பெறுபவர் / வாங்குபவர் (Buyer / Transferee)",
+                  transferee_patta: target.patta_no || "4187",
+                  extent: `${Number(target.area_value) || 2.53} ${target.area_unit || "Acres"} (1.02.5 Hectares)`,
+                  consideration: "ரூ. 18,50,000 (INR Eighteen Lakhs Fifty Thousand Only)",
+                  stamp_duty: "ரூ. 1,29,500 (முத்திரைத்தாள்: ரூ. 92,500 + பதிவுக் கட்டணம்: ரூ. 37,000)",
+                  boundaries: {
+                    north: "SF.245/3A வாய்க்கால் மற்றும் பொதுப்பாதை",
+                    south: "SF.245/4 சுப்பிரமணி நஞ்சை நிலம்",
+                    east: "SF.246 பெரியசாமி பாசன நிலம்",
+                    west: "SF.245/3B-1 ராமசாமி பிள்ளை வசமுள்ள நிலம்"
+                  },
+                  mutation_order: target.mutation_no ? `#${target.mutation_no} (வருவாய்த்துறை பட்டா மாறுதல்)` : "MUT/2026/00412 (பட்டா மாறுதல் உத்தரவு)",
+                  status: "Approved & Immutable (பட்டா மாறுதல் முடிந்தது)",
+                  blockchain_status: "Anchored to Polygon Amoy Testnet (Block #14920412)",
                   verified: true
                 }
               ]
@@ -639,7 +705,53 @@ export const api = {
 
   // ── Title Lineage & PDF ───────────────────────────────────────────────────
   getTitleLineage: (id: string) =>
-    apiFetch<any>(`/api/records/${id}/title-lineage`).catch(() => null),
+    apiFetch<any>(`/api/records/${id}/title-lineage`).catch(() => {
+      if (typeof window !== "undefined") {
+        try {
+          const custom = JSON.parse(localStorage.getItem("tv_custom_records") || "[]");
+          const found = custom.find((r: any) => r.id === id);
+          if (found) {
+            return {
+              cleanliness_score: 96,
+              grade: "CLEAR / UNENCUMBERED (தூய உரிமை)",
+              years_evaluated: 28,
+              total_transactions: 3,
+              risk_summary: [],
+              chain: [
+                {
+                  year: "1998",
+                  transaction_type: "குடும்ப பாகப்பிரிவினை பத்திரம் (Ancestral Partition Deed)",
+                  deed_no: "Doc No. 1104/1998, SRO Nilakkottai",
+                  grantor: "மறைந்த காண்டசாமி பிள்ளை (Late Kandasamy Pillai)",
+                  grantee: "ராமசாமி பிள்ளை (Ramasamy Pillai)",
+                  consideration: "குடும்ப பாகப்பிரிவினை / Family Settlement (ரூ. 4,50,000)",
+                  flags: []
+                },
+                {
+                  year: "2012",
+                  transaction_type: "வருவாய் உட்பிரிவு உத்தரவு (Sub-division Demarcation)",
+                  deed_no: "Ni.Mu. 8920/2012/A4, நிலக்கோட்டை வட்டாட்சியர்",
+                  grantor: "ராமசாமி பிள்ளை (Full SF.245/3B Holding)",
+                  grantee: "ராமசாமி பிள்ளை (SF.245/3B-2 Extent: 2.53 Acres)",
+                  consideration: "அரசு நில அளவை உட்பிரிவு (Govt Demarcation)",
+                  flags: []
+                },
+                {
+                  year: "2026",
+                  transaction_type: found.transaction_type || "கிரையப் பத்திரம் (Absolute Sale Deed)",
+                  deed_no: "Doc No. 412/2026, SRO Nilakkottai",
+                  grantor: found.father_name ? `${found.father_name} (விற்பவர்)` : "ராமசாமி பிள்ளை (Ramasamy Pillai - விற்பவர்)",
+                  grantee: found.owner_name ? `${found.owner_name} (வாங்குபவர்)` : "முத்துலட்சுமி க. (Muthulakshmi K. - வாங்குபவர்)",
+                  consideration: "ரூ. 18,50,000 (INR Eighteen Lakhs Fifty Thousand)",
+                  flags: []
+                }
+              ]
+            };
+          }
+        } catch {}
+      }
+      return null;
+    }),
 
   getTitleSearchPdfUrl: (id: string) => {
     return API_BASE ? `${API_BASE}/api/records/${id}/title-pdf` : `/api/records/${id}/title-pdf`;

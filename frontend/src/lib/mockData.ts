@@ -270,20 +270,75 @@ function generate108Parcels(): CoimbatoreParcel[] {
             date: "1994-06-12",
             deed_type: "Ancestral Partition / Settlement (குடும்ப பாகப்பிரிவினை)",
             doc_no: `Doc ${1200 + globalIndex}/1994, SRO ${tConfig.taluk}`,
-            transferor: `${nameObj.f_en} (Ancestor)`,
-            transferee: nameObj.en,
+            transferor: `${nameObj.f_en} / ${nameObj.f_ta} (Ancestor)`,
+            transferor_role: "மூதாதையர் / முந்தைய பட்டாதாரர் (Patriarch / Ancestor)",
+            transferor_patta: `${1000 + (globalIndex % 400)}`,
+            transferee: `${nameObj.en} / ${nameObj.ta}`,
+            transferee_role: "பாகஸ்தர் / வாரிசுதாரர் (Legal Heir / Co-parcener)",
+            transferee_patta: pattaNo,
             extent: `${areaAcres} Acres`,
-            status: "Verified on Revenue Register"
+            consideration: "குடும்ப பாகப்பிரிவினை உரிமை / Family Coparcenary Share",
+            stamp_duty: `ரூ. ${(Math.round(marketValue * 0.02)).toLocaleString('en-IN')}`,
+            boundaries: {
+              north: `SF.${Math.max(1, surveyMain - 1)} வாய்க்கால் & பொதுப்பாதை`,
+              south: `SF.${surveyMain + 1} ராமசாமி கவுண்டர் நிலம்`,
+              east: `SF.${surveyMain + 2} விவசாய நிலம்`,
+              west: `SF.${surveyMain} எல்லைக்கோடு`
+            },
+            mutation_order: `RO/1994/PTR-${400 + globalIndex}`,
+            status: "Certified & Registered (பதிவு செய்யப்பட்டது)",
+            blockchain_status: "Legacy Land Register Verified",
+            verified: true
           },
           {
             step: 2,
+            date: "2015-09-18",
+            deed_type: "வருவாய் உட்பிரிவு & பட்டா மாறுதல் (Sub-division & Patta Transfer)",
+            doc_no: `SD-${2015000 + globalIndex}, வட்டாட்சியர் அலுவலகம் ${tConfig.taluk}`,
+            transferor: `${nameObj.en} / ${nameObj.ta}`,
+            transferor_role: "கூட்டுப் பட்டாதாரர் (Joint Pattadar)",
+            transferor_patta: pattaNo,
+            transferee: `${nameObj.en} / ${nameObj.ta}`,
+            transferee_role: "தனிப் பட்டாதாரர் (Sole Registered Pattadar)",
+            transferee_patta: pattaNo,
+            extent: `${areaAcres} Acres (${areaCents} Cents)`,
+            consideration: "அரசு நில அளவை உட்பிரிவு (Govt Cadastral Survey Demarcation)",
+            stamp_duty: "அரசு நிர்ணய கட்டணம்",
+            boundaries: {
+              north: `SF.${Math.max(1, surveyMain - 1)} பொது வாய்க்கால்`,
+              south: `SF.${surveyMain + 1} விவசாய நஞ்சை நிலம்`,
+              east: `SF.${surveyMain + 2} தோட்டம்`,
+              west: `கிராம எல்லை வண்டிப்பாதை`
+            },
+            mutation_order: `SD/2015/CBE-${100 + globalIndex}`,
+            status: "FMB Demarcation Sealed",
+            blockchain_status: "Revenue Ledger Synchronized",
+            verified: true
+          },
+          {
+            step: 3,
             date: "2023-11-20",
-            deed_type: "Digital RoR Patta Conversion & Blockchain Anchor",
+            deed_type: "Digital RoR Patta Conversion & Blockchain Anchor (டிஜிட்டல் பட்டா பதிவேடு)",
             doc_no: `TV-2023-TN-CBE-${surveyMain}`,
-            transferor: "Revenue Dept / e-Pattadar Portal",
-            transferee: nameObj.en,
-            extent: `${areaAcres} Acres`,
-            status: "Anchored to Polygon Amoy Testnet (RecordRegistry.sol)"
+            transferor: "Revenue Dept / e-Pattadar Portal (வருவாய்த்துறை)",
+            transferor_role: "அரசு அங்கீகாரம் (State Revenue Authority)",
+            transferor_patta: pattaNo,
+            transferee: `${nameObj.en} / ${nameObj.ta}`,
+            transferee_role: "உரிமையாளர் / பட்டாதாரர் (Absolute Title Holder)",
+            transferee_patta: pattaNo,
+            extent: `${areaAcres} Acres (${areaSqm} sq.m)`,
+            consideration: `வழிகாட்டி மதிப்பு: ரூ. ${marketValue.toLocaleString('en-IN')}`,
+            stamp_duty: "டிஜிட்டல் நில ஆவண முறை",
+            boundaries: {
+              north: `SF.${Math.max(1, surveyMain - 1)} பொது வாய்க்கால்`,
+              south: `SF.${surveyMain + 1} நஞ்சை நிலம்`,
+              east: `SF.${surveyMain + 2} தோட்டம்`,
+              west: `வண்டிப்பாதை`
+            },
+            mutation_order: `DILRMP-2023-${globalIndex + 1000}`,
+            status: "Anchored to Polygon Amoy Testnet (RecordRegistry.sol)",
+            blockchain_status: "Verified On-Chain (Block #14920000)",
+            verified: true
           }
         ],
         inheritance_tree: {
