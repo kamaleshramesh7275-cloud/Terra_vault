@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from core.database import get_db
-from core.models import LandRecord, CadastralPlot
+from core.models import LandRecord, GISPlot
 from services.gis_exporter import generate_geojson, generate_kml, generate_landxml
 from services.ledger_exporter import generate_jamabandi_excel, generate_ledger_csv
 

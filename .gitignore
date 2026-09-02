@@ -1,0 +1,33 @@
+# Dependencies & Builds
+node_modules/
+.next/
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# ML Model Weights (over 100MB)
+ml_models/
+*.safetensors
+*.bin
+*.pt
+*.onnx
+
+# Temporary Test Specimen Outputs
+test_specimen/
+scratch/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# IDE & System Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
