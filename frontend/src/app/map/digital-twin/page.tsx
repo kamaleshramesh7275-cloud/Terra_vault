@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Layers, Mountain, Satellite, ZoomIn, ZoomOut, RotateCcw,
   Compass, Eye, ShieldCheck, Ruler, Activity, CheckCircle2,
   AlertTriangle, Info, MapPin, Building, Sprout, Sparkles, Navigation2,
-  Search, X, ExternalLink, Copy, Check, Scissors, ChevronRight, History, Maximize2
+  Search, X, ExternalLink, Copy, Check, Scissors, ChevronRight, History, Maximize2, ArrowLeft
 } from "lucide-react";
 import { MOCK_COIMBATORE_PARCELS, CoimbatoreParcel } from "@/lib/mockData";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -374,72 +375,114 @@ function DigitalTwinContent() {
   // Update basemap layers with instant visibility toggle
   const switchBasemap = (bmId: string) => {
     setActiveBasemap(bmId);
-    if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
     const map = mapInstanceRef.current;
-    map.setLayoutProperty("layer-satellite", "visibility", bmId === "satellite" ? "visible" : "none");
-    map.setLayoutProperty("layer-osm", "visibility", bmId === "osm" ? "visible" : "none");
-    map.setLayoutProperty("layer-topo", "visibility", bmId === "topo" ? "visible" : "none");
+    if (!map) return;
+    try {
+      if (map.getLayer("layer-satellite")) {
+        map.setLayoutProperty("layer-satellite", "visibility", bmId === "satellite" ? "visible" : "none");
+      }
+      if (map.getLayer("layer-osm")) {
+        map.setLayoutProperty("layer-osm", "visibility", bmId === "osm" ? "visible" : "none");
+      }
+      if (map.getLayer("layer-topo")) {
+        map.setLayoutProperty("layer-topo", "visibility", bmId === "topo" ? "visible" : "none");
+      }
+    } catch (e) {
+      console.warn("Basemap switch exception", e);
+    }
   };
 
   // Update NDVI layer visibility
   const toggleNdvi = (val: boolean) => {
     setShowNdvi(val);
-    if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
-    mapInstanceRef.current.setLayoutProperty(
-      "parcels-ndvi-fill",
-      "visibility",
-      val ? "visible" : "none"
-    );
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    try {
+      if (map.getLayer("parcels-ndvi-fill")) {
+        map.setLayoutProperty("parcels-ndvi-fill", "visibility", val ? "visible" : "none");
+      }
+    } catch (e) {
+      console.warn("NDVI toggle exception", e);
+    }
   };
 
   // Update Encroachment layer visibility
   const toggleEncroachment = (val: boolean) => {
     setShowEncroachment(val);
-    if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
-    mapInstanceRef.current.setLayoutProperty(
-      "parcels-encroachment",
-      "visibility",
-      val ? "visible" : "none"
-    );
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    try {
+      if (map.getLayer("parcels-encroachment")) {
+        map.setLayoutProperty("parcels-encroachment", "visibility", val ? "visible" : "none");
+      }
+    } catch (e) {
+      console.warn("Encroachment toggle exception", e);
+    }
   };
 
   // Update Time-Travel baseline
   const switchTimeTravel = (year: "1994" | "2026") => {
     setTimeTravelYear(year);
-    if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
-    mapInstanceRef.current.setLayoutProperty(
-      "parcels-1994-outline",
-      "visibility",
-      year === "1994" ? "visible" : "none"
-    );
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    try {
+      if (map.getLayer("parcels-1994-outline")) {
+        map.setLayoutProperty("parcels-1994-outline", "visibility", year === "1994" ? "visible" : "none");
+      }
+    } catch (e) {
+      console.warn("Time travel toggle exception", e);
+    }
   };
 
   // Update highlight and fly-to when selectedParcel changes
   useEffect(() => {
-    if (!mapInstanceRef.current || !mapInstanceRef.current.isStyleLoaded()) return;
-    if (selectedParcel) {
-      mapInstanceRef.current.setFilter("parcels-highlight", ["==", "id", selectedParcel.id]);
+    const map = mapInstanceRef.current;
+    if (!map || !selectedParcel) return;
+    try {
+      if (map.getLayer("parcels-highlight")) {
+        map.setFilter("parcels-highlight", ["==", "id", selectedParcel.id]);
+      }
       const [lng, lat] = selectedParcel.polygon[0];
-      mapInstanceRef.current.flyTo({
+      map.flyTo({
         center: [lng, lat],
         zoom: 16.5,
         pitch: pitch > 0 ? pitch : 50,
         bearing: bearing,
         speed: 1.2
       });
+    } catch (e) {
+      console.warn("Parcel flyTo exception", e);
     }
   }, [selectedParcel]);
 
   // Camera presets
   const setCameraPreset = (preset: "2d" | "3d" | "drone") => {
-    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+    if (!map) return;
     if (preset === "2d") {
-      mapInstanceRef.current.easeTo({ pitch: 0, bearing: 0, zoom: 16 });
+      setPitch(0);
+      setBearing(0);
+      map.easeTo({ pitch: 0, bearing: 0, zoom: 16 });
     } else if (preset === "3d") {
-      mapInstanceRef.current.easeTo({ pitch: 50, bearing: -20, zoom: 16.5 });
+      setPitch(50);
+      setBearing(-20);
+      map.easeTo({ pitch: 50, bearing: -20, zoom: 16.5 });
     } else if (preset === "drone") {
-      mapInstanceRef.current.easeTo({ pitch: 60, bearing: 45, zoom: 17 });
+      setPitch(60);
+      setBearing(45);
+      map.easeTo({ pitch: 60, bearing: 45, zoom: 17 });
     }
+  };
+
+  // Zoom controls
+  const handleZoomIn = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
+  };
+  const handleZoomOut = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomOut();
+  };
+  const handleResetNorth = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.resetNorthPitch();
   };
 
   // Toggle Measurement Tool
@@ -475,7 +518,19 @@ function DigitalTwinContent() {
         zIndex: 20
       }}>
         {/* Title & Telemetry */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Link
+            href="/map"
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "#1e293b", border: "1px solid #334155", color: "#38bdf8",
+              padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800,
+              textDecoration: "none", transition: "all 0.15s"
+            }}
+          >
+            <ArrowLeft size={14} />
+            Back to 2D Cadastral Map
+          </Link>
           <div style={{
             width: 38, height: 38, borderRadius: 8,
             background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
@@ -689,6 +744,51 @@ function DigitalTwinContent() {
           </div>
         </div>
 
+        {/* Floating Map Zoom & Compass Controls */}
+        <div style={{
+          position: "absolute",
+          top: 14,
+          right: selectedParcel ? 390 : 14,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          zIndex: 15
+        }}>
+          <button
+            onClick={handleZoomIn}
+            title="Zoom In"
+            style={{
+              width: 36, height: 36, borderRadius: 8, background: "#0f172a", border: "1px solid #334155",
+              color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.4)"
+            }}
+          >
+            <ZoomIn size={18} />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            title="Zoom Out"
+            style={{
+              width: 36, height: 36, borderRadius: 8, background: "#0f172a", border: "1px solid #334155",
+              color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.4)"
+            }}
+          >
+            <ZoomOut size={18} />
+          </button>
+          <button
+            onClick={handleResetNorth}
+            title="Reset North Compass"
+            style={{
+              width: 36, height: 36, borderRadius: 8, background: "#0f172a", border: "1px solid #334155",
+              color: "#38bdf8", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.4)"
+            }}
+          >
+            <Compass size={18} />
+          </button>
+        </div>
+
         {/* Right Inspection Property Drawer with Scrollable Body */}
         {selectedParcel && (
           <div style={{
@@ -803,6 +903,42 @@ function DigitalTwinContent() {
                 <div style={{ fontSize: 11, color: "#ffffff", marginTop: 3 }}>
                   {selectedParcel.encumbrance_status}
                 </div>
+              </div>
+
+              {/* Interactive Subdivision Simulator */}
+              <div style={{ background: "rgba(30, 41, 59, 0.7)", padding: 12, borderRadius: 10, border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", display: "flex", alignItems: "center", gap: 5 }}>
+                    <Scissors size={14} /> Sub-Division Simulator (உட்பிரிவு)
+                  </span>
+                  <button
+                    onClick={() => setIsSubdivisionActive(!isSubdivisionActive)}
+                    style={{
+                      background: isSubdivisionActive ? "#f59e0b" : "#334155",
+                      border: "none", color: isSubdivisionActive ? "#000" : "#fff",
+                      fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 4, cursor: "pointer"
+                    }}
+                  >
+                    {isSubdivisionActive ? "Active" : "Simulate"}
+                  </button>
+                </div>
+                {isSubdivisionActive ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8, fontSize: 11 }}>
+                    <div style={{ padding: "6px 8px", background: "#064e3b", borderRadius: 6, border: "1px solid #059669" }}>
+                      <strong>SF {selectedParcel.survey_no}/1:</strong> {(selectedParcel.area_acres * 0.58).toFixed(2)} Acres ({Math.round(selectedParcel.area_cents * 0.58)} Cents) • 58% Share
+                    </div>
+                    <div style={{ padding: "6px 8px", background: "#78350f", borderRadius: 6, border: "1px solid #d97706" }}>
+                      <strong>SF {selectedParcel.survey_no}/2:</strong> {(selectedParcel.area_acres * 0.42).toFixed(2)} Acres ({Math.round(selectedParcel.area_cents * 0.42)} Cents) • 42% Share
+                    </div>
+                    <div style={{ fontSize: 10, color: "#94a3b8" }}>
+                      FMB Demarcation Order: SD/2026/0418 • GPS Points Recorded
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 10, color: "#94a3b8" }}>
+                    Click Simulate to generate instant mathematical co-parcenary sub-divisions and FMB boundaries.
+                  </div>
+                )}
               </div>
 
               {/* Blockchain Polygon Proof Trigger Button */}
