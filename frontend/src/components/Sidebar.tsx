@@ -11,7 +11,6 @@ import { useAuth } from "@/components/AuthGuard";
 const NAV = [
   { href: "/map", icon: Map, label: "Cadastral GIS Map" },
   { href: "/records", icon: FileText, label: "Land Records RoR" },
-  { href: "/citizen", icon: User, label: "Citizen Portal (G2C)" },
   { href: "/business", icon: Building2, label: "G2B Commercial & Banks" },
   { href: "/portal/vao", icon: Sprout, label: "VAO Ground Desk" },
   { href: "/portal/ri", icon: Search, label: "RI Firka Scrutiny" },
