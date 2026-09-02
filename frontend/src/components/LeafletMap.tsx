@@ -274,6 +274,18 @@ export default function LeafletMap({
         style: (feature) => {
           const p = feature?.properties || {};
           const isSelected = p.id === selectedPlotId || p.survey_no === selectedPlotId;
+          const isHighlighted = Boolean(p.highlighted || (isSelected && highlightSelected));
+
+          if (isHighlighted) {
+            return {
+              fillColor: "#10b981",
+              fillOpacity: 0.90,
+              color: "#facc15",
+              weight: 5,
+              dashArray: "",
+              className: "pulse-polygon",
+            };
+          }
 
           // Compute risk score based on properties or survey number hash for demo diversity
           const statusStr = (p.encumbrance_status || p.status || "").toLowerCase();
@@ -324,26 +336,56 @@ export default function LeafletMap({
             `<div style="font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:2px 4px;">
               📌 SF No. ${p.survey_no} (${p.district || 'Coimbatore'})<br/>
               <span style="font-size:11px;font-weight:normal;color:#94a3b8;">${p.owner_name?.split('/')[0] || ''}</span>
-              ${showFraudHeatmap ? `<br/><span style="font-size:11px;font-weight:bold;color:${getFraudRiskColor(riskScore)}">🚨 Risk Score: ${riskScore}%</span>` : ""}
+              ${p.is_ocr_ingested ? `<br/><span style="font-size:11px;font-weight:bold;color:#10b981;">✨ Verified OCR Parcel</span>` : showFraudHeatmap ? `<br/><span style="font-size:11px;font-weight:bold;color:${getFraudRiskColor(riskScore)}">🚨 Risk Score: ${riskScore}%</span>` : ""}
             </div>`,
             { permanent: false, direction: "top", className: "cadastral-tooltip" }
           );
 
           // Popup on click
-          layerItem.bindPopup(`
-            <div style="font-family:Inter,sans-serif;min-width:220px;color:#0f172a;line-height:1.4;">
-              <div style="font-weight:700;font-size:14px;color:#0369a1;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:6px;">
-                புல எண்: ${p.survey_no} (Patta: ${p.patta_no || '1084'})
+          if (p.is_ocr_ingested) {
+            layerItem.bindPopup(`
+              <div style="font-family:Inter,sans-serif;min-width:240px;color:#0f172a;line-height:1.4;">
+                <div style="background:#0f2942;color:#fff;padding:6px 10px;border-radius:6px;margin:-8px -8px 8px -8px;font-weight:700;font-size:11px;display:flex;justify-content:space-between;align-items:center;">
+                  <span>✨ OCR VERIFIED PARCEL</span>
+                  <span style="background:#10b981;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;">${Math.round((p.overall_confidence || 0.94) * 100)}% CONF</span>
+                </div>
+                <div style="font-weight:700;font-size:14px;color:#0369a1;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:6px;">
+                  புல எண்: ${p.survey_no} (Patta: #${p.patta_no})
+                </div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>உரிமையாளர் (Pattadar):</strong> ${p.owner_name}</div>
+                ${p.father_name ? `<div style="font-size:12px;margin-bottom:3px;"><strong>தந்தை பெயர்:</strong> ${p.father_name}</div>` : ""}
+                <div style="font-size:12px;margin-bottom:3px;"><strong>கிராமம் & மாவட்டம்:</strong> ${p.village}, ${p.district}</div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>பரப்பளவு (Extent):</strong> ${p.area_acres} Acres</div>
+                <div style="font-size:12px;margin-bottom:6px;"><strong>Classification:</strong> ${p.land_type}</div>
+                <div style="font-size:11px;background:#ecfdf5;color:#047857;padding:3px 6px;border-radius:4px;font-weight:700;display:block;text-align:center;">
+                  🛡️ RoR Ledger & Cadastral GIS Synchronized
+                </div>
               </div>
-              <div style="font-size:12px;margin-bottom:3px;"><strong>உரிமையாளர்:</strong> ${p.owner_name}</div>
-              <div style="font-size:12px;margin-bottom:3px;"><strong>மாவட்டம்:</strong> ${p.district || 'Coimbatore'} (${p.taluk || 'Pollachi'})</div>
-              <div style="font-size:12px;margin-bottom:3px;"><strong>பரப்பளவு:</strong> ${p.area_acres || '1.0'} ஏக்கர்</div>
-              <div style="font-size:12px;margin-bottom:6px;"><strong>Fraud Risk Index:</strong> <strong style="color:${getFraudRiskColor(riskScore)}">${riskScore}%</strong></div>
-              <div style="font-size:11px;background:${riskScore > 50 ? '#fef2f2' : '#ecfdf5'};color:${riskScore > 50 ? '#dc2626' : '#047857'};padding:3px 6px;border-radius:4px;font-weight:600;display:inline-block;">
-                ${riskScore > 50 ? '⚠️ High Fraud Risk Flagged' : '🛡️ Title Verified Clean'}
+            `);
+          } else {
+            layerItem.bindPopup(`
+              <div style="font-family:Inter,sans-serif;min-width:220px;color:#0f172a;line-height:1.4;">
+                <div style="font-weight:700;font-size:14px;color:#0369a1;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:6px;">
+                  புல எண்: ${p.survey_no} (Patta: ${p.patta_no || '1084'})
+                </div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>உரிமையாளர்:</strong> ${p.owner_name}</div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>மாவட்டம்:</strong> ${p.district || 'Coimbatore'} (${p.taluk || 'Pollachi'})</div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>பரப்பளவு:</strong> ${p.area_acres || '1.0'} ஏக்கர்</div>
+                <div style="font-size:12px;margin-bottom:6px;"><strong>Fraud Risk Index:</strong> <strong style="color:${getFraudRiskColor(riskScore)}">${riskScore}%</strong></div>
+                <div style="font-size:11px;background:${riskScore > 50 ? '#fef2f2' : '#ecfdf5'};color:${riskScore > 50 ? '#dc2626' : '#047857'};padding:3px 6px;border-radius:4px;font-weight:600;display:inline-block;">
+                  ${riskScore > 50 ? '⚠️ High Fraud Risk Flagged' : '🛡️ Title Verified Clean'}
+                </div>
               </div>
-            </div>
-          `);
+            `);
+          }
+
+          if (p.highlighted) {
+            setTimeout(() => {
+              try {
+                layerItem.openPopup();
+              } catch {}
+            }, 500);
+          }
 
           layerItem.on("click", (e) => {
             if (measureMode !== "none") return;
@@ -358,14 +400,16 @@ export default function LeafletMap({
 
           layerItem.on("mouseout", () => {
             const isSelected = p.id === selectedPlotId || p.survey_no === selectedPlotId;
+            const isHigh = Boolean(p.highlighted || (isSelected && highlightSelected));
             const baseColor = showFraudHeatmap
               ? getFraudRiskColor(riskScore)
               : getCategoryColor(p.land_category, p.land_type);
 
             (layerItem as L.Path).setStyle({
-              fillColor: isSelected ? "#38bdf8" : baseColor,
-              fillOpacity: isSelected ? 0.85 : (showFraudHeatmap ? 0.70 : 0.45),
-              weight: isSelected ? 4 : (showFMBGrid ? 2.5 : 1.0)
+              fillColor: isHigh ? "#10b981" : isSelected ? "#38bdf8" : baseColor,
+              fillOpacity: isHigh ? 0.90 : isSelected ? 0.85 : (showFraudHeatmap ? 0.70 : 0.45),
+              color: isHigh ? "#facc15" : isSelected ? "#ffffff" : (showFMBGrid ? "#6366f1" : baseColor),
+              weight: isHigh ? 5 : isSelected ? 4 : (showFMBGrid ? 2.5 : 1.0)
             });
           });
         },
@@ -373,8 +417,25 @@ export default function LeafletMap({
 
       geojsonLayerRef.current = layer;
 
-      // Fit bounds only once on initial load or when plotsData changes
-      if (!boundsInitializedRef.current) {
+      // Auto-fly to highlighted feature or fit bounds
+      const highlightedFeature = plotsData?.features?.find(
+        (f: any) => f.properties?.highlighted || f.properties?.id === selectedPlotId || f.properties?.survey_no === selectedPlotId
+      );
+
+      if (highlightedFeature && highlightSelected) {
+        try {
+          const coords = highlightedFeature.geometry.coordinates[0];
+          const lats = coords.map((c: any) => c[1]);
+          const lngs = coords.map((c: any) => c[0]);
+          const cLat = lats.reduce((a: number, b: number) => a + b, 0) / lats.length;
+          const cLng = lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length;
+
+          map.flyTo([cLat, cLng], 14, { duration: 1.2 });
+          boundsInitializedRef.current = true;
+        } catch {
+          map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 14 });
+        }
+      } else if (!boundsInitializedRef.current) {
         try {
           const bounds = layer.getBounds();
           if (bounds.isValid()) {

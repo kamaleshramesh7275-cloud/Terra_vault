@@ -455,7 +455,7 @@ export default function UploadPage() {
         const confScore = rec?.overall_confidence ? Math.round(rec.overall_confidence * 100) : 88;
         const isHighConf = confScore >= 75 && recordStatus !== "review" && recordStatus !== "rejected";
 
-        const mapUrl = `/map?survey_no=${encodeURIComponent(surveyNo)}&patta_no=${encodeURIComponent(pattaNo)}&highlight=true`;
+        const mapUrl = `/map?survey_no=${encodeURIComponent(surveyNo)}&patta_no=${encodeURIComponent(pattaNo)}&record_id=${encodeURIComponent(rec?.id || uploadResult.record_id)}&highlight=true`;
 
         return (
           <div className="glass-card" style={{ padding: 32, background: "#ffffff", border: "1px solid #cbd5e1" }}>
