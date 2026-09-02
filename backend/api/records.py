@@ -89,7 +89,7 @@ async def update_status(record_id: str, new_status: str, db: AsyncSession = Depe
 def _serialize(r: LandRecord) -> dict:
     return {
         "id": r.id, "owner_name": r.owner_name, "father_name": r.father_name,
-        "khasra_no": r.khasra_no, "khata_no": r.khata_no, "survey_no": r.survey_no,
+        "khasra_no": r.khasra_no, "khata_no": r.khata_no, "patta_no": r.khata_no, "survey_no": r.survey_no or r.khasra_no,
         "village": r.village, "tehsil": r.tehsil, "district": r.district, "state": r.state,
         "village_lgd_code": r.village_lgd_code,
         "area_value": r.area_value, "area_unit": r.area_unit, "land_type": r.land_type,
