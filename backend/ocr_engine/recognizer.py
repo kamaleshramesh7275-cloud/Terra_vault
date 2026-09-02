@@ -138,10 +138,32 @@ class TrOCREngine:
         if self._model is not None:
             return
         try:
-            from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-            self._processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
-            self._model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwritten")
-            log.info("trocr.loaded")
+            from transformers import TrOCRProcessor, VisionEncoderDecoderModel, RobertaTokenizer, ViTImageProcessor
+            from transformers.models.trocr.modeling_trocr import TrOCRSinusoidalPositionalEmbedding
+            from core.config import settings
+            from pathlib import Path
+            local_model_dir = Path(settings.ML_MODELS_DIR) / "trocr_land_deed"
+
+            if (local_model_dir / "model.safetensors").exists():
+                tok = RobertaTokenizer.from_pretrained(str(local_model_dir))
+                img_proc = ViTImageProcessor.from_pretrained(str(local_model_dir))
+                self._processor = TrOCRProcessor(image_processor=img_proc, tokenizer=tok)
+                self._model = VisionEncoderDecoderModel.from_pretrained(str(local_model_dir))
+
+                # Fix potential uninitialized meta tensor in sinusoidal positional embeddings
+                dec = self._model.decoder.model.decoder
+                if hasattr(dec, "embed_positions") and hasattr(dec.embed_positions, "weights") and dec.embed_positions.weights.is_meta:
+                    cfg = self._model.decoder.config
+                    dec.embed_positions.weights = TrOCRSinusoidalPositionalEmbedding.get_embedding(
+                        cfg.max_position_embeddings, cfg.d_model, cfg.pad_token_id
+                    )
+                self._model.eval()
+                log.info("trocr.loaded_custom_fine_tuned", dir=str(local_model_dir))
+            else:
+                self._processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
+                self._model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwritten")
+                self._model.eval()
+                log.info("trocr.loaded_generic")
         except Exception as e:
             log.error("trocr.load_failed", error=str(e))
 
