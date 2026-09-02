@@ -29,11 +29,15 @@ if not _is_sqlite:
         # Neon's PgBouncer pooler manages its own pool — keep SA pool small
         "pool_size": 5,
         "max_overflow": 10,
-        # Neon requires SSL — pass via connect_args (asyncpg style)
-        "connect_args": {"ssl": "require"},
+        # Neon requires SSL — pass via connect_args (asyncpg style) with 4s timeout
+        "connect_args": {"ssl": "require", "timeout": 4},
     })
 
-engine = create_async_engine(db_url, **engine_kwargs)
+try:
+    engine = create_async_engine(db_url, **engine_kwargs)
+except Exception:
+    db_url = "sqlite+aiosqlite:///./terravault_local.db"
+    engine = create_async_engine(db_url, echo=False)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,

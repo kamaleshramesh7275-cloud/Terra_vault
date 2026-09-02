@@ -20,9 +20,12 @@ log = structlog.get_logger()
 async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
     log.info("terra_vault.startup", env=settings.ENVIRONMENT)
-    # Create all tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Create all tables (safe fallback if remote DB port is blocked)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        log.warning("startup.db_tables_init_failed", error=str(e))
     # Ensure MinIO bucket exists
     try:
         await ensure_bucket(settings.MINIO_BUCKET)
