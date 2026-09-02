@@ -52,12 +52,14 @@ else:
     sync_url = settings.SYNC_DATABASE_URL
     if sync_url.startswith("postgres://"):
         sync_url = sync_url.replace("postgres://", "postgresql://", 1)
-    sync_engine = create_engine(sync_url)
+    try:
+        sync_engine = create_engine(sync_url)
+    except Exception:
+        sync_engine = create_engine("sqlite:///./terravault_local.db", echo=False)
 
 try:
     engine = create_async_engine(db_url, **engine_kwargs)
 except Exception:
-    # Graceful fallback to SQLite
     engine = create_async_engine("sqlite+aiosqlite:///./terravault_local.db", echo=False)
 
 AsyncSessionLocal = async_sessionmaker(
@@ -73,14 +75,53 @@ class Base(DeclarativeBase):
     pass
 
 
+async def _init_sqlite_fallback():
+    global engine, AsyncSessionLocal
+    fallback_engine = create_async_engine("sqlite+aiosqlite:///./terravault_local.db", echo=False)
+    async with fallback_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    engine = fallback_engine
+    AsyncSessionLocal = async_sessionmaker(
+        fallback_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False,
+        autocommit=False,
+    )
+    return AsyncSessionLocal
+
+
 async def get_db():
-    """FastAPI dependency: yields an async DB session."""
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
+    """FastAPI dependency: yields an async DB session with automatic SQLite fallback."""
+    global AsyncSessionLocal, engine
+    try:
+        async with AsyncSessionLocal() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception as e:
+                await session.rollback()
+                err_msg = str(e).lower()
+                # Check for network/connection/auth errors with remote database
+                if any(k in err_msg for k in ("connection", "timeout", "refused", "closed", "ssl", "cannot connect", "authenticat")):
+                    import structlog
+                    structlog.get_logger().warning("database.failover_to_sqlite", error=str(e))
+                    fallback_maker = await _init_sqlite_fallback()
+                    async with fallback_maker() as fb_session:
+                        yield fb_session
+                        await fb_session.commit()
+                else:
+                    raise
+            finally:
+                await session.close()
+    except Exception as outer_err:
+        outer_msg = str(outer_err).lower()
+        if any(k in outer_msg for k in ("connection", "timeout", "refused", "closed", "ssl", "cannot connect", "authenticat")):
+            import structlog
+            structlog.get_logger().warning("database.failover_to_sqlite_outer", error=str(outer_err))
+            fallback_maker = await _init_sqlite_fallback()
+            async with fallback_maker() as fb_session:
+                yield fb_session
+                await fb_session.commit()
+        else:
             raise
-        finally:
-            await session.close()
