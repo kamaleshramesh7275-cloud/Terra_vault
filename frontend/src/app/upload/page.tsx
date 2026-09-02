@@ -442,7 +442,7 @@ export default function UploadPage() {
 
       {/* ── STEP: Done ── */}
       {step === "done" && uploadResult && (() => {
-        const rec = completedRecord || uploadResult;
+        const rec = completedRecord || uploadResult?.record || uploadResult;
         const ownerName = rec?.owner_name || "N/A (Not Detected)";
         const fatherName = rec?.father_name || "N/A";
         const surveyNo  = rec?.survey_no || rec?.khasra_no || "N/A";

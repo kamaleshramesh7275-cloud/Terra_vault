@@ -257,31 +257,44 @@ def process_document(self, record_id: str, file_path: str):
         # Write extracted fields to record
         record.owner_name       = fields.owner_name.value
         record.father_name      = fields.father_name.value
-        record.khasra_no        = fields.khasra_no.value
-        record.khata_no         = fields.khata_no.value or fields.patta_no.value
-        record.patta_no         = fields.patta_no.value or fields.khata_no.value
-        record.survey_no        = fields.survey_no.value
-        record.survey_subdivision = fields.survey_no.value
-        record.village          = fields.village.value
-        record.tehsil           = fields.tehsil.value
-        record.district         = fields.district.value
-        record.state            = fields.state.value or record.state or "Tamil Nadu"
-        record.village_lgd_code = fields.village_lgd_code.value
-        record.area_value       = float(fields.area_value.value) if fields.area_value.value else None
-        record.area_unit        = fields.area_unit.value
-        record.land_type        = fields.land_type.value
-        record.mutation_no      = fields.mutation_no.value
+        record.khasra_no        = fields.khasra_no.value if hasattr(fields, "khasra_no") else None
+        
+        # Safely resolve patta_no and khata_no
+        khata_obj = getattr(fields, "khata_no", None)
+        patta_obj = getattr(fields, "patta_no", None)
+        khata_str = khata_obj.value if khata_obj else None
+        patta_str = patta_obj.value if patta_obj else None
+        resolved_patta = patta_str or khata_str
+
+        record.khata_no         = resolved_patta
+        record.patta_no         = resolved_patta
+        record.survey_no        = fields.survey_no.value if hasattr(fields, "survey_no") else None
+        record.survey_subdivision = record.survey_no
+        record.village          = fields.village.value if hasattr(fields, "village") else None
+        record.tehsil           = fields.tehsil.value if hasattr(fields, "tehsil") else None
+        record.district         = fields.district.value if hasattr(fields, "district") else None
+        record.state            = getattr(fields, "state", None) and fields.state.value or record.state or "Tamil Nadu"
+        record.village_lgd_code = getattr(fields, "village_lgd_code", None) and fields.village_lgd_code.value
+        try:
+            record.area_value   = float(fields.area_value.value) if (hasattr(fields, "area_value") and fields.area_value.value) else None
+        except (ValueError, TypeError):
+            record.area_value   = None
+        record.area_unit        = fields.area_unit.value if hasattr(fields, "area_unit") else "acre"
+        record.land_type        = fields.land_type.value if hasattr(fields, "land_type") else "Agricultural"
+        record.mutation_no      = fields.mutation_no.value if hasattr(fields, "mutation_no") else None
         # Parse mutation_date string → datetime to satisfy the DateTime column
-        record.mutation_date    = parse_mutation_date(fields.mutation_date.value) if fields.mutation_date.value else None
-        record.transaction_type = fields.transaction_type.value
+        record.mutation_date    = parse_mutation_date(fields.mutation_date.value) if (hasattr(fields, "mutation_date") and fields.mutation_date.value) else None
+        record.transaction_type = fields.transaction_type.value if hasattr(fields, "transaction_type") else "Sale Deed"
         record.overall_confidence = fields.overall_confidence
         session.commit()
 
         # Save per-field confidence records (with bounding box when available)
-        for fname in ["owner_name", "khasra_no", "khata_no", "survey_no",
+        for fname in ["owner_name", "khasra_no", "khata_no", "survey_no", "patta_no",
                       "village", "tehsil", "district", "area_value",
                       "mutation_no", "mutation_date", "land_type", "transaction_type"]:
-            ef = getattr(fields, fname)
+            ef = getattr(fields, fname, None)
+            if not ef:
+                continue
             # Try to find the best-matching OCR word for bounding box
             bbox = None
             if ef.value and words:

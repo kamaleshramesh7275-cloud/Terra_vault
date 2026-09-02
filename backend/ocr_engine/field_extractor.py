@@ -97,27 +97,27 @@ OWNER_NAME_PATTERNS = [
 ]
 
 FATHER_NAME_PATTERNS = [
-    r"த\s*ந்\s*ை\s*த\s*[:\-.]*\s*(?:ம\s*ை\s*ற\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\s]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\s*வ\s*ி\s*வ\s*ச\s*ா\s*ய\s*ி|\s*வ\s*ச\s*ி\s*ப்|\n)",
-    r"க\s*ண\s*வ\s*ர்\s*[:\-.]*\s*([\u0B80-\u0BFF\.\s]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\n)",
+    r"த\s*ந்\s*தை\s*[:\-.]*\s*(?:ம\s*றை\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\s*வ\s*ி\s*வ\s*ச\s*ா\s*ய\s*ி|\s*வ\s*ச\s*ி\s*ப்|\n|$)",
+    r"க\s*ண\s*வ\s*ர்\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\n|$)",
     r"(?:father|husband|spouse)\s*[:\-.]*\s*([A-Za-z][A-Za-z\s]{2,40}?)(?=[,\n;]|$)",
     r"(?:पिता|पति)\s*[:\-.]*\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,3})",
 ]
 
 # ── Village / location label-hint patterns ────────────────────────────────────
 VILLAGE_PATTERNS = [
-    r"க\s*ி\s*ர\s*ா\s*ம\s*ம்\s*[:\-.]*\s*([\u0B80-\u0BFF\s]{2,30}?)(?=\s*வ\s*ட்\s*ட\s*ம்|\s*ம\s*ா\s*வ\s*ட்|\s*ச\s*ர்\s*ே\s*வ|\n|$)",
+    r"க\s*ி\s*ர\s*ா\s*ம\s*ம்\s*[:\-.]*\s*([\u0B80-\u0BFF\sA-Za-z\(\)\-]{2,40}?)(?=\s*வ\s*ட்\s*ட\s*ம்|\s*ம\s*ா\s*வ\s*ட்|\s*ச\s*ர்\s*ே\s*வ|\n|$)",
     r"(?:village|vill\.?|gram|gaon)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,40}?)(?=\s*(?:Tehsil|Taluka|District|$))",
     r"(?:ग्राम|गाँव|मौजा)\s*[:\-]?\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,3})",
 ]
 
 TEHSIL_PATTERNS = [
-    r"(?:^|\n|\s{2,})வ\s*ட்\s*ட\s*ம்\s*[:\-.]*\s*([\u0B80-\u0BFF\s]{2,25}?)(?=\s*க\s*ி\s*ர\s*ா\s*ம\s*ம்|\s*ம\s*ா\s*வ\s*ட்|\n|$)",
+    r"(?:^|\n|\s{2,})வ\s*ட்\s*ட\s*ம்\s*[:\-.]*\s*([\u0B80-\u0BFF\sA-Za-z\(\)\-]{2,35}?)(?=\s*க\s*ி\s*ர\s*ா\s*ம\s*ம்|\s*ம\s*ா\s*வ\s*ட்|\n|$)",
     r"(?:tehsil|taluka|taluk|mandal)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,30}?)(?=\s*(?:District|$))",
     r"(?:तहसील|तालुका|मंडल)\s*[:\-]?\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,2})",
 ]
 
 DISTRICT_PATTERNS = [
-    r"ம\s*ா\s*வ\s*ட்\s*ட\s*ம்\s*[:\-.]*\s*([\u0B80-\u0BFF\s]{2,25}?)(?=\s*வ\s*ட்\s*ட\s*ம்|\s*க\s*ி\s*ர\s*ா\s*ம\s*ம்|\n|$)",
+    r"ம\s*ா\s*வ\s*ட்\s*ட\s*ம்\s*[:\-.]*\s*([\u0B80-\u0BFF\sA-Za-z\(\)\-]{2,35}?)(?=\s*வ\s*ட்\s*ட\s*ம்|\s*க\s*ி\s*ர\s*ா\s*ம\s*ம்|\n|$)",
     r"(?:district|dist\.?)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,30}?)(?=[,\n]|$)",
     r"(?:जिला|जिल्ला)\s*[:\-]?\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,2})",
 ]
@@ -183,6 +183,7 @@ class LandRecordFields:
     father_name: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0, "ner", []))
     khasra_no: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0, "regex", []))
     khata_no: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0, "regex", []))
+    patta_no: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0, "regex", []))
     survey_no: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0, "regex", []))
     village: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0, "ner", []))
     tehsil: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0, "ner", []))

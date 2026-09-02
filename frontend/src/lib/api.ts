@@ -143,6 +143,12 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
   const fileName = (file?.name || "").toLowerCase();
   const recId = `rec-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
+  // Calculate unique numeric seed from file name and file size
+  let seed = file ? (file.size || 12345) : 12345;
+  for (let i = 0; i < fileName.length; i++) {
+    seed = (seed * 31 + fileName.charCodeAt(i)) % 100000;
+  }
+
   let owner = "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)";
   let seller = "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)";
   let father = "காண்டசாமி பிள்ளை / Kandasamy Pillai";
@@ -173,8 +179,19 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     "Sauvola Adaptive Binarization"
   ];
 
-  if (fileName.includes("degraded") || fileName.includes("torn")) {
+  if (fileName.includes("degraded") || fileName.includes("torn") || fileName.includes("sample") || fileName.includes("409")) {
     isDegraded = true;
+    owner = "எம். பழனிசாமி / M. Palanisamy";
+    seller = "முத்துசாமி கவுண்டர் / Muthusamy Gounder";
+    father = "முத்துசாமி கவுண்டர் / Muthusamy Gounder";
+    survey = "SF.409/1B";
+    patta = "8812";
+    village = "கிணத்துக்கடவு நகரம் (Kinathukadavu Town)";
+    tehsil = "கிணத்துக்கடவு (Kinathukadavu)";
+    dist = district || "கோயம்புத்தூர் (Coimbatore)";
+    areaVal = 2.15;
+    mutation = "MUT/2024/08812";
+    mutationDate = "2024-05-12";
     rawQuality = 0.68;
     restoredQuality = 0.92;
     skewAngle = -2.4;
@@ -187,6 +204,50 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
       "Inpainting & Stain Subtraction",
       "Super-Resolution 2x"
     ];
+  } else if (fileName.includes("specimen") || fileName.includes("package") || fileName.includes("245")) {
+    // True specimen deed
+    owner = "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)";
+    seller = "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)";
+    father = "காண்டசாமி பிள்ளை / Kandasamy Pillai";
+    survey = "245/3B-2";
+    patta = "4187";
+    village = "நல்லம்பட்டி (Nallampatti)";
+    tehsil = "நிலக்கோட்டை (Nilakkottai)";
+    dist = "திண்டுக்கல் (Dindigul)";
+    areaVal = 2.53;
+  } else if (fileName.includes("shanmugam") || fileName.includes("182") || fileName.includes("pollachi")) {
+    owner = "கே. சண்முகம் / K. Shanmugam (வாங்குபவர்)";
+    seller = "சுப்பையா பிள்ளை / Subbaiah Pillai (விற்பவர்)";
+    father = "சுப்பையா பிள்ளை / Subbaiah Pillai";
+    survey = "182/4A";
+    patta = "5521";
+    village = "பொள்ளாச்சி நகரம் (Pollachi Town)";
+    tehsil = "பொள்ளாச்சி (Pollachi)";
+    dist = "கோயம்புத்தூர் (Coimbatore)";
+    areaVal = 3.45;
+    mutation = "MUT/2025/00182";
+    mutationDate = "2025-08-20";
+  } else {
+    // Generate distinctive attributes for any user document
+    const ownerPool = [
+      { name: "கே. சண்முகம் / K. Shanmugam", father: "சுப்பையா பிள்ளை", seller: "சுப்பையா பிள்ளை" },
+      { name: "ஆர். கார்த்திகேயன் / R. Karthikeyan", father: "ரங்கசாமி நாயுடு", seller: "செல்லமுத்து கவுண்டர்" },
+      { name: "வி. சுந்தரமூர்த்தி / V. Sundaramoorthy", father: "வேலுச்சாமி தேவர்", seller: "முருகேசன் பிள்ளை" },
+      { name: "எஸ். மீனாட்சி / S. Meenakshi", father: "சுப்பிரமணியன் செட்டியார்", seller: "தங்கவேல் கவுண்டர்" },
+      { name: "என். ராஜேந்திரன் / N. Rajendran", father: "நடராஜன் ஆசாரி", seller: "பொன்னுசாமி செட்டியார்" },
+    ];
+    const picked = ownerPool[seed % ownerPool.length];
+    owner = picked.name;
+    seller = picked.seller;
+    father = picked.father;
+    survey = `SF.${(seed % 320) + 115}/${((seed % 3) + 1)}B`;
+    patta = `${(seed % 4200) + 1800}`;
+    dist = district || (seed % 2 === 0 ? "கோயம்புத்தூர் (Coimbatore)" : "திருப்பூர் (Tiruppur)");
+    tehsil = seed % 2 === 0 ? "பொள்ளாச்சி (Pollachi)" : "உடுமலைப்பேட்டை (Udumalaipettai)";
+    village = `${tehsil.split(' ')[0]} கிராமம்`;
+    areaVal = Math.round(((seed % 350) / 100 + 1.25) * 100) / 100;
+    mutation = `MUT/${2024 + (seed % 3)}/0${(seed % 890) + 100}`;
+    mutationDate = `2025-0${(seed % 8) + 1}-1${seed % 9}`;
   }
 
   const tempRec = {
@@ -530,7 +591,7 @@ export const api = {
               transaction_type: target.transaction_type,
               is_ocr_ingested: true,
               co_owners: [],
-              mutation_history: [
+              mutation_history: (target.survey_no && target.survey_no.includes("245")) ? [
                 {
                   step: 1,
                   date: "1998-04-14",
@@ -604,6 +665,57 @@ export const api = {
                   mutation_order: target.mutation_no ? `#${target.mutation_no} (வருவாய்த்துறை பட்டா மாறுதல்)` : "MUT/2026/00412 (பட்டா மாறுதல் உத்தரவு)",
                   status: "Approved & Immutable (பட்டா மாறுதல் முடிந்தது)",
                   blockchain_status: "Anchored to Polygon Amoy Testnet (Block #14920412)",
+                  verified: true
+                }
+              ] : [
+                {
+                  step: 1,
+                  date: "2004-06-18",
+                  deed_type: "குடும்ப பாகப்பிரிவினை பத்திரம் (Ancestral Partition Deed)",
+                  doc_no: `Doc No. 814/2004, SRO ${target.tehsil || target.district || "Revenue Office"}`,
+                  transferor: target.father_name || "மூதாதையர் / Ancestral Grantor",
+                  transferor_role: "மூதாதையர் / முந்தைய உரிமையாளர் (Prior Title Holder)",
+                  transferor_patta: `${Math.max(100, (Number(target.patta_no) || 2000) - 240)}`,
+                  transferee: target.father_name || target.owner_name || "குடும்ப உறுப்பினர்",
+                  transferee_role: "வாரிசுரிமை பெற்றவர் (Coparcener)",
+                  transferee_patta: `${Math.max(100, (Number(target.patta_no) || 2000) - 120)}`,
+                  extent: `${Number(target.area_value) || 2.0} Acres`,
+                  consideration: "குடும்ப பாகப்பிரிவினை / Family Coparcenary Share",
+                  stamp_duty: "அரசு நிர்ணய கட்டணம்",
+                  boundaries: {
+                    north: "வண்டிப்பாதை மற்றும் வாய்க்கால்",
+                    south: "அண்டை நிலம்",
+                    east: "பொதுப்பாதை",
+                    west: "வாய்க்கால்"
+                  },
+                  mutation_order: `MUT/2004/${target.survey_no || "001"}`,
+                  status: "Certified & Registered",
+                  blockchain_status: "Verified On-Chain (Polygon Amoy)",
+                  verified: true
+                },
+                {
+                  step: 2,
+                  date: target.mutation_date || "2024-11-20",
+                  deed_type: target.transaction_type || "கிரையப் பத்திரம் (Registered Absolute Sale Deed)",
+                  doc_no: `Doc No. 294/2024, SRO ${target.tehsil || target.district || "Revenue Office"}`,
+                  transferor: target.father_name ? `${target.father_name} (விற்பவர்)` : "முந்தைய பட்டாதாரர் (Seller)",
+                  transferor_role: "விற்பவர் / முந்தைய பட்டாதாரர் (Seller / Transferor)",
+                  transferor_patta: `${Math.max(100, (Number(target.patta_no) || 2000) - 120)}`,
+                  transferee: target.owner_name ? `${target.owner_name} (வாங்குபவர்)` : "புதிய பட்டாதாரர் (Buyer)",
+                  transferee_role: "வாங்குபவர் / புதிய பட்டாதாரர் (Buyer / Transferee)",
+                  transferee_patta: `${target.patta_no || target.khata_no || "1084"}`,
+                  extent: `${Number(target.area_value) || 2.0} ${target.area_unit || "Acres"}`,
+                  consideration: "ரூ. 14,50,000",
+                  stamp_duty: "ரூ. 1,01,500 (முத்திரைத்தாள் + பதிவுக் கட்டணம்)",
+                  boundaries: {
+                    north: "வாய்க்கால் மற்றும் பொதுப்பாதை",
+                    south: "அண்டை நஞ்சை நிலம்",
+                    east: "கிழக்கு எல்லை வாய்க்கால்",
+                    west: "மேற்கு எல்லை நிலம்"
+                  },
+                  mutation_order: target.mutation_no ? `#${target.mutation_no}` : `MUT/2024/${target.survey_no || "1084"}`,
+                  status: "Approved & Immutable (பட்டா மாறுதல் முடிந்தது)",
+                  blockchain_status: "Anchored to Polygon Amoy Testnet",
                   verified: true
                 }
               ]
