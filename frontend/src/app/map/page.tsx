@@ -126,7 +126,7 @@ export default function MapPage() {
             properties: {
               id: customRec.id,
               survey_no: customRec.survey_no || targetSurveyNo || "245/3B-2",
-              patta_no: customRec.patta_no || targetPattaNo || "1842",
+              patta_no: customRec.patta_no || targetPattaNo || "3021",
               owner_name: customRec.owner_name,
               father_name: customRec.father_name,
               taluk: customRec.tehsil || "Kinathukadavu",

@@ -209,6 +209,7 @@ def process_document(self, record_id: str, file_path: str):
         full_text = ""
         words = []
         avg_conf = 0.0
+        img_paths = [restoration_result.enhanced_path]
 
         # If PDF, attempt native digital text extraction first
         if file_path.lower().endswith(".pdf"):

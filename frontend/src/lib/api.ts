@@ -96,17 +96,17 @@ function generateDocumentDataUrl(rec: any, isDegraded = false): string {
     ctx.font = "14px sans-serif";
     const startY = 300;
     const rows = [
-      ["மாவட்டத்தின் பெயர் (District):", `${rec.district || "திண்டுக்கல் (Dindigul)"}`],
-      ["வட்டத்தின் பெயர் (Taluk / Tehsil):", `${rec.tehsil || "நிலக்கோட்டை (Nilakkottai)"}`],
-      ["வருவாய் கிராமம் (Revenue Village):", `${rec.village || "நல்லம்பட்டி (Nallampatti)"}`],
-      ["புல எண் & உட்பிரிவு (Survey / Sub-div):", `${rec.survey_no || "245/3B-2"}`],
-      ["பட்டா எண் (Patta Number):", `#${rec.patta_no || "1842"}`],
-      ["பட்டாதாரர் பெயர் (Pattadar / Owner):", `${rec.owner_name || "க. ராமசாமி / K. Ramasamy"}`],
-      ["தந்தை / கணவர் பெயர் (Father / Spouse):", `${rec.father_name || "கந்தசாமி / Kandasamy"}`],
-      ["விஸ்தீரணம் (Area Extent):", `${rec.area_value} ${rec.area_unit || "Acres"}`],
-      ["நில வகைப்பாடு (Land Classification):", `${rec.land_type || "புஞ்சை நிலம் (Dry Land)"}`],
-      ["பரிவர்த்தனை வகை (Transaction Type):", `${rec.transaction_type || "கிரைய பத்திரம் (Sale Deed)"}`],
-      ["மாறுதல் உத்தரவு (Mutation Reference):", `#${rec.mutation_no || "MUT-2024-8841"} (${rec.mutation_date || "2024-02-18"})`],
+      ["மாவட்டத்தின் பெயர் (District):", `${rec.district || "N/A"}`],
+      ["வட்டத்தின் பெயர் (Taluk / Tehsil):", `${rec.tehsil || "N/A"}`],
+      ["வருவாய் கிராமம் (Revenue Village):", `${rec.village || "N/A"}`],
+      ["புல எண் & உட்பிரிவு (Survey / Sub-div):", `${rec.survey_no || "N/A"}`],
+      ["பட்டா எண் (Patta Number):", `${rec.patta_no ? `#${rec.patta_no}` : "N/A"}`],
+      ["பட்டாதாரர் பெயர் (Pattadar / Owner):", `${rec.owner_name || "N/A"}`],
+      ["தந்தை / கணவர் பெயர் (Father / Spouse):", `${rec.father_name || "N/A"}`],
+      ["விஸ்தீரணம் (Area Extent):", `${rec.area_value ? `${rec.area_value} ${rec.area_unit || "Acres"}` : "N/A"}`],
+      ["நில வகைப்பாடு (Land Classification):", `${rec.land_type || "N/A"}`],
+      ["பரிவர்த்தனை வகை (Transaction Type):", `${rec.transaction_type || "N/A"}`],
+      ["மாறுதல் உத்தரவு (Mutation Reference):", `${rec.mutation_no ? `#${rec.mutation_no} (${rec.mutation_date || ""})` : "N/A"}`],
     ];
 
     rows.forEach(([label, val], idx) => {
