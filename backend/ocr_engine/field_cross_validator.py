@@ -19,7 +19,7 @@ STATE_STAMP_DUTY = {
 
 # State-wise survey number patterns
 STATE_SURVEY_PATTERNS = {
-    "TN": r"^\d{1,4}(/[A-Z])?$",      # TN: 104/A or 104
+    "TN": r"^\d{1,4}(/[0-9A-Za-z]+)*(-[0-9A-Za-z]+)?$",      # TN: 245/3B-2 or 409/1B or 104
     "MH": r"^\d{1,4}(-[A-Z])?$",      # MH: 104-A or 104
     "UP": r"^\d{1,4}(/\d+)?$",         # UP: 104/1 or 104
     "KA": r"^\d{1,4}[A-Z]?$",          # KA: 104A or 104

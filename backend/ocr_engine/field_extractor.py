@@ -46,13 +46,13 @@ _load_lgd_data()
 PATTERNS = {
     "khasra_no":   [r"\bkhasra\s*(?:no\.?|number|संख्या|नं\.?)?\s*[:\-]?\s*([A-Za-z0-9/\-]+)\b",
                     r"\bखसरा\s*(?:नं\.?|न\.?)?\s*[:\-]?\s*(\d+[A-Za-z0-9/\-]*)\b",
-                    r"\b(?:புல\s*எண்|புல\s*எ\.?|சர்வே\s*எண்)\s*[:\-]?\s*([0-9/\-A-Za-z]+)\b"],
+                    r"\b(?:புல\s*எண்|புல\s*எ\.?|சர்வே\s*எண்(?:\s*/\s*உட்பிரிவு)?)\s*[:\-\.]?\s*([0-9/\-A-Za-z]+)\b"],
     "khata_no":    [r"\bkhata\s*(?:no\.?|number)?\s*[:\-]?\s*(\d+)\b",
                     r"\bखाता\s*(?:नं\.?|न\.?)?\s*[:\-]?\s*(\d+)\b",
-                    r"\b(?:பட்டா\s*எண்|பட்டா\s*எ\.?|பட்டா)\s*[:\-]?\s*(\d+)\b"],
+                    r"\b(?:பட்டா\s*எண்|பட்டா\s*எ\.?|பட்டா)\s*[:\-\.]?\s*(\d+)\b"],
     "survey_no":   [r"\bsurvey\s*(?:no\.?|number)?\s*[:\-]?\s*([A-Za-z0-9/\-]+)\b",
                     r"\bसर्वे\s*(?:नं\.?)?\s*[:\-]?\s*([A-Za-z0-9/\-]+)\b",
-                    r"\b(?:புல\s*எண்|சர்வே\s*எண்)\s*[:\-]?\s*([0-9/\-A-Za-z]+)\b"],
+                    r"\b(?:புல\s*எண்|சர்வே\s*எண்(?:\s*/\s*உட்பிரிவு)?)\s*[:\-\.]?\s*([0-9/\-A-Za-z]+)\b"],
     "mutation_no": [r"\bmutation\s*(?:no\.?|number)?\s*[:\-]?\s*(\d+)\b",
                     r"\bदाखिल\s*खारिज\s*(?:नं\.?)?\s*[:\-]?\s*(\d+)\b",
                     r"\b(?:மாறுதல்\s*மனு\s*எண்|மாறுதல்\s*எண்)\s*[:\-]?\s*(\d+)\b"],
@@ -71,10 +71,10 @@ OWNER_NAME_PATTERNS = [
     r"([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,3})\s+(?:पुत्र|पुत्री|पत्नी|पिता)\s*[:\-]?",
     # Hindi: after खातेदार / नाम label
     r"(?:खातेदार|नाम)\s*[:\-]\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){1,4})",
-    # Tamil: after உரிமையாளர் பெயர் / பட்டாதாரர் பெயர் / பெயர் label
-    r"(?:உரிமையாளர்\s*பெயர்|பட்டாதாரர்\s*பெயர்|பெயர்)\s*[:\-]\s*([\u0B80-\u0BFF\s]{2,40})",
-    # Tamil: name before த/பெ or க/பெ
-    r"([\u0B80-\u0BFF\s]{2,30})\s+(?:த/பெ|க/பெ|தந்தை|கணவர்)\s*[:\-]?",
+    # Tamil: after வாங்குபவர் / உரிமையாளர் பெயர் / பட்டாதாரர் பெயர் / பெயர் / விற்பவர் label
+    r"(?:வாங்குபவர்|கிரயம்\s*பெறுபவர்|உரிமையாளர்\s*பெயர்|பட்டாதாரர்\s*பெயர்|பெயர்|விற்பவர்)\s*(?:\([^)]*\))?\s*[:\-]?\s*([\u0B80-\u0BFF\.\s]{2,40}?)(?=[,\n;]|\s+தந்தை|\s+வயது|\s+நிலம்|$)",
+    # Tamil: name before த/பெ or க/பெ or தந்தை
+    r"([\u0B80-\u0BFF\.\s]{2,30})\s+(?:த/பெ|க/பெ|தந்தை|கணவர்)\s*[:\-]?",
 ]
 
 # ── Village / location label-hint patterns ────────────────────────────────────
@@ -205,13 +205,22 @@ class FieldExtractor:
         except Exception as e:
             log.warning("spacy.load_failed", error=str(e))
 
+    def _normalize_indic_text(self, text: str) -> str:
+        """Removes watermarks and collapses fragmented spacing in Tamil/Indic words."""
+        cleaned = re.sub(r"(?:SPECIMEN|SAMPLE|ONLY|மாதிரி|உதாரணம்|மட்டும்|சட்டப்பூர்வ|ஆவணம்|அல்ல)", " ", text, flags=re.IGNORECASE)
+        for _ in range(4):
+            cleaned = re.sub(r"([\u0B80-\u0BFF\u0900-\u097F])\s+([\u0B80-\u0BFF\u0900-\u097F])", r"\1\2", cleaned)
+        return cleaned
+
     def extract(self, ocr_text: str, avg_ocr_confidence: float = 0.8) -> LandRecordFields:
         result = LandRecordFields()
+        norm_text = self._normalize_indic_text(ocr_text)
+        search_corpus = ocr_text + "\n" + norm_text
 
         # ── 1. Regex extractions ─────────────────────────────────────────────
         for field_name, patterns in PATTERNS.items():
             for pattern in patterns:
-                m = re.search(pattern, ocr_text, re.IGNORECASE)
+                m = re.search(pattern, search_corpus, re.IGNORECASE)
                 if m:
                     value = m.group(1).strip()
                     ef = ExtractedField(value=value, confidence=avg_ocr_confidence * 0.85,
@@ -238,7 +247,7 @@ class FieldExtractor:
         ]:
             if getattr(result, field_name).value is None:
                 for pattern in patterns:
-                    m = re.search(pattern, ocr_text, re.IGNORECASE | re.UNICODE)
+                    m = re.search(pattern, search_corpus, re.IGNORECASE | re.UNICODE)
                     if m:
                         value = m.group(1).strip()
                         ef = ExtractedField(value=value, confidence=avg_ocr_confidence * 0.80,
@@ -249,7 +258,7 @@ class FieldExtractor:
         # ── 1c. Relationship-prefix regex for owner_name ──────────────────────
         if result.owner_name.value is None:
             for pattern in OWNER_NAME_PATTERNS:
-                m = re.search(pattern, ocr_text, re.IGNORECASE | re.UNICODE)
+                m = re.search(pattern, search_corpus, re.IGNORECASE | re.UNICODE)
                 if m:
                     value = m.group(1).strip()
                     result.owner_name = ExtractedField(
