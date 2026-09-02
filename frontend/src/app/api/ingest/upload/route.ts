@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function cleanPdfTamilText(raw: string): string {
   if (!raw) return "";
@@ -170,9 +172,18 @@ export async function POST(req: NextRequest) {
     let extractedText = "";
     if (isPdf) {
       try {
-        const parser = new PDFParse(new Uint8Array(buffer));
-        const parsed = await parser.getText();
-        extractedText = parsed.text || "";
+        const pdfModule: any = await import("pdf-parse");
+        const PDFParser = pdfModule.PDFParse || pdfModule.default?.PDFParse || pdfModule.default || pdfModule;
+        if (typeof PDFParser === "function") {
+          const parser = new PDFParser(new Uint8Array(buffer));
+          if (typeof parser.getText === "function") {
+            const parsed = await parser.getText();
+            extractedText = parsed?.text || "";
+          } else if (typeof parser.then === "function") {
+            const parsed = await parser;
+            extractedText = parsed?.text || "";
+          }
+        }
       } catch (err) {
         console.warn("Native PDF extraction fallback note:", err);
       }
