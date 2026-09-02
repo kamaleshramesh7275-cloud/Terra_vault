@@ -59,9 +59,18 @@ async def upload_document(
 
     # Dispatch to Celery or run synchronously if offline fallback
     from workers.pipeline_worker import process_document, task_always_eager
+    from api.records import _serialize
     if task_always_eager:
         process_document(record_id, local_path)
-        return {"record_id": record_id, "status": "done", "message": "Pipeline completed inline"}
+        # Expire cache and reload updated record from db
+        db.expire_all()
+        updated_rec = await db.get(LandRecord, record_id)
+        return {
+            "record_id": record_id,
+            "status": updated_rec.status if updated_rec else "done",
+            "message": "Pipeline completed inline",
+            "record": _serialize(updated_rec) if updated_rec else None
+        }
     else:
         process_document.delay(record_id, local_path)
         return {"record_id": record_id, "status": "processing", "message": "Pipeline started"}

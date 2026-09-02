@@ -181,6 +181,12 @@ export default function UploadPage() {
       if (result.record) {
         setCompletedRecord(result.record);
       }
+      if (result.status === "done" || result.status === "verified" || result.status === "review") {
+        setProgress(100);
+        setProgressLabel("OCR Extraction & Land Verification Complete!");
+        setStep("done");
+        return;
+      }
       // Begin real-time polling
       startPolling(result.record_id);
     } catch (e: any) {

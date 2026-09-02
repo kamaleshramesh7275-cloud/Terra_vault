@@ -39,6 +39,8 @@ paddlepaddle>=2.6.2
 paddleocr>=2.7.3
 pytesseract>=0.3.10
 pdf2image>=1.17.0          # PDF → PNG conversion (requires poppler-utils)
+pypdf>=4.0.0
+pymupdf>=1.24.0
 transformers>=4.40.0    # TrOCR (HuggingFace)
 
 # NLP

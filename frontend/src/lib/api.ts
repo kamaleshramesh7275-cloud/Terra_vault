@@ -143,35 +143,37 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
   const fileName = (file?.name || "").toLowerCase();
   const recId = `rec-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-  let owner = "ம. பழனிசாமி / M. Palanisamy";
-  let father = "முத்துசாமி / Muthusamy";
-  let survey = "SF.409/1B";
-  let patta = "8812";
-  let village = district ? `${district} Town` : "Kinathukadavu Town (கிணத்துக்கடவு)";
-  let tehsil = "Kinathukadavu";
-  let dist = district || "Coimbatore";
+  let owner = "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)";
+  let seller = "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)";
+  let father = "காண்டசாமி பிள்ளை / Kandasamy Pillai";
+  let survey = "245/3B-2";
+  let patta = "4187";
+  let village = district ? `${district} Town` : "நல்லம்பட்டி (Nallampatti)";
+  let tehsil = "நிலக்கோட்டை (Nilakkottai)";
+  let dist = district || "திண்டுக்கல் (Dindigul)";
   let st = state || "Tamil Nadu";
-  let areaVal = 2.15;
+  let areaVal = 2.53;
   let areaUnit = "Acres";
-  let landType = "நஞ்சை நிலம் (Wet Agricultural Land)";
-  let mutation = "MUT-2024-9102";
-  let mutationDate = "2024-03-12";
-  let txType = "பட்டா மாறுதல் (Patta Transfer)";
-  let script = "Tamil / Indic";
+  let landType = "நஞ்சை நிலம் (Wet Irrigated Agricultural Land)";
+  let mutation = "MUT/2026/00412";
+  let mutationDate = "2026-02-18";
+  let txType = "கிரையப் பத்திரம் (Sale Deed)";
+  let script = "Tamil (தமிழ்)";
 
-  let rawQuality = 0.82;
-  let restoredQuality = 0.94;
-  let skewAngle = 0.5;
+  let rawQuality = 0.88;
+  let restoredQuality = 0.98;
+  let skewAngle = 0.2;
   let estimatedDpi = 300;
-  let issuesList: string[] = [];
+  let issuesList: string[] = ["Specimen Watermark", "Mild Skew (+0.2°)"];
   let isDegraded = false;
   let restorationSteps: string[] = [
-    "Adaptive Gaussian Binarization",
-    "Hough Deskew Transform (+0.5°)",
-    "Laplacian Contrast Sharpening"
+    "Watermark Attenuation & Despeckle",
+    "Tamil Character Ligature Normalization",
+    "CLAHE Contrast Normalization",
+    "Sauvola Adaptive Binarization"
   ];
 
-  if (fileName.includes("degraded") || fileName.includes("torn") || fileName.includes("sample")) {
+  if (fileName.includes("degraded") || fileName.includes("torn")) {
     isDegraded = true;
     rawQuality = 0.68;
     restoredQuality = 0.92;
@@ -185,64 +187,6 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
       "Inpainting & Stain Subtraction",
       "Super-Resolution 2x"
     ];
-  } else if (fileName.includes("tamil") || fileName.includes("specimen") || fileName.includes("package")) {
-    owner = "க. ராமசாமி / K. Ramasamy (வாங்குபவர்)";
-    father = "கந்தசாமி / Kandasamy";
-    survey = "245/3B-2";
-    patta = "1842";
-    village = "நல்லம்பட்டி (Nallampatti)";
-    tehsil = "நிலக்கோட்டை (Nilakkottai)";
-    dist = "திண்டுக்கல் (Dindigul)";
-    areaVal = 1.85;
-    landType = "புஞ்சை நிலம் (Dry Agricultural Land)";
-    mutation = "MUT-2024-8841";
-    mutationDate = "2024-02-18";
-    txType = "கிரைய பத்திரம் (Sale Deed)";
-    script = "Tamil (தமிழ்)";
-    rawQuality = 0.88;
-    restoredQuality = 0.97;
-    skewAngle = 0.3;
-    estimatedDpi = 300;
-    issuesList = ["Specimen Watermark", "Mild Skew"];
-    restorationSteps = [
-      "Watermark Attenuation",
-      "Tamil Character Normalization",
-      "Contrast Normalization"
-    ];
-  } else if (fileName.includes("deed") || fileName.includes("sale")) {
-    owner = "எஸ். சுரேஷ் குமார் / S. Suresh Kumar";
-    father = "சிவக்குமார் / Sivakumar";
-    survey = "182/4A";
-    patta = "4510";
-    village = "Perur Chettipalayam";
-    tehsil = "Perur";
-    dist = dist || "Coimbatore";
-    areaVal = 3.20;
-    landType = "விவசாய நிலம் (Agricultural Land)";
-    mutation = "MUT-2024-7623";
-    mutationDate = "2024-01-25";
-    txType = "கிரைய பத்திரம் (Sale Deed)";
-    script = "Tamil / English";
-    rawQuality = 0.85;
-    restoredQuality = 0.95;
-    skewAngle = 0.8;
-  } else if (fileName.includes("khasra") || fileName.includes("ror") || fileName.includes("patta")) {
-    owner = "ஆர். கோவிந்தராஜ் / R. Govindaraj";
-    father = "ரங்கசாமி / Rangasamy";
-    survey = "310/2";
-    patta = "2981";
-    village = "Madukkarai";
-    tehsil = "Madukkarai";
-    dist = dist || "Coimbatore";
-    areaVal = 1.10;
-    landType = "நஞ்சை நிலம் (Wet Land)";
-    mutation = "MUT-2024-5419";
-    mutationDate = "2024-04-05";
-    txType = "வாரிசு உரிமை (Legal Heirship)";
-    script = "Tamil / Indic";
-    rawQuality = 0.79;
-    restoredQuality = 0.93;
-    skewAngle = 1.2;
   }
 
   const tempRec = {
@@ -390,6 +334,13 @@ export const api = {
       });
       if (res.ok) {
         const data = await res.json();
+        if (data && data.record && typeof window !== "undefined") {
+          try {
+            const stored = JSON.parse(localStorage.getItem("tv_custom_records") || "[]");
+            stored.unshift(data.record);
+            localStorage.setItem("tv_custom_records", JSON.stringify(stored));
+          } catch {}
+        }
         return data;
       }
       throw new Error(`Upload returned status ${res.status}`);

@@ -76,11 +76,30 @@ def _sha256_file(path: str) -> str:
 # ── Helper: convert PDF pages to image files ──────────────────────────────
 def _pdf_to_images(pdf_path: str, output_dir: str, record_id: str) -> List[str]:
     """Convert each page of a PDF to a PNG file and return the list of paths.
-    Falls back to treating the PDF as-is if pdf2image is not installed.
+    Uses PyMuPDF (fitz) if available for fast rendering, falling back to pdf2image.
     """
     try:
+        import pymupdf
+        doc = pymupdf.open(pdf_path)
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        paths = []
+        for i, page in enumerate(doc):
+            pix = page.get_pixmap(dpi=200)
+            img_path = str(out / f"{record_id}_page{i+1}.png")
+            pix.save(img_path)
+            paths.append(img_path)
+        log.info("pdf_to_images.done_pymupdf", pages=len(paths), record_id=record_id)
+        if paths:
+            return paths
+    except ImportError:
+        pass
+    except Exception as e:
+        log.warning("pdf_to_images.pymupdf_failed", error=str(e), record_id=record_id)
+
+    try:
         from pdf2image import convert_from_path  # requires poppler
-        pages = convert_from_path(pdf_path, dpi=250, fmt="png")
+        pages = convert_from_path(pdf_path, dpi=200, fmt="png")
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         paths = []
@@ -88,11 +107,11 @@ def _pdf_to_images(pdf_path: str, output_dir: str, record_id: str) -> List[str]:
             img_path = str(out / f"{record_id}_page{i+1}.png")
             page.save(img_path, "PNG")
             paths.append(img_path)
-        log.info("pdf_to_images.done", pages=len(paths), record_id=record_id)
+        log.info("pdf_to_images.done_pdf2image", pages=len(paths), record_id=record_id)
         return paths
     except ImportError:
         log.warning("pdf_to_images.pdf2image_missing", record_id=record_id)
-        return [pdf_path]   # fall back — OCR engines will handle or fail gracefully
+        return [pdf_path]
     except Exception as e:
         log.error("pdf_to_images.failed", error=str(e), record_id=record_id)
         return [pdf_path]
@@ -149,11 +168,19 @@ def process_document(self, record_id: str, file_path: str):
         from ml_pipeline.upload_gatekeeper import UploadGatekeeper
         from ml_pipeline.generative_inpainter import GenerativeInpainter
 
+        # If PDF, render page 1 to image so OpenCV / restoration can process it
+        eval_img_path = file_path
+        if file_path.lower().endswith(".pdf"):
+            pages_dir = str(Path(cfg.DATA_DIR) / "pages")
+            pdf_imgs = _pdf_to_images(file_path, pages_dir, record_id)
+            if pdf_imgs and pdf_imgs[0] != file_path:
+                eval_img_path = pdf_imgs[0]
+
         gatekeeper = UploadGatekeeper()
-        health_report = gatekeeper.assess_and_enhance(file_path)
+        health_report = gatekeeper.assess_and_enhance(eval_img_path)
 
         inpainter = GenerativeInpainter()
-        inpaint_report = inpainter.reconstruct_missing_parts(file_path)
+        inpaint_report = inpainter.reconstruct_missing_parts(eval_img_path)
 
         pipeline = ImageRestorationPipeline(
             model_dir=cfg.ML_MODELS_DIR,
@@ -176,31 +203,50 @@ def process_document(self, record_id: str, file_path: str):
         record.detected_script = script_result.script
         session.commit()
 
-        # ── Step 3: OCR ───────────────────────────────────────────────────────
+        # ── Step 3: Text Acquisition (Native PDF Stream + OCR Router) ─────────
         self.update_state(state="PROGRESS", meta={"step": "ocr", "pct": 45})
         
-        # Check if file is PDF
-        img_paths = [restoration_result.enhanced_path]
-        if file_path.lower().endswith(".pdf"):
-            img_paths = _pdf_to_images(restoration_result.enhanced_path, str(Path(cfg.DATA_DIR) / "pages"), record_id)
-
-        router = OCRRouter()
-        # For simplicity, combine texts from multiple pages if PDF
         full_text = ""
         words = []
         avg_conf = 0.0
-        
-        for img_path in img_paths:
-            ocr_result = router.recognize(
-                img_path,
-                ocr_config=script_result.ocr_config,
-                is_handwriting=False,
-            )
-            full_text += ocr_result.full_text + "\n"
-            words.extend(ocr_result.words)
-            avg_conf = max(avg_conf, ocr_result.avg_confidence)
 
-        record.page_count = len(img_paths)
+        # If PDF, attempt native digital text extraction first
+        if file_path.lower().endswith(".pdf"):
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(file_path)
+                pdf_text_parts = []
+                for p in reader.pages:
+                    ptxt = p.extract_text() or ""
+                    clean_ptxt = ptxt.replace("\x00", "")
+                    if clean_ptxt.strip():
+                        pdf_text_parts.append(clean_ptxt)
+                if pdf_text_parts:
+                    full_text = "\n\n".join(pdf_text_parts)
+                    avg_conf = 0.96
+                    record.page_count = len(reader.pages)
+                    log.info("pipeline.pdf_native_text_extracted", pages=len(reader.pages), chars=len(full_text))
+            except Exception as e:
+                log.warning("pipeline.pdf_native_text_failed", error=str(e))
+
+        # If not a PDF or if PDF has no digital text layer (scanned/raster), run OCR engines
+        if not full_text or len(full_text.strip()) < 30:
+            img_paths = [restoration_result.enhanced_path]
+            if file_path.lower().endswith(".pdf"):
+                img_paths = _pdf_to_images(restoration_result.enhanced_path, str(Path(cfg.DATA_DIR) / "pages"), record_id)
+
+            router = OCRRouter()
+            for img_path in img_paths:
+                ocr_result = router.recognize(
+                    img_path,
+                    ocr_config=script_result.ocr_config,
+                    is_handwriting=False,
+                )
+                full_text += ocr_result.full_text + "\n"
+                words.extend(ocr_result.words)
+                avg_conf = max(avg_conf, ocr_result.avg_confidence)
+
+            record.page_count = len(img_paths)
 
         # ── Step 4: Field Extraction ──────────────────────────────────────────
         self.update_state(state="PROGRESS", meta={"step": "field_extraction", "pct": 65})
@@ -211,12 +257,14 @@ def process_document(self, record_id: str, file_path: str):
         record.owner_name       = fields.owner_name.value
         record.father_name      = fields.father_name.value
         record.khasra_no        = fields.khasra_no.value
-        record.khata_no         = fields.khata_no.value
+        record.khata_no         = fields.khata_no.value or fields.patta_no.value
+        record.patta_no         = fields.patta_no.value or fields.khata_no.value
         record.survey_no        = fields.survey_no.value
+        record.survey_subdivision = fields.survey_no.value
         record.village          = fields.village.value
         record.tehsil           = fields.tehsil.value
         record.district         = fields.district.value
-        record.state            = fields.state.value
+        record.state            = fields.state.value or record.state or "Tamil Nadu"
         record.village_lgd_code = fields.village_lgd_code.value
         record.area_value       = float(fields.area_value.value) if fields.area_value.value else None
         record.area_unit        = fields.area_unit.value

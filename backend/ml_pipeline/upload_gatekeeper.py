@@ -62,10 +62,12 @@ class UploadGatekeeper:
         if lines is not None and len(lines) > 0:
             angles = []
             for line in lines:
-                x1, y1, x2, y2 = line[0][:4]
-                ang = np.degrees(np.arctan2(y2 - y1, x2 - x1))
-                if -89 < ang < 89:   # ±89° full-rotation detection
-                    angles.append(ang)
+                coords = line[0] if (hasattr(line[0], "__len__") or isinstance(line[0], (np.ndarray, list))) else line
+                if len(coords) >= 4:
+                    x1, y1, x2, y2 = coords[:4]
+                    ang = np.degrees(np.arctan2(y2 - y1, x2 - x1))
+                    if -89 < ang < 89:   # ±89° full-rotation detection
+                        angles.append(ang)
             if angles:
                 skew_angle = float(np.median(angles))
 
