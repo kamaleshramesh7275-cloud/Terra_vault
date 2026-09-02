@@ -1,82 +1,116 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Upload, FileText, ClipboardCheck,
-  Map, BarChart3, Users, Shield, Leaf, Sparkles, Lock
+  Map, FileText, CheckSquare, BarChart2, Shield, Upload,
+  Landmark, User as UserIcon, LogOut, Cpu, Database, Eye, Layers,
+  User, Sprout, Search, FileCheck, Scale, Building2
 } from "lucide-react";
+import { useAuth } from "@/components/AuthGuard";
 
 const NAV = [
-  { href: "/",          icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/features",  icon: Sparkles,        label: "AI Features" },
-  { href: "/upload",    icon: Upload,          label: "Upload" },
-  { href: "/records",   icon: FileText,        label: "Records" },
-  { href: "/review",    icon: ClipboardCheck,  label: "Review Queue" },
-  { href: "/map",       icon: Map,             label: "GIS Map" },
-  { href: "/analytics", icon: BarChart3,       label: "Analytics" },
-  { href: "/blockchain",icon: Lock,            label: "ZK Blockchain" },
-  { href: "/citizen",   icon: Users,           label: "Citizen Portal" },
-  { href: "/admin",     icon: Shield,          label: "Admin" },
+  { href: "/map", icon: Map, label: "Cadastral GIS Map" },
+  { href: "/records", icon: FileText, label: "Land Records RoR" },
+  { href: "/citizen", icon: User, label: "Citizen Portal" },
+  { href: "/portal/vao", icon: Sprout, label: "VAO Ground Desk" },
+  { href: "/portal/ri", icon: Search, label: "RI Firka Scrutiny" },
+  { href: "/portal/tahsildar", icon: FileCheck, label: "Tahsildar Portal" },
+  { href: "/portal/rdo", icon: Scale, label: "RDO Tribunal Desk" },
+  { href: "/portal/collector", icon: Building2, label: "Collector Command" },
+  { href: "/review", icon: CheckSquare, label: "Human-in-Loop Verification" },
+  { href: "/analytics", icon: BarChart2, label: "Revenue Analytics" },
+  { href: "/blockchain", icon: Shield, label: "Polygon Audit Trail" },
+  { href: "/map/digital-twin", icon: Eye, label: "3D Digital Twin" },
+  { href: "/upload", icon: Upload, label: "Record Ingestion" },
+  { href: "/admin", icon: Landmark, label: "System Admin" },
 ];
-
-import { useAuth } from "@/components/AuthGuard";
-import { LogOut, User as UserIcon } from "lucide-react";
 
 export function Sidebar() {
   const path = usePathname();
-  const { username, role, logout } = useAuth();
+  const { role, username, logout } = useAuth();
 
-  const filteredNav = NAV.filter((item) => item.href !== "/admin" || role === "admin");
+  const filteredNav = NAV.filter((item) => item.href !== "/admin" || role === "admin" || role === "collector");
+
+  const ROLE_REDIRECT_MAP: Record<string, string> = {
+    citizen: "/citizen",
+    vao: "/portal/vao",
+    ri: "/portal/ri",
+    tahsildar: "/portal/tahsildar",
+    rdo: "/portal/rdo",
+    admin: "/portal/collector",
+    collector: "/portal/collector",
+  };
 
   return (
-    <nav className="sidebar">
-      <div className="sidebar-logo">
+    <nav className="sidebar" style={{ width: 240, background: "#ffffff", borderRight: "1px solid #cbd5e1", color: "#0f172a", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      {/* Sidebar Header Logo */}
+      <div className="sidebar-logo" style={{ padding: "14px 18px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg,#10b981,#6366f1)",
+            width: 32, height: 32, borderRadius: 6,
+            background: "#0f2942", border: "1px solid #1e293b",
             display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#ffffff"
           }}>
-            <Leaf size={18} color="white" />
+            <Landmark size={17} color="#ffffff" />
           </div>
           <div>
-            <div style={{ fontFamily: "var(--font-head)", fontWeight: 700, fontSize: 15 }}>
-              Terra_vault
+            <div style={{ fontWeight: 800, fontSize: 13, color: "#0f2942", letterSpacing: "-0.01em" }}>
+              Revenue Portal
             </div>
-            <div style={{ fontSize: 10, color: "var(--color-text-muted)", letterSpacing: "0.06em" }}>
-              AI LAND RECORDS
+            <div style={{ fontSize: 10, color: "#475569", letterSpacing: "0.04em", fontWeight: 700 }}>
+              STATE NAVIGATION DESK
             </div>
           </div>
         </div>
       </div>
 
-      <div style={{ flex: 1 }}>
-        {filteredNav.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`sidebar-nav-item${path === href ? " active" : ""}`}
-          >
-            <Icon size={17} />
-            {label}
-          </Link>
-        ))}
+      {/* Navigation Items */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px 8px" }}>
+        {filteredNav.map(({ href, icon: Icon, label }) => {
+          const isActive = path === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 12px",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: isActive ? 700 : 600,
+                color: isActive ? "#ffffff" : "#334155",
+                background: isActive ? "#0f2942" : "transparent",
+                borderLeft: isActive ? "3px solid #d97706" : "3px solid transparent",
+                marginBottom: 3,
+                textDecoration: "none",
+                transition: "all 0.15s"
+              }}
+            >
+              <Icon size={15} color={isActive ? "#ffffff" : "#475569"} />
+              {label}
+            </Link>
+          );
+        })}
       </div>
 
-      <div style={{ padding: "14px 18px", borderTop: "1px solid var(--color-border)", display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Sidebar Footer User Box */}
+      <div style={{ padding: "12px 14px 28px 14px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{
-              width: 28, height: 28, borderRadius: "50%", background: "var(--color-surface)",
-              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--color-border)"
+              width: 26, height: 26, borderRadius: "50%", background: "#0f2942",
+              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #1e293b"
             }}>
-              <UserIcon size={14} color="var(--color-text-muted)" />
+              <UserIcon size={13} color="#ffffff" />
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text)", lineHeight: 1.2 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#0f2942", lineHeight: 1.2 }}>
                 {username}
               </div>
-              <div style={{ fontSize: 10, color: role === "admin" ? "#10b981" : "var(--color-text-muted)", textTransform: "capitalize" }}>
+              <div style={{ fontSize: 10, color: "#1e3a8a", textTransform: "capitalize", fontWeight: 700 }}>
                 {role}
               </div>
             </div>
@@ -86,22 +120,22 @@ export function Sidebar() {
             title="Log Out"
             style={{
               background: "transparent", border: "none", cursor: "pointer",
-              color: "var(--color-text-muted)", padding: 4, borderRadius: 6, display: "flex", alignItems: "center"
+              color: "#475569", padding: 4, borderRadius: 6, display: "flex", alignItems: "center"
             }}
           >
-            <LogOut size={15} />
+            <LogOut size={14} />
           </button>
         </div>
 
-        <div style={{ fontSize: 10, color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span>●</span> Polygon Amoy</span>
+        <div style={{ fontSize: 10, color: "#475569", display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 4, borderTop: "1px solid #cbd5e1" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#16a34a", fontWeight: 700 }}><span>●</span> Polygon Seal</span>
           <select
-            style={{ background: "rgba(0,0,0,0.3)", color: "#a5b4fc", fontSize: 10, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", padding: "1px 4px" }}
+            style={{ background: "#ffffff", color: "#0f2942", fontSize: 10, borderRadius: 4, border: "1px solid #cbd5e1", padding: "2px 4px", fontWeight: 600 }}
             value={role}
             onChange={(e) => {
               const newRole = e.target.value;
               localStorage.setItem("tv_role", newRole);
-              // Request JWT token for persona
+              const targetUrl = ROLE_REDIRECT_MAP[newRole] || "/";
               fetch(`/api/auth/persona-token?role=${encodeURIComponent(newRole)}`, { method: "POST" })
                 .then(r => r.json())
                 .then(d => {
@@ -110,15 +144,17 @@ export function Sidebar() {
                   }
                 })
                 .catch(() => {})
-                .finally(() => window.location.reload());
+                .finally(() => {
+                  window.location.href = targetUrl;
+                });
             }}
           >
-            <option value="citizen">👤 Citizen (பொதுமக்கள்)</option>
-            <option value="vao">🌾 VAO (கிராம நிர்வாக அலுவலர்)</option>
-            <option value="ri">🔍 RI (வருவாய் ஆய்வாளர்)</option>
-            <option value="tahsildar">📜 Tahsildar (தாசில்தார்)</option>
-            <option value="rdo">🏢 RDO (வருவாய் கோட்டாட்சியர்)</option>
-            <option value="admin">🏛️ District Collector (மாவட்ட ஆட்சியர்)</option>
+            <option value="citizen">Citizen Portal</option>
+            <option value="vao">VAO Ground Desk</option>
+            <option value="ri">RI Firka Desk</option>
+            <option value="tahsildar">Tahsildar Portal</option>
+            <option value="rdo">RDO Tribunal</option>
+            <option value="admin">District Collector</option>
           </select>
         </div>
       </div>

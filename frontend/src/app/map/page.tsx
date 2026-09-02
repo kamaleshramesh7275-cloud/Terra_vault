@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { api } from "@/lib/api";
 import {
@@ -75,6 +76,10 @@ export default function MapPage() {
   const [isSplitMode, setIsSplitMode] = useState<boolean>(false);
   const [splitResult, setSplitResult] = useState<any>(null);
 
+  const searchParams = useSearchParams();
+  const targetSurveyNo = searchParams.get("survey_no");
+  const targetPattaNo = searchParams.get("patta_no");
+
   useEffect(() => {
     loadPlots();
   }, [selectedTaluk, selectedCategory]);
@@ -90,8 +95,19 @@ export default function MapPage() {
     })
       .then((data) => {
         setPlotsData(data);
-        if (data?.features?.length > 0 && (!selectedPlot || !data.features.some((f: any) => f.properties.survey_no === selectedPlot?.survey_no))) {
-          handlePlotSelect(data.features[0].properties);
+        if (data?.features?.length > 0) {
+          // Check if URL specified a target survey or patta number
+          const matchedFeature = data.features.find((f: any) => {
+            const p = f.properties;
+            return (targetSurveyNo && p.survey_no?.toLowerCase().includes(targetSurveyNo.toLowerCase())) ||
+                   (targetPattaNo && p.patta_no === targetPattaNo);
+          });
+
+          if (matchedFeature) {
+            handlePlotSelect(matchedFeature.properties);
+          } else if (!selectedPlot || !data.features.some((f: any) => f.properties.survey_no === selectedPlot?.survey_no)) {
+            handlePlotSelect(data.features[0].properties);
+          }
         }
       })
       .catch((err) => console.error("Error loading Coimbatore plots", err))
@@ -131,11 +147,11 @@ export default function MapPage() {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 26 }}>🌿</span>
-              <h1 style={{ fontFamily: "var(--font-head)", fontSize: 24, fontWeight: 700, margin: 0 }}>
+              <h1 style={{ fontFamily: "var(--font-head)", fontSize: 24, fontWeight: 800, color: "#0f2942", margin: 0 }}>
                 Coimbatore District Cadastral GIS & Land Registry
               </h1>
             </div>
-            <p style={{ color: "var(--color-text-muted)", fontSize: 13, marginTop: 4, marginBottom: 0 }}>
+            <p style={{ color: "#334155", fontSize: 13, fontWeight: 600, marginTop: 4, marginBottom: 0 }}>
               கோயம்புத்தூர் மாவட்ட நில அளவை, பட்டா மற்றும் வாரிசுரிமை பதிவேடு — Covering all 9 Taluks with FMB Survey Boundaries, Mutation Chains & Inheritance Trees
             </p>
           </div>
@@ -143,7 +159,7 @@ export default function MapPage() {
           {/* Search Input Form */}
           <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: 8 }}>
             <div style={{ position: "relative", width: 280 }}>
-              <Search size={15} color="#94a3b8" style={{ position: "absolute", left: 10, top: 10 }} />
+              <Search size={15} color="#475569" style={{ position: "absolute", left: 10, top: 10 }} />
               <input
                 type="text"
                 placeholder="Search SF No, Patta or Owner..."
@@ -153,10 +169,11 @@ export default function MapPage() {
                   width: "100%",
                   padding: "8px 12px 8px 32px",
                   borderRadius: 8,
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: "rgba(15, 23, 42, 0.6)",
-                  color: "#f8fafc",
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  color: "#0f172a",
                   fontSize: 12,
+                  fontWeight: 600,
                   outline: "none"
                 }}
               />
@@ -166,11 +183,11 @@ export default function MapPage() {
               style={{
                 padding: "8px 14px",
                 borderRadius: 8,
-                background: "var(--color-primary, #10b981)",
-                color: "#000",
+                background: "#0f2942",
+                color: "#ffffff",
                 fontWeight: 700,
                 fontSize: 12,
-                border: "none",
+                border: "1px solid #1e293b",
                 cursor: "pointer"
               }}
             >
@@ -182,34 +199,34 @@ export default function MapPage() {
 
       {/* Coimbatore District KPI Summary Strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginBottom: 16 }}>
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 11, color: "#94a3b8" }}>Taluks Covered</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#f8fafc", marginTop: 2 }}>9 Taluks (வட்டங்கள்)</div>
-          <div style={{ fontSize: 10, color: "#10b981" }}>Coimbatore North to Valparai</div>
+        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Taluks Covered</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#0f2942", marginTop: 2 }}>9 Taluks (வட்டங்கள்)</div>
+          <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 700 }}>Coimbatore North to Valparai</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 11, color: "#94a3b8" }}>Active Parcels in View</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#38bdf8", marginTop: 2 }}>{totalParcels} FMB Parcels</div>
-          <div style={{ fontSize: 10, color: "#94a3b8" }}>Total Extent: {totalAcres.toFixed(1)} Acres</div>
+        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Active Parcels in View</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#0f2942", marginTop: 2 }}>{totalParcels} FMB Parcels</div>
+          <div style={{ fontSize: 10, color: "#475569", fontWeight: 700 }}>Total Extent: {totalAcres.toFixed(1)} Acres</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 11, color: "#94a3b8" }}>Average Maturity Score</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#10b981", marginTop: 2 }}>94.2% Verified</div>
-          <div style={{ fontSize: 10, color: "#10b981" }}>High Digitization Quality</div>
+        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Average Maturity Score</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#16a34a", marginTop: 2 }}>94.2% Verified</div>
+          <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 700 }}>High Digitization Quality</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 11, color: "#94a3b8" }}>Total Land Asset Value</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#f59e0b", marginTop: 2 }}>₹{(totalValuation / 10000000).toFixed(1)} Crores</div>
-          <div style={{ fontSize: 10, color: "#94a3b8" }}>Based on Guideline & Fair Market</div>
+        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Total Land Asset Value</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#d97706", marginTop: 2 }}>₹{(totalValuation / 10000000).toFixed(1)} Crores</div>
+          <div style={{ fontSize: 10, color: "#475569", fontWeight: 700 }}>Based on Guideline & Fair Market</div>
         </div>
 
-        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 11, color: "#94a3b8" }}>Blockchain Anchor Proof</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: "#a78bfa", marginTop: 2 }}>100% Anchored</div>
-          <div style={{ fontSize: 10, color: "#a78bfa" }}>Polygon Amoy Testnet (80002)</div>
+        <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #cbd5e1", background: "#ffffff" }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>Blockchain Anchor Proof</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#1e3a8a", marginTop: 2 }}>100% Anchored</div>
+          <div style={{ fontSize: 10, color: "#1e3a8a", fontWeight: 700 }}>Polygon Amoy Testnet (80002)</div>
         </div>
       </div>
 
@@ -222,13 +239,13 @@ export default function MapPage() {
             style={{
               padding: "6px 12px",
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 700,
               borderRadius: 8,
               whiteSpace: "nowrap",
               border: "1px solid",
-              borderColor: selectedTaluk === t.id ? "#10b981" : "rgba(255,255,255,0.08)",
-              background: selectedTaluk === t.id ? "rgba(16, 185, 129, 0.18)" : "rgba(255,255,255,0.02)",
-              color: selectedTaluk === t.id ? "#10b981" : "#cbd5e1",
+              borderColor: selectedTaluk === t.id ? "#0f2942" : "#cbd5e1",
+              background: selectedTaluk === t.id ? "#0f2942" : "#ffffff",
+              color: selectedTaluk === t.id ? "#ffffff" : "#334155",
               cursor: "pointer",
               transition: "all 0.15s"
             }}
@@ -250,19 +267,21 @@ export default function MapPage() {
               style={{
                 padding: "5px 12px",
                 fontSize: 11,
-                fontWeight: 600,
+                fontWeight: 700,
                 borderRadius: 20,
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
                 border: "1px solid",
-                borderColor: isSelected ? "#38bdf8" : "rgba(255,255,255,0.08)",
-                background: isSelected ? "rgba(56, 189, 248, 0.15)" : "transparent",
-                color: isSelected ? "#38bdf8" : "#94a3b8",
-                cursor: "pointer"
+                borderColor: isSelected ? "#0f2942" : "#cbd5e1",
+                background: isSelected ? "#0f2942" : "#ffffff",
+                color: isSelected ? "#ffffff" : "#334155",
+                cursor: "pointer",
+                transition: "all 0.15s"
               }}
             >
-              <Icon size={13} /> {c.label}
+              <Icon size={13} color={isSelected ? "#ffffff" : "#475569"} />
+              {c.label}
             </button>
           );
         })}

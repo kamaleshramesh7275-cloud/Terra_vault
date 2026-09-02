@@ -436,3 +436,64 @@ export const MOCK_MATURITY_SUMMARY = {
     verified: tc.count
   }))
 };
+
+export function addUploadedParcel(rec: Partial<CoimbatoreParcel>): CoimbatoreParcel {
+  const newIndex = MOCK_COIMBATORE_PARCELS.length + 1;
+  const newId = `cbe-plot-${String(newIndex).padStart(3, "0")}`;
+
+  const newParcel: CoimbatoreParcel = {
+    id: newId,
+    survey_no: rec.survey_no || `${100 + newIndex}/1A`,
+    subdivision: rec.subdivision || "1A",
+    patta_no: rec.patta_no || `${5000 + newIndex}`,
+    owner_name: rec.owner_name || "K. Rajendran / K. ராஜேந்திரன்",
+    father_name: rec.father_name || "Karuppusamy / கருப்புசாமி",
+    co_owners: rec.co_owners || [],
+    village: rec.village || "Kinathukadavu Town",
+    taluk: rec.taluk || "Kinathukadavu",
+    district: rec.district || "Coimbatore",
+    state: rec.state || "Tamil Nadu",
+    village_lgd_code: "632101",
+    land_type: rec.land_type || "தோட்டக்கால் (Coconut Plantation / தோட்டம்)",
+    land_category: (rec.land_category as any) || "Agriculture",
+    soil_type: "Black Cotton Soil (கரிசல்)",
+    area_acres: rec.area_acres || 2.45,
+    area_cents: Math.round((rec.area_acres || 2.45) * 100),
+    area_sqm: Math.round((rec.area_acres || 2.45) * 4046.86),
+    guideline_value_sqft: 1850,
+    market_value_inr: Math.round((rec.area_acres || 2.45) * 43560 * 1850 * 1.35),
+    encumbrance_status: "Clean / Nil Encumbrance (வில்லங்கம் இல்லை)",
+    blockchain_hash: rec.blockchain_hash || `0x9f83a24b1029384756${newIndex}a9b8c7d6e5f4`,
+    polygon: rec.polygon || [
+      [76.9610, 10.9850],
+      [76.9625, 10.9855],
+      [76.9630, 10.9840],
+      [76.9615, 10.9835],
+      [76.9610, 10.9850]
+    ],
+    mutation_history: [
+      {
+        step: 1,
+        date: "2026-09-02",
+        deed_type: "OCR Ingestion & Title Registration",
+        doc_no: `DOC-2026-${8800 + newIndex}`,
+        transferor: "State Government Registry",
+        transferee: rec.owner_name || "K. Rajendran",
+        extent: `${rec.area_acres || 2.45} Acres`,
+        status: "Verified & Sealed"
+      }
+    ],
+    inheritance_tree: {
+      root: {
+        name: rec.owner_name ? rec.owner_name.split("/")[0] : "K. Rajendran",
+        relation: "Current Owner",
+        generation: "Gen 1",
+        children: []
+      }
+    }
+  };
+
+  // Unshift so it appears at top of lists
+  MOCK_COIMBATORE_PARCELS.unshift(newParcel);
+  return newParcel;
+}

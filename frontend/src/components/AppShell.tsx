@@ -1,22 +1,29 @@
-"use client";
+﻿"use client";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
+import { GovHeader } from "@/components/GovHeader";
 import { AuthGuard } from "@/components/AuthGuard";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === "/login";
+  const isLandingPage = pathname === "/" || pathname.startsWith("/state") || pathname === "/citizen" || pathname === "/login";
 
   return (
-    <AuthGuard>
-      {isLoginPage ? (
-        <main style={{ minHeight: "100vh", background: "var(--color-bg)" }}>{children}</main>
-      ) : (
-        <>
-          <Sidebar />
-          <main className="main-content">{children}</main>
-        </>
-      )}
-    </AuthGuard>
+    <LanguageProvider>
+      <AuthGuard>
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--color-bg)" }}>
+          <GovHeader />
+          {isLandingPage ? (
+            <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>{children}</main>
+          ) : (
+            <div style={{ display: "flex", flex: 1 }}>
+              <Sidebar />
+              <main className="main-content" style={{ flex: 1, padding: "24px 32px" }}>{children}</main>
+            </div>
+          )}
+        </div>
+      </AuthGuard>
+    </LanguageProvider>
   );
 }

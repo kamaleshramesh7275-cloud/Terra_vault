@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, createContext, useContext } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const PUBLIC_ROUTES = ["/login", "/citizen"];
+const PUBLIC_ROUTES = ["/", "/login", "/citizen", "/state"];
 
 interface UserContextType {
   username: string;
