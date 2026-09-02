@@ -166,7 +166,7 @@ function DigitalTwinContent() {
 
       map.on("load", () => {
         // 1. Cadastral Parcels GeoJSON Source
-        const features = MOCK_COIMBATORE_PARCELS.map(p => ({
+        const features = MOCK_COIMBATORE_PARCELS.map((p, idx) => ({
           type: "Feature",
           id: p.id,
           properties: {
@@ -181,8 +181,8 @@ function DigitalTwinContent() {
             encumbrance_status: p.encumbrance_status,
             market_value_inr: p.market_value_inr,
             blockchain_hash: p.blockchain_hash,
-            has_encroachment: p.id === "cbe-plot-001" || p.id === "cbe-plot-003",
-            ndvi_score: 0.78 + ((p.id.charCodeAt(p.id.length - 1) % 5) * 0.04)
+            has_encroachment: (idx % 2 === 0) || p.id === "cbe-plot-000" || p.id === "cbe-plot-001" || p.id === "cbe-plot-003",
+            ndvi_score: 0.72 + ((idx % 7) * 0.035)
           },
           geometry: {
             type: "Polygon",
@@ -230,6 +230,7 @@ function DigitalTwinContent() {
           id: "parcels-fill",
           type: "fill",
           source: "cadastral-parcels",
+          layout: { visibility: "visible" },
           paint: {
             "fill-color": [
               "match",
@@ -260,11 +261,23 @@ function DigitalTwinContent() {
               0.82, "#22c55e",
               0.92, "#15803d"
             ],
-            "fill-opacity": 0.75
+            "fill-opacity": 0.85
           }
         });
 
-        // 5. Cadastral Outline Layer (Bold High-Contrast White)
+        // 5. 1994 Historical Fill Layer
+        map.addLayer({
+          id: "parcels-1994-fill",
+          type: "fill",
+          source: "historical-1994",
+          layout: { visibility: "none" },
+          paint: {
+            "fill-color": "#f59e0b",
+            "fill-opacity": 0.28
+          }
+        });
+
+        // 6. Cadastral Outline Layer (Bold High-Contrast White)
         map.addLayer({
           id: "parcels-outline",
           type: "line",
@@ -276,7 +289,19 @@ function DigitalTwinContent() {
           }
         });
 
-        // 6. Encroachment Alert Collision Layer (Flashing Neon Red)
+        // 7. Encroachment Alert Fill Layer (Flashing Red)
+        map.addLayer({
+          id: "parcels-encroachment-fill",
+          type: "fill",
+          source: "cadastral-parcels",
+          filter: ["==", "has_encroachment", true],
+          paint: {
+            "fill-color": "#ef4444",
+            "fill-opacity": 0.35
+          }
+        });
+
+        // 8. Encroachment Alert Collision Line Layer (Flashing Neon Red)
         map.addLayer({
           id: "parcels-encroachment",
           type: "line",
@@ -284,11 +309,11 @@ function DigitalTwinContent() {
           filter: ["==", "has_encroachment", true],
           paint: {
             "line-color": "#ef4444",
-            "line-width": 5
+            "line-width": 5.5
           }
         });
 
-        // 7. 1994 Historical Ancestral Boundary Layer (Dashed Gold)
+        // 9. 1994 Historical Ancestral Boundary Layer (Dashed Gold)
         map.addLayer({
           id: "parcels-1994-outline",
           type: "line",
@@ -296,12 +321,12 @@ function DigitalTwinContent() {
           layout: { visibility: "none" },
           paint: {
             "line-color": "#f59e0b",
-            "line-width": 3.5,
+            "line-width": 4,
             "line-dasharray": [4, 2]
           }
         });
 
-        // 8. Selected Parcel Glowing Highlight Outline
+        // 10. Selected Parcel Glowing Highlight Outline
         map.addLayer({
           id: "parcels-highlight",
           type: "line",
@@ -401,6 +426,9 @@ function DigitalTwinContent() {
       if (map.getLayer("parcels-ndvi-fill")) {
         map.setLayoutProperty("parcels-ndvi-fill", "visibility", val ? "visible" : "none");
       }
+      if (map.getLayer("parcels-fill")) {
+        map.setLayoutProperty("parcels-fill", "visibility", val ? "none" : "visible");
+      }
     } catch (e) {
       console.warn("NDVI toggle exception", e);
     }
@@ -415,6 +443,9 @@ function DigitalTwinContent() {
       if (map.getLayer("parcels-encroachment")) {
         map.setLayoutProperty("parcels-encroachment", "visibility", val ? "visible" : "none");
       }
+      if (map.getLayer("parcels-encroachment-fill")) {
+        map.setLayoutProperty("parcels-encroachment-fill", "visibility", val ? "visible" : "none");
+      }
     } catch (e) {
       console.warn("Encroachment toggle exception", e);
     }
@@ -428,6 +459,9 @@ function DigitalTwinContent() {
     try {
       if (map.getLayer("parcels-1994-outline")) {
         map.setLayoutProperty("parcels-1994-outline", "visibility", year === "1994" ? "visible" : "none");
+      }
+      if (map.getLayer("parcels-1994-fill")) {
+        map.setLayoutProperty("parcels-1994-fill", "visibility", year === "1994" ? "visible" : "none");
       }
     } catch (e) {
       console.warn("Time travel toggle exception", e);
@@ -680,11 +714,11 @@ function DigitalTwinContent() {
           padding: 14,
           borderRadius: 12,
           border: "1px solid rgba(255, 255, 255, 0.14)",
-          width: 240,
+          width: 260,
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)"
         }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            AI Analytics Layers
+          <div style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            AI Analytics & Computer Vision
           </div>
 
           <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
@@ -700,6 +734,15 @@ function DigitalTwinContent() {
             />
           </label>
 
+          {showEncroachment && (
+            <div style={{
+              background: "#450a0a", border: "1px solid #dc2626", borderRadius: 6,
+              padding: "6px 8px", fontSize: 10, color: "#fca5a5", fontWeight: 700
+            }}>
+              🚨 <strong>Active Collision Vector:</strong> Flashing neon red zones show high-risk Poramboke & Road buffer overlaps.
+            </div>
+          )}
+
           <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80" }}>
               <Sprout size={15} color="#22c55e" />
@@ -712,6 +755,20 @@ function DigitalTwinContent() {
               style={{ cursor: "pointer", width: 17, height: 17, accentColor: "#22c55e" }}
             />
           </label>
+
+          {showNdvi && (
+            <div style={{
+              background: "rgba(2, 44, 34, 0.8)", border: "1px solid #059669", borderRadius: 6,
+              padding: "6px 8px", fontSize: 10, color: "#86efac", fontWeight: 700
+            }}>
+              <div style={{ marginBottom: 4 }}>🌿 <strong>Sentinel-2 NDVI Scale:</strong></div>
+              <div style={{ height: 6, borderRadius: 3, background: "linear-gradient(to right, #ef4444, #eab308, #22c55e, #15803d)", marginBottom: 4 }} />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#cbd5e1" }}>
+                <span>0.65 Stressed</span>
+                <span>0.92 Vigorous</span>
+              </div>
+            </div>
+          )}
 
           <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.12)", paddingTop: 10, marginTop: 2 }}>
             <div style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
@@ -741,6 +798,11 @@ function DigitalTwinContent() {
                 2026 Drone Twin
               </button>
             </div>
+            {timeTravelYear === "1994" && (
+              <div style={{ marginTop: 6, padding: "4px 8px", background: "#78350f", borderRadius: 6, border: "1px solid #d97706", fontSize: 10, color: "#fef3c7", fontWeight: 700 }}>
+                🕰️ <strong>1994 Cadastral Baseline:</strong> Gold dashed outlines show ancestral boundaries (-42m offset).
+              </div>
+            )}
           </div>
         </div>
 
