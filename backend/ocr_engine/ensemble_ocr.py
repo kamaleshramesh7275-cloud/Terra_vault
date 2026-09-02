@@ -49,6 +49,53 @@ class MultiPassEnsembleOCR:
     Fine-tuned: Weighted voting (TrOCR weight × 1.5), adaptive LGD threshold.
     """
 
+    @staticmethod
+    def create_degradation_streams(img_path: str, output_dir: str = "/tmp/degradation_streams") -> Dict[str, str]:
+        """
+        Generates 3 specialized image processing streams for degraded, folded, or stained deeds:
+        1. fold_shadow_erased: erases crease gradients and fold lines
+        2. stain_filtered: Sauvola adaptive binarization pulling text from under ink blotches
+        3. clahe_enhanced: high-contrast lighting correction for faded historical ink
+        """
+        import cv2
+        from pathlib import Path
+        from ml_pipeline.restoration import (
+            remove_fold_shadows, sauvola_stain_filter,
+            reconnect_creased_strokes, correct_lighting, suppress_ink_bleed
+        )
+
+        out_path = Path(output_dir)
+        out_path.mkdir(parents=True, exist_ok=True)
+        stem = Path(img_path).stem
+
+        img = cv2.imread(img_path)
+        if img is None:
+            return {"raw": img_path}
+
+        # Stream 1: Fold Shadow Removal
+        fold_img = remove_fold_shadows(img)
+        p1 = str(out_path / f"{stem}_fold_erased.png")
+        cv2.imwrite(p1, fold_img)
+
+        # Stream 2: Sauvola Stain Filter + Stroke Reconnect (for ink spills and thumbprints)
+        stain_img = sauvola_stain_filter(img)
+        stain_img = reconnect_creased_strokes(stain_img)
+        p2 = str(out_path / f"{stem}_stain_filtered.png")
+        cv2.imwrite(p2, stain_img)
+
+        # Stream 3: High-contrast CLAHE + Bleed Suppression (for faded ink)
+        clahe_img = correct_lighting(img)
+        clahe_img = suppress_ink_bleed(clahe_img)
+        p3 = str(out_path / f"{stem}_clahe_enhanced.png")
+        cv2.imwrite(p3, clahe_img)
+
+        return {
+            "fold_shadow_erased": p1,
+            "stain_filtered": p2,
+            "clahe_enhanced": p3,
+        }
+
+
     def process_ensemble(self, pass_texts: List[Tuple[str, float]]) -> EnsembleOCRResult:
         """
         Takes OCR results from multiple image preprocessing passes:

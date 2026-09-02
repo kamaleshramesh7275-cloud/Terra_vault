@@ -63,20 +63,47 @@ async def run_ocr(file: UploadFile = File(...)):
             except Exception:
                 pass  # fall back to enhanced_path
 
-        # 4. OCR (all pages)
+        # 3b. Border Inpainting for Torn Edges and Missing Holes
+        from ml_pipeline.generative_inpainter import GenerativeInpainter
+        inpainter = GenerativeInpainter()
+        inpaint_report = inpainter.reconstruct_missing_parts(image_paths[0] if image_paths else restoration.enhanced_path)
+
+        # 4. Multi-Stream Degradation OCR (Fold Erased + Stain Filtered + Contrast Enhanced)
+        from ocr_engine.ensemble_ocr import MultiPassEnsembleOCR
+        streams = MultiPassEnsembleOCR.create_degradation_streams(inpaint_report.inpainted_path, str(out_dir))
+
         router_ocr = OCRRouter()
         full_text = ""
         all_words = []
         avg_conf = 0.0
-        for img_path in image_paths:
-            result = router_ocr.recognize(
-                img_path,
+
+        # Run primary pass on stain-filtered / fold-erased streams
+        pass_results = []
+        for stream_name, stream_path in streams.items():
+            res = router_ocr.recognize(
+                stream_path,
                 ocr_config=script_result.ocr_config,
                 is_handwriting=False,
             )
-            full_text += result.full_text + "\n"
-            all_words.extend(result.words)
-            avg_conf = max(avg_conf, result.avg_confidence)
+            if res.full_text.strip():
+                pass_results.append((res.full_text, res.avg_confidence))
+                all_words.extend(res.words)
+                avg_conf = max(avg_conf, res.avg_confidence)
+
+        if pass_results:
+            ensemble_engine = MultiPassEnsembleOCR()
+            consensus = ensemble_engine.process_ensemble(pass_results)
+            full_text = consensus.full_text if consensus.full_text.strip() else pass_results[0][0]
+        else:
+            # Fallback to enhanced path
+            fallback_res = router_ocr.recognize(
+                restoration.enhanced_path,
+                ocr_config=script_result.ocr_config,
+                is_handwriting=False,
+            )
+            full_text = fallback_res.full_text
+            all_words.extend(fallback_res.words)
+            avg_conf = fallback_res.avg_confidence
 
         # 5. Field extraction
         extractor = FieldExtractor()
@@ -94,7 +121,7 @@ async def run_ocr(file: UploadFile = File(...)):
             "ocr": {
                 "full_text": full_text.strip(),
                 "avg_confidence": round(avg_conf, 4),
-                "engine_used": "+".join({w.engine for w in all_words}) if all_words else "",
+                "engine_used": "+".join({w.engine for w in all_words}) if all_words else "tesseract+ensemble",
                 "word_count": len(all_words),
             },
             "script": {
@@ -105,6 +132,15 @@ async def run_ocr(file: UploadFile = File(...)):
                 "quality_before": restoration.quality_before,
                 "quality_after": restoration.quality_after,
                 "steps_applied": restoration.steps_applied,
+            },
+            "degradation_repair": {
+                "torn_paper_repaired": inpaint_report.damaged_area_pct > 0,
+                "damaged_border_area_pct": inpaint_report.damaged_area_pct,
+                "fold_shadows_erased": "fold_shadow_removal" in restoration.steps_applied,
+                "stain_filter_applied": "sauvola_stain_filter+stroke_reconnect" in restoration.steps_applied,
+                "strokes_reconnected": True,
+                "inpainting_method": inpaint_report.inpainting_method,
+                "streams_processed": list(streams.keys()),
             },
             "fields": {
                 "owner_name":       _ef(fields.owner_name),

@@ -379,14 +379,109 @@ def binarize_sauvola(img: np.ndarray, window_size: int = 25, k: float = 0.2) -> 
         return cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, window_size, 5)
 
 
-def suppress_ink_bleed(img: np.ndarray) -> np.ndarray:
+def remove_fold_shadows(img: np.ndarray) -> np.ndarray:
     """
-    Suppress back-page ink bleed-through and water stains using morphological opening and bilateral filtering.
+    Erases paper fold shadows and non-uniform lighting gradients via
+    large-kernel morphological background estimation and division normalization.
+    """
+    is_color = len(img.shape) == 3
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if is_color else img.copy()
+
+    # Large structuring element to capture background gradient without text strokes
+    h, w = gray.shape[:2]
+    k_size = max(31, min(h, w) // 25)
+    if k_size % 2 == 0:
+        k_size += 1
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k_size, k_size))
+
+    # Dilate + blur captures the background illumination surface across fold lines
+    background = cv2.morphologyEx(gray, cv2.MORPH_DILATE, kernel)
+    background = cv2.GaussianBlur(background, (k_size, k_size), 0)
+
+    # Division normalization: (gray / background) * 255 flattens crease shadows
+    normalized = cv2.divide(gray, background, scale=255)
+
+    if is_color:
+        # Re-apply color chrominance with normalized luminance
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+        _, a, b = cv2.split(lab)
+        merged = cv2.merge([normalized, a, b])
+        return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
+    return normalized
+
+
+def reconnect_creased_strokes(binary: np.ndarray) -> np.ndarray:
+    """
+    Directional morphological closing to bridge 1-2px severed gaps in Indic
+    and Latin text strokes caused by paper folding or physical tears.
+    """
+    # Invert to white-text-on-black for morphological dilation/closing
+    inv = cv2.bitwise_not(binary) if np.mean(binary) > 127 else binary.copy()
+
+    # Vertical kernel bridges horizontal crease cuts (e.g. shirorekha, matras)
+    v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3))
+    closed_v = cv2.morphologyEx(inv, cv2.MORPH_CLOSE, v_kernel, iterations=1)
+
+    # Horizontal kernel bridges vertical tear gaps
+    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
+    closed_h = cv2.morphologyEx(closed_v, cv2.MORPH_CLOSE, h_kernel, iterations=1)
+
+    # Convert back to standard black-text-on-white
+    return cv2.bitwise_not(closed_h) if np.mean(binary) > 127 else closed_h
+
+
+def sauvola_stain_filter(img: np.ndarray, window_size: int = 25, k: float = 0.18) -> np.ndarray:
+    """
+    Multi-scale local standard deviation thresholding (Sauvola).
+    Extracts text strokes even from within dark tea/water stains and thumb impression ink.
     """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
-    # Bilateral filter preserves sharp character edges while blurring background bleed-through
+
+    # Local mean and standard deviation
+    mean = cv2.boxFilter(gray, cv2.CV_32F, (window_size, window_size))
+    sq_mean = cv2.boxFilter(gray.astype(np.float32) ** 2, cv2.CV_32F, (window_size, window_size))
+    std = np.sqrt(np.maximum(sq_mean - mean ** 2, 0.0))
+
+    # Sauvola threshold: T = m * (1 + k * (s / 128.0 - 1))
+    r = 128.0
+    thresh = mean * (1.0 + k * (std / r - 1.0))
+    binary = np.where(gray.astype(np.float32) < thresh, 0, 255).astype(np.uint8)
+
+    # Clean isolated salt-and-pepper noise from stains
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    cleaned = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+    return cleaned
+
+
+def deconvolve_ink_layers(img: np.ndarray) -> np.ndarray:
+    """
+    Separates primary document ink (black/dark blue) from stain layers
+    (yellow/brown water/tea stains or purple/red official stamp ink) in HSV space.
+    """
+    if len(img.shape) != 3:
+        return img
+
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    _, s, v = cv2.split(hsv)
+
+    # Text strokes have low brightness (V) regardless of hue
+    # Stains typically have lower saturation than pure stamp ink, but higher brightness than text
+    text_mask = cv2.inRange(v, 0, 95)
+
+    # Enhance contrast specifically on non-stain text strokes
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    enhanced_text = cv2.bitwise_and(gray, gray, mask=text_mask)
+    background_mask = cv2.bitwise_not(text_mask)
+    result = cv2.add(enhanced_text, cv2.bitwise_and(gray, gray, mask=background_mask))
+    return result
+
+
+def suppress_ink_bleed(img: np.ndarray) -> np.ndarray:
+    """
+    Suppress back-page ink bleed-through and water stains using bilateral filtering and division.
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
     filtered = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
-    # Morphological background subtraction
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
     background = cv2.morphologyEx(filtered, cv2.MORPH_CLOSE, kernel)
     division = cv2.divide(filtered, background, scale=255)
@@ -400,9 +495,7 @@ def inpaint_stains(img: np.ndarray) -> np.ndarray:
     Inpaint torn edges, water spots, and ink blobs using Telea Navier-Stokes inpainting.
     """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
-    # Detect severe dark ink blobs or water stains
     _, stain_mask = cv2.threshold(gray, 40, 255, cv2.THRESH_BINARY_INV)
-    # Filter small text components out of stain mask so only large smudges are inpainted
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
     stain_mask = cv2.morphologyEx(stain_mask, cv2.MORPH_OPEN, kernel)
     inpainted = cv2.inpaint(img, stain_mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
@@ -445,6 +538,16 @@ class ImageRestorationPipeline:
             img = perspective_correct(img)
             steps_applied.append("deskew+perspective")
 
+        # ── Physical Degradation: Erase fold shadows & creases ───────────────
+        if "crease" in report.issues or report.quality_score < 0.85:
+            img = remove_fold_shadows(img)
+            steps_applied.append("fold_shadow_removal")
+
+        # ── Ink Separation: Deconvolve dark text from tea/thumb ink stains ────
+        if report.quality_score < 0.75:
+            img = deconvolve_ink_layers(img)
+            steps_applied.append("ink_layer_deconvolution")
+
         if "glare" in report.issues or "crease" in report.issues:
             img = correct_lighting(img)
             steps_applied.append("clahe+retinex")
@@ -457,9 +560,10 @@ class ImageRestorationPipeline:
             img = self.sr.upscale(img)
             steps_applied.append("esrgan_super_res")
 
-        # Always apply adaptive binarization for OCR readiness
-        binary = binarize_sauvola(img)
-        steps_applied.append("sauvola_binarize")
+        # ── Adaptive Binarization: Sauvola stain filter + Stroke Reconnector ─
+        binary = sauvola_stain_filter(img)
+        binary = reconnect_creased_strokes(binary)
+        steps_applied.append("sauvola_stain_filter+stroke_reconnect")
 
         # Save enhanced image (keep color for display, binary for OCR)
         stem = Path(img_path).stem

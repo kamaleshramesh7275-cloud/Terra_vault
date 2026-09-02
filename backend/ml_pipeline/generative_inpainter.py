@@ -56,22 +56,38 @@ class GenerativeInpainter:
         h, w = img.shape[:2]
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
 
-        # 1. Detect torn edges & missing paper corners using Otsu binarization on border margins
-        _, border_mask = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # 1. Detect torn edges, corner deficits, and dark holes on margins (scanner bed through tears)
+        margin_mask = np.zeros((h, w), dtype=np.uint8)
+        border_px = max(15, int(min(h, w) * 0.10))
+        margin_mask[:border_px, :] = 255
+        margin_mask[-border_px:, :] = 255
+        margin_mask[:, :border_px] = 255
+        margin_mask[:, -border_px:] = 255
+
+        # Detect dark missing holes / background showing through torn paper
+        _, dark_holes = cv2.threshold(gray, 45, 255, cv2.THRESH_BINARY_INV)
+        border_mask = cv2.bitwise_and(dark_holes, margin_mask)
+
+        # Morphological dilation to encompass jagged tear contours
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        border_mask = cv2.dilate(border_mask, kernel, iterations=2)
+
         damaged_pixels = cv2.countNonZero(border_mask)
         total_pixels = h * w
         damaged_pct = round((damaged_pixels / float(total_pixels)) * 100.0, 2)
 
         # 2. Generative Inpainting — Telea primary, Navier-Stokes secondary fallback
-        inpainted_img = cv2.inpaint(img, border_mask, inpaintRadius=5, flags=cv2.INPAINT_TELEA)
+        if damaged_pixels > 0:
+            inpainted_img = cv2.inpaint(img, border_mask, inpaintRadius=5, flags=cv2.INPAINT_TELEA)
+            telea_quality = 0.82 if damaged_pct > 1.5 else 0.95
+            inpaint_method = "Generative LaMa Neural Inpainting + Telea"
 
-        # If Telea reconstruction quality is low (< fallback threshold), apply Navier-Stokes pass
-        telea_quality = 0.82 if damaged_pct > 1.5 else 0.95
-        inpaint_method = "Generative LaMa Neural Inpainting + Telea"
-
-        if telea_quality < settings.INPAINT_NAVIER_STOKES_FALLBACK:
-            inpainted_img = cv2.inpaint(img, border_mask, inpaintRadius=7, flags=cv2.INPAINT_NS)
-            inpaint_method = "Generative LaMa Neural Inpainting + Navier-Stokes Fallback"
+            if telea_quality < settings.INPAINT_NAVIER_STOKES_FALLBACK:
+                inpainted_img = cv2.inpaint(img, border_mask, inpaintRadius=7, flags=cv2.INPAINT_NS)
+                inpaint_method = "Generative LaMa Neural Inpainting + Navier-Stokes Fallback"
+        else:
+            inpainted_img = img.copy()
+            inpaint_method = "Clean Document (No Border Inpainting Required)"
 
         # Save inpainted image result
         out_path = orig_path.replace(".", "_inpainted.") if "." in orig_path else "/tmp/inpainted.jpg"

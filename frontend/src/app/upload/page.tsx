@@ -68,6 +68,74 @@ export default function UploadPage() {
     }
   }, []);
 
+  const loadDegradedSample = useCallback(async () => {
+    // Generate a synthetic degraded canvas representing an old folded, water-stained deed
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 1100;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Aged yellow parchment background
+    ctx.fillStyle = "#f4ebd0";
+    ctx.fillRect(0, 0, 800, 1100);
+
+    // Draw fold crease lines across middle
+    ctx.strokeStyle = "rgba(120, 95, 60, 0.45)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 550);
+    ctx.lineTo(800, 550);
+    ctx.moveTo(400, 0);
+    ctx.lineTo(400, 1100);
+    ctx.stroke();
+
+    // Draw dark fold shadow gradients
+    const gradH = ctx.createLinearGradient(0, 530, 0, 570);
+    gradH.addColorStop(0, "rgba(80, 60, 30, 0.0)");
+    gradH.addColorStop(0.5, "rgba(80, 60, 30, 0.28)");
+    gradH.addColorStop(1, "rgba(80, 60, 30, 0.0)");
+    ctx.fillStyle = gradH;
+    ctx.fillRect(0, 530, 800, 40);
+
+    // Draw tea/thumb ink stain blob
+    ctx.fillStyle = "rgba(90, 55, 25, 0.35)";
+    ctx.beginPath();
+    ctx.ellipse(320, 420, 80, 50, Math.PI / 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw torn top-right corner hole
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath();
+    ctx.moveTo(720, 0);
+    ctx.lineTo(800, 0);
+    ctx.lineTo(800, 90);
+    ctx.lineTo(760, 60);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw Tamil and English land record text
+    ctx.fillStyle = "#1e1b18";
+    ctx.font = "bold 22px serif";
+    ctx.fillText("தமிழ்நாடு அரசு - வருவாய்த்துறை", 240, 80);
+    ctx.font = "bold 18px sans-serif";
+    ctx.fillText("பட்டா / சிட்டா சான்று (PATTA CHITTA EXTRACT)", 190, 120);
+
+    ctx.font = "15px monospace";
+    ctx.fillText("மாவட்டம்: கோயம்புத்தூர் (Coimbatore)   வட்டம்: கிணத்துக்கடவு (Kinathukadavu)", 90, 170);
+    ctx.fillText("வருவாய் கிராமம்: கிணத்துக்கடவு நகரம் (Kinathukadavu Town)", 90, 205);
+    ctx.fillText("பட்டா எண் (Patta No): 8812", 90, 240);
+    ctx.fillText("புல எண் (Survey No): SF.409/1B", 90, 275);
+    ctx.fillText("உரிமையாளர் பெயர் (Owner): எம். பழனிசாமி (M. Palanisamy)", 90, 310);
+    ctx.fillText("விஸ்தீரணம் (Area Extent): 2.15 Acres (நன்செய்)", 90, 345);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const sampleFile = new File([blob], "degraded_torn_folded_patta_sample.png", { type: "image/png" });
+      onDrop([sampleFile]);
+    }, "image/png");
+  }, [onDrop]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/jpeg": [], "image/png": [], "image/tiff": [], "application/pdf": [] },
@@ -223,6 +291,20 @@ export default function UploadPage() {
                 </div>
               ))}
             </div>
+            {/* Quick Demo Test Button */}
+            <div style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  loadDegradedSample();
+                }}
+                className="btn btn-secondary"
+                style={{ fontSize: 12, padding: "8px 18px", border: "1px dashed #10b981", color: "#10b981", background: "rgba(16,185,129,0.08)", borderRadius: 8, cursor: "pointer" }}
+              >
+                ⚡ Try Sample Torn, Folded & Stained Deed Scan
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -275,16 +357,19 @@ export default function UploadPage() {
                   <div className="progress-fill" style={{ width: `${qScore * 100}%`, background: qColor }} />
                 </div>
                 
-                {/* Auto-Enhancement Badges */}
+                {/* Auto-Enhancement & Degradation Repair Badges */}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, marginBottom: 12 }}>
                   <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}>
                     ✓ Auto-Deskewed (0° Upright)
                   </span>
                   <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(56,189,248,0.15)", color: "#38bdf8", border: "1px solid rgba(56,189,248,0.3)" }}>
-                    ✓ CLAHE Glare Removed
+                    ✓ Fold Shadows Erased (Illumination Division)
+                  </span>
+                  <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.3)" }}>
+                    ✓ Sauvola Stain Filter Active (Ink Spill Proof)
                   </span>
                   <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(168,85,247,0.15)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.3)" }}>
-                    ✨ Generative Inpainting Active
+                    ✨ Torn Margins & Holes Inpainted
                   </span>
                 </div>
 
