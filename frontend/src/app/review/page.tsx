@@ -216,28 +216,59 @@ export default function ReviewPage() {
                     ))}
                   </div>
 
-                  {/* Multimodal AI: IQA & Stamp Detector Badges */}
-                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--color-border)", display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      Multimodal AI Insights
-                    </div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(16, 185, 129, 0.15)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
-                        IQA Quality: 94.2% • Sauvola Binarized
-                      </span>
-                      <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(99, 102, 241, 0.15)", color: "#818cf8", border: "1px solid rgba(99, 102, 241, 0.3)" }}>
-                        🏛️ Official Seal Detected (0.92 Conf)
-                      </span>
-                      <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(245, 158, 11, 0.15)", color: "#fbbf24", border: "1px solid rgba(245, 158, 11, 0.3)" }}>
-                        ✍️ Registrar Signature Isolated
-                      </span>
-                      <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.3)" }}>
-                        📊 6-Column Khasra Table Grid Parsed
-                      </span>
-                    </div>
-                  </div>
+                  {/* Document Integrity — Dynamic from API quality_issues */}
+                  {(() => {
+                    const qi = detail.record?.quality_issues || {};
+                    const stamps: any[] = qi.stamps || [];
+                    const tamper = qi.tamper || {};
+                    const healthScore = qi.health_score;
+                    const tamperRisk = tamper.risk_score ?? 0;
+                    const tamperVerdict = tamper.verdict || (tamperRisk > 80 ? "HIGH_RISK" : tamperRisk > 40 ? "MEDIUM_RISK" : "LOW_RISK");
+                    const tamperColor = tamperVerdict.includes("HIGH") ? "#ef4444" : tamperVerdict.includes("MEDIUM") ? "#f59e0b" : "#10b981";
+                    const tamperBg = tamperVerdict.includes("HIGH") ? "rgba(239,68,68,0.12)" : tamperVerdict.includes("MEDIUM") ? "rgba(245,158,11,0.12)" : "rgba(16,185,129,0.12)";
+                    const tamperEmoji = tamperVerdict.includes("HIGH") ? "🔴" : tamperVerdict.includes("MEDIUM") ? "🟡" : "🟢";
+                    const stampLabelMap: Record<string, string> = {
+                      official_seal: "🏛️ Official Seal", revenue_stamp: "🔖 Revenue Stamp",
+                      signature: "✒️ Registrar Signature", thumb_impression: "👍 Thumb Impression"
+                    };
+                    return (
+                      <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--color-border)" }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                          🛡️ Document Integrity
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {/* Health Score */}
+                          {healthScore != null && (
+                            <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }}>
+                              IQA Score: {(healthScore).toFixed(1)}%
+                            </span>
+                          )}
+                          {/* Stamp detections */}
+                          {stamps.length === 0 && (
+                            <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(99,102,241,0.10)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}>
+                              No Stamps Detected
+                            </span>
+                          )}
+                          {stamps.map((s: any, i: number) => (
+                            <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(99,102,241,0.15)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.3)" }}>
+                              {stampLabelMap[s.label] || `📌 ${s.label}`} ({(s.confidence * 100).toFixed(0)}%)
+                            </span>
+                          ))}
+                          {/* Ink Tamper verdict */}
+                          <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: tamperBg, color: tamperColor, border: `1px solid ${tamperColor}40` }}>
+                            {tamperEmoji} Tamper: {tamperVerdict.replace(/_/g, " ")} {tamperRisk > 0 ? `(${tamperRisk.toFixed(0)}/100)` : ""}
+                          </span>
+                          {/* Tamper flags */}
+                          {(tamper.flags || []).map((flag: string, i: number) => (
+                            <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 4, background: "rgba(239,68,68,0.10)", color: "#fca5a5", border: "1px solid rgba(239,68,68,0.25)" }}>
+                              ⚠️ {flag.replace(/_/g, " ")}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
-              )}
 
               {/* Field corrections */}
               <div style={{ display: "flex", flexDirection: "column", gap: 12, overflow: "auto", maxHeight: 420 }}>

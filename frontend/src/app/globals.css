@@ -321,3 +321,13 @@ html, body {
   border-radius: 3px;
   transition: width 0.8s ease;
 }
+
+/* ── Leaflet Polygon Pulse ────────────────────────────────────────── */
+@keyframes leaflet-pulse {
+  0% { opacity: 0.5; stroke-width: 2px; }
+  50% { opacity: 1; stroke-width: 6px; }
+  100% { opacity: 0.5; stroke-width: 2px; }
+}
+.pulse-polygon {
+  animation: leaflet-pulse 1.5s infinite alternate !important;
+}

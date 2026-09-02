@@ -96,6 +96,7 @@ def _serialize(r: LandRecord) -> dict:
         "mutation_no": r.mutation_no, "mutation_date": str(r.mutation_date) if r.mutation_date else None,
         "transaction_type": r.transaction_type, "detected_script": r.detected_script,
         "overall_confidence": r.overall_confidence, "quality_score": r.quality_score,
+        "quality_issues": r.quality_issues or {},   # includes stamps + tamper + health_score
         "status": r.status, "blockchain_anchored": r.blockchain_anchored,
         "raw_doc_url": r.raw_doc_url, "enhanced_doc_url": r.enhanced_doc_url,
         "created_at": r.created_at.isoformat() if r.created_at else None,

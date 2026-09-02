@@ -79,6 +79,7 @@ export default function MapPage() {
   const searchParams = useSearchParams();
   const targetSurveyNo = searchParams.get("survey_no");
   const targetPattaNo = searchParams.get("patta_no");
+  const highlight = searchParams.get("highlight") === "true";
 
   useEffect(() => {
     loadPlots();
@@ -514,6 +515,7 @@ export default function MapPage() {
                 bufferRadius={bufferRadius}
                 isSplitMode={isSplitMode}
                 onParcelSplit={setSplitResult}
+                highlightSelected={highlight}
               />
             )}
 

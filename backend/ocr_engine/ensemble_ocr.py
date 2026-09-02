@@ -8,13 +8,17 @@ import re
 from fuzzywuzzy import process, fuzz
 
 
-# Local Government Directory (LGD) Gazatteer Dictionary for Indian Revenue Districts/Villages
-LGD_GAZETTEER = [
-    "Rampur", "Lucknow", "Coimbatore", "Pollachi", "Sulur", "Mettupalayam", "Annur",
-    "Kinathukadavu", "Madukkarai", "Valparai", "Perur", "Agra", "Bhopal", "Kanpur",
-    "Varanasi", "Gorakhpur", "Prayagraj", "Patna", "Gaya", "Muzaffarpur", "Darbhanga",
-    "Salem", "Erode", "Tiruppur", "Trichy", "Madurai", "Thanjavur", "Kanchipuram"
-]
+# Local Government Directory (LGD) Gazatteer — Full Tamil Nadu Village List (~850 villages)
+try:
+    from ocr_engine.lgd_gazetteer_tn import TN_LGD_VILLAGES as LGD_GAZETTEER
+except ImportError:
+    # Fallback minimal list if import fails
+    LGD_GAZETTEER = [
+        "Rampur", "Lucknow", "Coimbatore", "Pollachi", "Sulur", "Mettupalayam", "Annur",
+        "Kinathukadavu", "Madukkarai", "Valparai", "Perur", "Agra", "Bhopal", "Kanpur",
+        "Varanasi", "Gorakhpur", "Prayagraj", "Patna", "Gaya", "Muzaffarpur", "Darbhanga",
+        "Salem", "Erode", "Tiruppur", "Trichy", "Madurai", "Thanjavur", "Kanchipuram"
+    ]
 
 LEGAL_REVENUE_DICTIONARY = {
     "khusra": "khasra", "kasra": "khasra", "khatauni": "khatauni", "khatoni": "khatauni",

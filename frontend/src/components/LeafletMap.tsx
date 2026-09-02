@@ -19,6 +19,7 @@ interface Props {
   bufferRadius?: number;
   isSplitMode?: boolean;
   onParcelSplit?: (result: any) => void;
+  highlightSelected?: boolean;
 }
 
 function getCategoryColor(category?: string, landType?: string) {
@@ -81,6 +82,7 @@ export default function LeafletMap({
   bufferRadius = 0,
   isSplitMode = false,
   onParcelSplit,
+  highlightSelected = false,
 }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -298,6 +300,7 @@ export default function LeafletMap({
             color: isSelected ? "#ffffff" : (showFMBGrid ? "#6366f1" : baseColor),
             weight: isSelected ? 4 : (showFMBGrid ? 2.5 : 1.0),
             dashArray: showFMBGrid ? (isSelected ? "" : "4, 4") : "",
+            className: isSelected && highlightSelected ? "pulse-polygon" : "",
           };
         },
         onEachFeature: (feature, layerItem) => {

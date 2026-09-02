@@ -7,7 +7,6 @@ import {
   Loader2, Globe, ClipboardCheck
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { addUploadedParcel } from "@/lib/mockData";
 
 type Step = "select" | "quality" | "options" | "uploading" | "done";
 
@@ -45,6 +44,7 @@ export default function UploadPage() {
   const [state, setState] = useState("");
   const [district, setDistrict] = useState("");
   const [uploadResult, setUploadResult] = useState<any>(null);
+  const [completedRecord, setCompletedRecord] = useState<any>(null); // real record from API after pipeline
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("Starting pipeline…");
   const [recordStatus, setRecordStatus] = useState<string>("");
@@ -92,6 +92,8 @@ export default function UploadPage() {
           clearInterval(pollerRef.current!);
           setProgress(100);
           setProgressLabel("Complete!");
+          // Store the real completed record for the map redirect
+          setCompletedRecord(rec);
           setStep("done");
         }
       } catch {
@@ -137,7 +139,7 @@ export default function UploadPage() {
   const reset = () => {
     if (pollerRef.current) clearInterval(pollerRef.current);
     setStep("select"); setFile(null); setPreview(null);
-    setQuality(null); setUploadResult(null); setProgress(0);
+    setQuality(null); setUploadResult(null); setCompletedRecord(null); setProgress(0);
     setProgressLabel("Starting pipeline…"); setRecordStatus(""); setError("");
   };
 
@@ -346,19 +348,14 @@ export default function UploadPage() {
 
       {/* ── STEP: Done ── */}
       {step === "done" && uploadResult && (() => {
-        // Auto register OCR extracted parcel into map dataset
-        const newlyAdded = addUploadedParcel({
-          survey_no: uploadResult?.survey_no || "SF.409/1B",
-          patta_no: uploadResult?.patta_no || "8812",
-          owner_name: uploadResult?.owner_name || "M. Palanisamy / எம். பழனிசாமி",
-          father_name: "Maruthasamy / மருதசாமி",
-          village: district || "Kinathukadavu Town",
-          district: district || "Coimbatore",
-          state: state || "Tamil Nadu",
-          area_acres: 2.15,
-          land_type: "தோட்டக்கால் (Coconut Plantation)",
-          blockchain_hash: uploadResult?.doc_sha256 ? `0x${uploadResult.doc_sha256.substring(0, 32)}` : undefined
-        });
+        // Use real record from API (completedRecord), fall back to uploadResult fields
+        const rec = completedRecord || uploadResult;
+        const surveyNo  = rec?.survey_no  || "SF.409/1B";
+        const pattaNo   = rec?.patta_no   || "8812";
+        const ownerName = rec?.owner_name || "M. Palanisamy / எம். பழனிசாமி";
+        const villageVal = rec?.village   || district || "Kinathukadavu Town";
+        const areaVal    = rec?.area_value ? `${rec.area_value} ${rec.area_unit || "Acres"}` : "2.15 Acres";
+        const mapUrl = `/map?survey_no=${encodeURIComponent(surveyNo)}&patta_no=${encodeURIComponent(pattaNo)}&highlight=true`;
 
         return (
           <div className="glass-card" style={{ padding: 32, background: "#ffffff", border: "1px solid #cbd5e1" }}>
@@ -378,34 +375,35 @@ export default function UploadPage() {
               </div>
             </div>
 
-            {/* Extracted RoR & GIS Card */}
+            {/* Extracted RoR & GIS Card — real data from API */}
             <div style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 8, padding: 18, marginBottom: 24, textAlign: "left" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                <CheckCircle2 size={14} /> Live Cadastral GIS & RoR Extraction Preview
+                <CheckCircle2 size={14} /> Live Cadastral GIS & RoR Extraction
+                {completedRecord && <span style={{ fontSize: 9, background: "#dcfce7", color: "#166534", padding: "1px 6px", borderRadius: 3, marginLeft: 4 }}>LIVE FROM DB</span>}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>Extracted Pattadar</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0f2942" }}>{newlyAdded.owner_name}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0f2942" }}>{ownerName}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>Survey Field & Patta</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0f2942" }}>{newlyAdded.survey_no} • Patta #{newlyAdded.patta_no}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0f2942" }}>{surveyNo} • Patta #{pattaNo}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>Village & Extent</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0f2942" }}>{newlyAdded.village} ({newlyAdded.area_acres} Acres)</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0f2942" }}>{villageVal} ({areaVal})</div>
                 </div>
               </div>
             </div>
 
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
               <a
-                href={`/map?survey_no=${encodeURIComponent(newlyAdded.survey_no)}&patta_no=${encodeURIComponent(newlyAdded.patta_no)}`}
+                href={mapUrl}
                 className="btn-primary"
                 style={{ background: "#0f2942", borderColor: "#1e293b", padding: "10px 20px", fontSize: 13 }}
               >
-                🗺️ View Extracted Parcel on Cadastral GIS Map →
+                🗺️ View on Cadastral GIS Map →
               </a>
               <a href={`/records/${uploadResult.record_id}`} className="btn-secondary" style={{ padding: "10px 16px", fontSize: 13 }}>
                 View Full RoR Record

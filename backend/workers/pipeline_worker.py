@@ -255,6 +255,32 @@ def process_document(self, record_id: str, file_path: str):
             session.add(fc)
         session.commit()
 
+        # ── Step 4b: Stamp & Ink Tamper Detection ─────────────────────────────
+        try:
+            from ocr_engine.stamp_detector import StampDetector
+            from ocr_engine.ink_tampering_detector import InkTamperingDetector
+
+            stamp_detector = StampDetector()
+            tamper_detector = InkTamperingDetector()
+
+            stamps = stamp_detector.detect(img_paths[0], state_code=(record.state or "TN")[:2].upper())
+            tamper = tamper_detector.detect(img_paths[0])
+
+            record.quality_issues = {
+                "stamps": [s.to_dict() for s in stamps],
+                "tamper": tamper.to_dict() if hasattr(tamper, "to_dict") else vars(tamper),
+                "health_score": health_report.health_score if hasattr(health_report, "health_score") else None,
+                "inpaint_steps": inpaint_report.steps_applied if hasattr(inpaint_report, "steps_applied") else [],
+            }
+            session.commit()
+            log.info("pipeline.integrity_check_done",
+                     record_id=record_id,
+                     stamps=len(stamps),
+                     tamper_risk=getattr(tamper, "risk_score", 0))
+        except Exception as integrity_exc:
+            log.warning("pipeline.integrity_check_failed", record_id=record_id, error=str(integrity_exc))
+            # Non-fatal — don't block the pipeline
+
         # ── Step 5: Business Rule Validation ──────────────────────────────────
         self.update_state(state="PROGRESS", meta={"step": "validation", "pct": 78})
         rules = RulesEngine()

@@ -39,6 +39,20 @@ async def list_plots(
     stmt = stmt.limit(limit)
     plots = (await db.execute(stmt)).scalars().all()
 
+    # Fetch active fraud alerts to compute real risk scores
+    from core.models import FraudAlert
+    alert_stmt = select(FraudAlert).where(FraudAlert.resolved == False)
+    alerts = (await db.execute(alert_stmt)).scalars().all()
+    
+    # Create a quick lookup mapping record_ids or survey_nos to highest risk
+    # (Since FraudAlert stores record_ids or subgraph_nodes, we'll map by subgraph_nodes which often contain survey_nos)
+    fraud_map = {}
+    for a in alerts:
+        score = 85.0 if a.severity == "critical" else (65.0 if a.severity == "high" else 45.0)
+        for node in a.subgraph_nodes:
+            if node not in fraud_map or score > fraud_map[node]:
+                fraud_map[node] = score
+
     features = []
     for plot in plots:
         meta = plot.extra_metadata or {}
@@ -62,6 +76,15 @@ async def list_plots(
             except Exception:
                 pass
         
+        # Determine real risk score from DB alerts
+        risk = 8.0 # Default low risk
+        if plot.survey_no in fraud_map:
+            risk = fraud_map[plot.survey_no]
+        elif plot.khasra_no in fraud_map:
+            risk = fraud_map[plot.khasra_no]
+        elif plot.owner_name in fraud_map:
+            risk = fraud_map[plot.owner_name]
+
         features.append({
             "type": "Feature",
             "id": plot.id,
@@ -85,6 +108,7 @@ async def list_plots(
                 "guideline_value": meta.get("guideline_value") or meta.get("guideline_value_sqft"),
                 "market_value_inr": meta.get("market_value_inr"),
                 "encumbrance_status": meta.get("encumbrance_status", "Clean / Nil Encumbrance"),
+                "risk_score": risk,
                 "has_mutation": bool(meta.get("mutation_history")),
                 "has_inheritance": bool(meta.get("inheritance_tree")),
                 "blockchain_anchored": meta.get("blockchain_anchored", True),
