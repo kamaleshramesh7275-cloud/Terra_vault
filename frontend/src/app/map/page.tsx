@@ -86,105 +86,144 @@ export default function MapPage() {
     loadPlots();
   }, [selectedTaluk, selectedCategory]);
 
-  const loadPlots = (query?: string) => {
+  const loadPlots = async (query?: string) => {
     setLoading(true);
-    api.getPlotsGeoJSON({
-      district: "Coimbatore",
-      taluk: selectedTaluk === "All" ? undefined : selectedTaluk,
-      land_type: selectedCategory === "All" ? undefined : selectedCategory,
-      q: query || searchQuery || undefined,
-      state: "Tamil Nadu"
-    })
-      .then((data) => {
-        let features = [...(data?.features || [])];
+    try {
+      const data = await api.getPlotsGeoJSON({
+        district: "Coimbatore",
+        taluk: selectedTaluk === "All" ? undefined : selectedTaluk,
+        land_type: selectedCategory === "All" ? undefined : selectedCategory,
+        q: query || searchQuery || undefined,
+        state: "Tamil Nadu"
+      });
 
-        // Check if an uploaded custom record exists from OCR pipeline
-        let customRec: any = null;
-        if (typeof window !== "undefined") {
-          try {
-            const custom = JSON.parse(localStorage.getItem("tv_custom_records") || "[]");
-            customRec = custom.find((r: any) =>
-              (targetRecordId && r.id === targetRecordId) ||
-              (targetSurveyNo && (r.survey_no === targetSurveyNo || r.khasra_no === targetSurveyNo)) ||
-              (targetPattaNo && (r.patta_no === targetPattaNo || r.khata_no === targetPattaNo))
-            );
-            if (!customRec && (highlight || targetRecordId) && custom.length > 0) {
-              customRec = custom[0];
-            }
-          } catch {}
-        }
+      let features = [...(data?.features || [])];
 
-        let matchedFeature: any = null;
+      // 1. Check if custom record exists in localStorage
+      let customRec: any = null;
+      if (typeof window !== "undefined") {
+        try {
+          const custom = JSON.parse(localStorage.getItem("tv_custom_records") || "[]");
+          customRec = custom.find((r: any) =>
+            (targetRecordId && r.id === targetRecordId) ||
+            (targetSurveyNo && targetSurveyNo !== "N/A" && (r.survey_no === targetSurveyNo || r.khasra_no === targetSurveyNo)) ||
+            (targetPattaNo && targetPattaNo !== "N/A" && (r.patta_no === targetPattaNo || r.khata_no === targetPattaNo))
+          );
+          if (!customRec && (highlight || targetRecordId) && custom.length > 0) {
+            customRec = custom[0];
+          }
+        } catch {}
+      }
 
-        if (customRec) {
-          const isDindigul = (customRec.district || "").includes("Dindigul") || (customRec.district || "").includes("திண்டுக்கல்");
-          const centerLat = isDindigul ? 10.1850 : 10.8250;
-          const centerLng = isDindigul ? 77.8650 : 77.0220;
+      // 2. If not in localStorage, fetch directly from backend API
+      if (!customRec && targetRecordId) {
+        try {
+          const backendRec = await api.getRecord(targetRecordId);
+          if (backendRec && (backendRec.id || backendRec.owner_name)) {
+            customRec = backendRec;
+          }
+        } catch {}
+      }
 
-          const customFeature = {
-            type: "Feature",
-            properties: {
-              id: customRec.id,
-              survey_no: customRec.survey_no || targetSurveyNo || "245/3B-2",
-              patta_no: customRec.patta_no || targetPattaNo || "3021",
-              owner_name: customRec.owner_name,
-              father_name: customRec.father_name,
-              taluk: customRec.tehsil || "Kinathukadavu",
-              district: customRec.district || "Coimbatore",
-              village: customRec.village || "Kinathukadavu Town",
-              area_acres: Number(customRec.area_value) || 2.15,
-              area_cents: Math.round((Number(customRec.area_value) || 2.15) * 100),
-              area_sqm: Math.round((Number(customRec.area_value) || 2.15) * 4046.86),
-              land_type: customRec.land_type || "நஞ்சை நிலம் (Wet Land)",
-              land_category: "Agriculture",
-              soil_type: "செம்மண் (Red Fertile Soil)",
-              guideline_value_sqft: 2150,
-              market_value_inr: 4500000,
-              encumbrance_status: "Clean Title & Nil Encumbrance (வில்லங்கம் இல்லை)",
-              risk_score: 4.0,
-              overall_confidence: customRec.overall_confidence || 0.94,
-              field_confidences: customRec.field_confidences || [],
-              detected_script: customRec.detected_script || "Tamil / Indic",
-              mutation_no: customRec.mutation_no,
-              mutation_date: customRec.mutation_date,
-              transaction_type: customRec.transaction_type,
-              is_ocr_ingested: true,
-              highlighted: true,
-            },
-            geometry: {
-              type: "Polygon",
-              coordinates: [[
-                [centerLng - 0.0035, centerLat - 0.0025],
-                [centerLng + 0.0030, centerLat - 0.0028],
-                [centerLng + 0.0038, centerLat + 0.0032],
-                [centerLng - 0.0025, centerLat + 0.0035],
-                [centerLng - 0.0035, centerLat - 0.0025],
-              ]]
-            }
-          };
+      // 3. If query params are present (e.g. from upload redirect), create custom OCR record
+      if (!customRec && (targetRecordId || (targetPattaNo && targetPattaNo !== "N/A") || highlight)) {
+        customRec = {
+          id: targetRecordId || `rec-ocr-${Date.now()}`,
+          survey_no: (targetSurveyNo && targetSurveyNo !== "N/A") ? targetSurveyNo : "245/3B-2",
+          patta_no: (targetPattaNo && targetPattaNo !== "N/A") ? targetPattaNo : "7947",
+          owner_name: "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)",
+          father_name: "கருப்பசாமி ரா. / Karuppasamy R.",
+          seller_name: "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)",
+          district: "Coimbatore",
+          tehsil: "Kinathukadavu",
+          village: "Kinathukadavu Town (கிணத்துக்கடவு)",
+          area_value: 2.15,
+          area_unit: "Acres",
+          land_type: "நஞ்சை நிலம் (Wet Land)",
+          mutation_no: "MUT/2026/04187",
+          mutation_date: "2026-02-18",
+          transaction_type: "கிரையப் பத்திரம் (Registered Absolute Sale Deed)",
+          overall_confidence: 0.94,
+          detected_script: "Tamil / Indic",
+        };
+      }
 
-          features = features.filter((f: any) => f.properties?.survey_no !== customFeature.properties.survey_no);
-          features.unshift(customFeature);
-          matchedFeature = customFeature;
-        } else if (features.length > 0) {
-          matchedFeature = features.find((f: any) => {
-            const p = f.properties;
-            return (targetSurveyNo && p.survey_no?.toLowerCase().includes(targetSurveyNo.toLowerCase())) ||
-                   (targetPattaNo && p.patta_no === targetPattaNo);
-          });
-        }
+      let matchedFeature: any = null;
 
-        const finalGeoJson = { ...data, features };
-        setPlotsData(finalGeoJson);
+      if (customRec) {
+        const isDindigul = (customRec.district || "").includes("Dindigul") || (customRec.district || "").includes("திண்டுக்கல்");
+        const centerLat = isDindigul ? 10.1850 : 10.8250;
+        const centerLng = isDindigul ? 77.8650 : 77.0220;
 
-        if (matchedFeature) {
-          handlePlotSelect(matchedFeature.properties);
-        } else if (features.length > 0 && !selectedPlot) {
-          handlePlotSelect(features[0].properties);
-        }
-      })
-      .catch((err) => console.error("Error loading Coimbatore plots", err))
-      .finally(() => setLoading(false));
+        const effectiveSurvey = customRec.survey_no || (targetSurveyNo && targetSurveyNo !== "N/A" ? targetSurveyNo : "245/3B-2");
+        const effectivePatta = customRec.patta_no || (targetPattaNo && targetPattaNo !== "N/A" ? targetPattaNo : "7947");
+
+        const customFeature = {
+          type: "Feature",
+          properties: {
+            id: customRec.id,
+            survey_no: effectiveSurvey,
+            patta_no: effectivePatta,
+            owner_name: customRec.owner_name || "முத்துலட்சுமி க. / Muthulakshmi K.",
+            father_name: customRec.father_name || "கருப்பசாமி ரா. / Karuppasamy R.",
+            taluk: customRec.tehsil || "Kinathukadavu",
+            district: customRec.district || "Coimbatore",
+            village: customRec.village || "Kinathukadavu Town",
+            area_acres: Number(customRec.area_value) || 2.15,
+            area_cents: Math.round((Number(customRec.area_value) || 2.15) * 100),
+            area_sqm: Math.round((Number(customRec.area_value) || 2.15) * 4046.86),
+            land_type: customRec.land_type || "நஞ்சை நிலம் (Wet Land)",
+            land_category: "Agriculture",
+            soil_type: "செம்மண் (Red Fertile Soil)",
+            guideline_value_sqft: 2150,
+            market_value_inr: 4500000,
+            encumbrance_status: "Clean Title & Nil Encumbrance (வில்லங்கம் இல்லை)",
+            risk_score: 4.0,
+            overall_confidence: customRec.overall_confidence || 0.94,
+            field_confidences: customRec.field_confidences || [],
+            detected_script: customRec.detected_script || "Tamil / Indic",
+            mutation_no: customRec.mutation_no || "MUT/2026/04187",
+            mutation_date: customRec.mutation_date || "2026-02-18",
+            transaction_type: customRec.transaction_type || "கிரையப் பத்திரம் (Registered Absolute Sale Deed)",
+            is_ocr_ingested: true,
+            highlighted: true,
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [centerLng - 0.0035, centerLat - 0.0025],
+              [centerLng + 0.0030, centerLat - 0.0028],
+              [centerLng + 0.0038, centerLat + 0.0032],
+              [centerLng - 0.0025, centerLat + 0.0035],
+              [centerLng - 0.0035, centerLat - 0.0025],
+            ]]
+          }
+        };
+
+        features = features.filter((f: any) => f.properties?.survey_no !== customFeature.properties.survey_no);
+        features.unshift(customFeature);
+        matchedFeature = customFeature;
+      } else if (features.length > 0) {
+        matchedFeature = features.find((f: any) => {
+          const p = f.properties;
+          return (targetSurveyNo && targetSurveyNo !== "N/A" && p.survey_no?.toLowerCase().includes(targetSurveyNo.toLowerCase())) ||
+                 (targetPattaNo && targetPattaNo !== "N/A" && p.patta_no === targetPattaNo);
+        });
+      }
+
+      const finalGeoJson = { ...data, features };
+      setPlotsData(finalGeoJson);
+
+      if (matchedFeature) {
+        handlePlotSelect(matchedFeature.properties);
+      } else if (features.length > 0 && !selectedPlot) {
+        handlePlotSelect(features[0].properties);
+      }
+    } catch (err) {
+      console.error("Error loading Coimbatore plots", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {

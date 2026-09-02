@@ -179,6 +179,15 @@ export default function UploadPage() {
     try {
       const result = await api.uploadDocument(file, state, district, preview || undefined);
       setUploadResult(result);
+      const rec = result.record || result;
+      if (typeof window !== "undefined" && rec) {
+        try {
+          const stored = JSON.parse(localStorage.getItem("tv_custom_records") || "[]");
+          const filtered = stored.filter((r: any) => r.id !== rec.id);
+          filtered.unshift(rec);
+          localStorage.setItem("tv_custom_records", JSON.stringify(filtered));
+        } catch {}
+      }
       if (result.record) {
         setCompletedRecord(result.record);
         setProgress(100);
