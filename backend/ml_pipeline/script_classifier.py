@@ -87,20 +87,23 @@ class ScriptClassifier:
     def _load_cnn(self):
         if self._cnn is not None:
             return
+        self._has_real_weights = False
+        model_path = Path(self.model_dir) / "script_classifier" / "model.pt" if self.model_dir else None
+        if not (model_path and model_path.exists()):
+            self._cnn = None
+            return
+
         try:
             import torch
             import torchvision.models as models
-            m = models.resnet18(pretrained=False)
+            m = models.resnet18(weights=None)
             n_classes = len(SCRIPT_OCR_MAP)
             m.fc = torch.nn.Linear(m.fc.in_features, n_classes)
-            model_path = Path(self.model_dir) / "script_classifier" / "model.pt" if self.model_dir else None
-            if model_path and model_path.exists():
-                m.load_state_dict(torch.load(str(model_path), map_location="cpu"))
-                log.info("script_classifier.cnn_loaded")
-            else:
-                log.warning("script_classifier.weights_missing_using_heuristic")
+            m.load_state_dict(torch.load(str(model_path), map_location="cpu"))
             m.eval()
             self._cnn = (m, list(SCRIPT_OCR_MAP.keys()))
+            self._has_real_weights = True
+            log.info("script_classifier.cnn_loaded")
         except Exception as e:
             log.warning("script_classifier.load_failed", error=str(e))
 
@@ -130,15 +133,24 @@ class ScriptClassifier:
             log.debug("script_classifier.heuristic_failed", error=str(e))
         return None
 
-    def classify(self, img_path: str) -> ScriptClassification:
-        """Classify script from image. Returns script name + OCR routing config."""
-        self._load_cnn()
+    def classify(self, img_path: str, text: Optional[str] = None) -> ScriptClassification:
+        """Classify script from image or text. Returns script name + OCR routing config."""
+        if text and len(text.strip()) > 5:
+            detected = _classify_text_by_unicode(text)
+            if detected:
+                log.info("script_classifier.unicode_detected_from_text", script=detected)
+                return ScriptClassification(
+                    script=detected,
+                    confidence=0.98,
+                    ocr_config=SCRIPT_OCR_MAP.get(detected, SCRIPT_OCR_MAP.get("Tamil")),
+                )
 
+        self._load_cnn()
         script = None
         confidence = 0.6
 
-        # ── Try CNN first (only if weights loaded) ──────────────────────────────
-        if self._cnn is not None:
+        # ── Try CNN first (only if real trained weights loaded) ───────────────
+        if self._cnn is not None and getattr(self, "_has_real_weights", False):
             import torch
             import torchvision.transforms as T
             model, classes = self._cnn

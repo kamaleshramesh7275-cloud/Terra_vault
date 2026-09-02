@@ -151,7 +151,7 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
 
   let owner = "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)";
   let seller = "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)";
-  let father = "காண்டசாமி பிள்ளை / Kandasamy Pillai";
+  let father = "கருப்பசாமி ரா. / Karuppasamy R.";
   let survey = "245/3B-2";
   let patta = "4187";
   let village = district ? `${district} Town` : "நல்லம்பட்டி (Nallampatti)";
@@ -208,7 +208,7 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     // True specimen deed
     owner = "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)";
     seller = "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)";
-    father = "காண்டசாமி பிள்ளை / Kandasamy Pillai";
+    father = "கருப்பசாமி ரா. / Karuppasamy R.";
     survey = "245/3B-2";
     patta = "4187";
     village = "நல்லம்பட்டி (Nallampatti)";

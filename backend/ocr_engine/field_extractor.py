@@ -64,9 +64,9 @@ PATTERNS = {
         r"\b(?:patta\s*no\.?|khata\s*no\.?)\s*[:\-.]*\s*(\d+)\b",
     ],
     "mutation_no": [
-        r"\b(?:mutation|mut)\s*(?:no\.?|number)?\s*[:\-]?\s*([A-Za-z0-9/\-]+)\b",
-        r"\bдаखिल\s*खारिज\s*(?:नं\.?)?\s*[:\-]?\s*(\d+)\b",
-        r"(?:மா\s*ற்\s*று\s*ப்\s*ப\s*தி\s*வு\s*எ\s*ண்|மா\s*று\s*த\s*ல்\s*எ\s*ண்)\s*[:\-.]*\s*([A-Za-z0-9/\-]+)",
+        r"\b(?:mutation|mut)\s*(?:no\.?|number)?\s*[:\-]?\s*([A-Za-z0-9/\-]{3,})\b",
+        r"\bдаखिल\s*खारिज\s*(?:नं\.?)?\s*[:\-]?\s*(\d{3,})\b",
+        r"(?:மா\s*ற்\s*று\s*ப்\s*ப\s*தி\s*வு\s*எ\s*ண்|மா\s*று\s*த\s*ல்\s*எ\s*ண்)\s*[:\-.]*\s*([A-Za-z0-9/\-]{3,})",
     ],
     "area_value": [
         r"ப\s*ர\s*ப்\s*ப\s*ள\s*வ\s*ு\s*[:\-.]*\s*([0-9.,\s]+(?:ஹெக்டேர்|ெஹக் ேடர்|ஏக்கர்|ஏக் கர்|சென்ட்|acre|hectare|cent)[^\n;]*)",
@@ -77,6 +77,14 @@ PATTERNS = {
         r"\b(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})\b",
     ],
 }
+
+# ── Paired Owner & Father/Husband patterns (Tamil deeds) ─────────────────────
+PAIRED_OWNER_FATHER_PATTERNS = [
+    # 1. Tamil Buyer / Purchaser + Father / Husband (prevents pairing buyer with seller's father)
+    r"(?:வா\s*ங்\s*கு\s*ப\s*வ\s*ர்|கிர\s*யம்\s*[ெபெ]\s*று\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*ந்\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc8]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb1]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
+    # 2. Tamil Seller / Prior Owner + Father
+    r"(?:வி\s*ற்\s*ப\s*வ\s*ர்|கிர\s*யம்\s*வ\s*ழ\s*ங்\s*கு\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*ந்\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc8]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb1]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
+]
 
 # ── Indian relationship-prefix patterns for owner name extraction ──────────────
 OWNER_NAME_PATTERNS = [
@@ -124,12 +132,6 @@ DISTRICT_PATTERNS = [
 
 
 def parse_mutation_date(raw: str) -> Optional[datetime]:
-    """Convert raw OCR date string to a datetime object.
-
-    Handles formats: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, DD Month YYYY,
-    as well as 2-digit years (assumed 20xx if <= current year, else 19xx).
-    Returns None if parsing fails.
-    """
     if not raw:
         return None
     raw = raw.strip()
@@ -151,20 +153,21 @@ AREA_UNITS = {"bigha", "acre", "hectare", "are", "guntha", "cent",
               "sq.ft", "sq.m", "sqft", "sqm", "sq ft", "sq m", "sq yard"}
 
 LAND_TYPE_KEYWORDS = {
-    "agricultural": ["agricultural", "farm", "farming", "कृषि", "खेती", "நன்செய்", "புன்செய்", "விவசாயம்"],
-    "residential":  ["residential", "house", "plot", "आवासीय", "मकान", "வீட்டுமனை", "குடியிருப்பு"],
+    "agricultural": ["agricultural", "farm", "farming", "कृषि", "खेती", "நன்செய்", "புன்செய்", "விவசாயம்", "நஞ்சை", "புஞ்சை"],
+    "residential":  ["residential", "house", "plot", "आवासीय", "मकान", "வீட்டுமனை", "குடியிருப்பு", "மனை"],
     "commercial":   ["commercial", "shop", "व्यावसायिक", "दुकान", "வணிகம்"],
     "forest":       ["forest", "वन", "jungle", "காடு"],
     "waste":        ["waste", "barren", "बंजर", "தரிசு"],
-    "govt":         ["government", "सरकारी", "govt", "புறம்போக்கு", "அரசு நிலம்"],
+    "govt":         ["புறம்போக்கு", "அரசு தரிசு", "அரசு புறம்போக்கு"],
 }
 
 TRANSACTION_KEYWORDS = {
-    "sale":        ["sale", "sold", "purchase", "विक्रय", "बिक्री", "கிரையம்", "விற்பனை"],
-    "inheritance": ["inheritance", "heir", "विरासत", "उत्तराधिकार", "பாகப்பிரிவினை", "வாரிசு"],
-    "partition":   ["partition", "division", "बंटवारा", "विभाजन", "பங்கு"],
-    "gift":        ["gift", "donation", "दान", "उपहार", "தானம்", "சீதனம்"],
-    "mortgage":    ["mortgage", "loan", "बंधक", "ऋण", "அடமானம்", "கடன்"],
+    "sale":        ["கிரையப் பத்திரம்", "கிரயப் பத்திரம்", "கிரையப்பத்திரம்", "கிரயப்பத்திரம்", "கிரையம்", "விற்பனை", "விற்பனைப் பத்திரம்", "sale", "sold", "purchase", "विक्रय", "बिक्री"],
+    "settlement":  ["செட்டில்மென்ட்", "தானசெட்டில்மென்ட்", "settlement"],
+    "partition":   ["பாகப்பிரிவினை", "பங்கு", "partition", "division", "बंटवारा"],
+    "gift":        ["தானப் பத்திரம்", "தானம்", "gift deed", "gift", "சீதனம்"],
+    "inheritance": ["வாரிசுரிமை", "வாரிசு சான்றிதழ்", "inheritance", "heir", "विरासत"],
+    "mortgage":    ["mortgage", "बंधक", "அடமானம்", "அடமானப் பத்திரம்"],
 }
 
 
@@ -241,6 +244,18 @@ class FieldExtractor:
         cleaned = re.sub(r"\s+", " ", cleaned)
         return cleaned
 
+    @staticmethod
+    def _clean_tamil_spaces(s: str) -> str:
+        if not s:
+            return s
+        s = s.replace("\x00", "")
+        prev = ""
+        while prev != s:
+            prev = s
+            s = re.sub(r"([\u0B80-\u0BFF])\s+([\u0B80-\u0BFF])", r"\1\2", s)
+        s = re.sub(r"([A-Za-z\u0B80-\u0BFF]{3,})([A-Za-z\u0B80-\u0BFF]\.)$", r"\1 \2", s)
+        return s.strip()
+
     def extract(self, ocr_text: str, avg_ocr_confidence: float = 0.8) -> LandRecordFields:
         result = LandRecordFields()
         norm_text = self._normalize_indic_text(ocr_text)
@@ -293,39 +308,64 @@ class FieldExtractor:
                     m = re.search(pattern, search_corpus, re.IGNORECASE | re.UNICODE)
                     if m:
                         val = m.group(1).strip()
-                        # Clean up any trailing punctuation or whitespace
                         val = re.sub(r"^[:\-\.\s]+|[:\-\.\s]+$", "", val)
-                        val = re.sub(r"\s+", " ", val)
+                        val = self._clean_tamil_spaces(val)
                         ef = ExtractedField(value=val, confidence=avg_ocr_confidence * 0.85,
                                             method="regex", flags=[])
                         setattr(result, field_name, ef)
                         break
 
-        # ── 1c. Relationship-prefix regex for owner_name & father_name ─────────
-        for pattern in OWNER_NAME_PATTERNS:
+        # ── 1c. Paired Owner & Father regex (Highest Priority) ───────────────
+        for pattern in PAIRED_OWNER_FATHER_PATTERNS:
             m = re.search(pattern, search_corpus, re.IGNORECASE | re.UNICODE)
             if m:
-                cand = m.group(1).strip()
-                cand = re.sub(r"^[:\-\.\s]+|[:\-\.\s]+$", "", cand)
-                cand = re.sub(r"\s+", " ", cand)
-                # Ignore noise words or specimen markers
-                if cand and not any(noise in cand for noise in ["மாதிரி", "உதாரணம்", "இதன் மூலம்", "அட்டவணை"]):
+                owner_cand = self._clean_tamil_spaces(m.group(1).strip())
+                father_cand = self._clean_tamil_spaces(m.group(2).strip())
+                for pfx in ["மைறந்த", "மறைந்த", "Late.", "Late"]:
+                    if father_cand.startswith(pfx):
+                        father_cand = father_cand[len(pfx):].strip()
+                if owner_cand and not any(noise in owner_cand for noise in ["மாதிரி", "உதாரணம்", "இதன் மூலம்", "அட்டவணை"]):
                     result.owner_name = ExtractedField(
-                        value=cand, confidence=avg_ocr_confidence * 0.92,
-                        method="regex", flags=[])
+                        value=owner_cand, confidence=avg_ocr_confidence * 0.95,
+                        method="regex_paired", flags=[]
+                    )
+                if father_cand and not any(noise in father_cand for noise in ["மாதிரி", "உதாரணம்"]):
+                    result.father_name = ExtractedField(
+                        value=father_cand, confidence=avg_ocr_confidence * 0.92,
+                        method="regex_paired", flags=[]
+                    )
+                if result.owner_name.value:
                     break
 
-        for pattern in FATHER_NAME_PATTERNS:
-            m = re.search(pattern, search_corpus, re.IGNORECASE | re.UNICODE)
-            if m:
-                cand = m.group(1).strip()
-                cand = re.sub(r"^[:\-\.\s]+|[:\-\.\s]+$", "", cand)
-                cand = re.sub(r"\s+", " ", cand)
-                if cand and not any(noise in cand for noise in ["மாதிரி", "உதாரணம்"]):
-                    result.father_name = ExtractedField(
-                        value=cand, confidence=avg_ocr_confidence * 0.88,
-                        method="regex", flags=[])
-                    break
+        # ── 1d. Fallback individual regex for owner_name & father_name ────────
+        if result.owner_name.value is None:
+            for pattern in OWNER_NAME_PATTERNS:
+                m = re.search(pattern, search_corpus, re.IGNORECASE | re.UNICODE)
+                if m:
+                    cand = m.group(1).strip()
+                    cand = re.sub(r"^[:\-\.\s]+|[:\-\.\s]+$", "", cand)
+                    cand = self._clean_tamil_spaces(cand)
+                    if cand and not any(noise in cand for noise in ["மாதிரி", "உதாரணம்", "இதன் மூலம்", "அட்டவணை"]):
+                        result.owner_name = ExtractedField(
+                            value=cand, confidence=avg_ocr_confidence * 0.92,
+                            method="regex", flags=[])
+                        break
+
+        if result.father_name.value is None:
+            for pattern in FATHER_NAME_PATTERNS:
+                m = re.search(pattern, search_corpus, re.IGNORECASE | re.UNICODE)
+                if m:
+                    cand = m.group(1).strip()
+                    cand = re.sub(r"^[:\-\.\s]+|[:\-\.\s]+$", "", cand)
+                    cand = self._clean_tamil_spaces(cand)
+                    for pfx in ["மைறந்த", "மறைந்த", "Late.", "Late"]:
+                        if cand.startswith(pfx):
+                            cand = cand[len(pfx):].strip()
+                    if cand and not any(noise in cand for noise in ["மாதிரி", "உதாரணம்"]):
+                        result.father_name = ExtractedField(
+                            value=cand, confidence=avg_ocr_confidence * 0.88,
+                            method="regex", flags=[])
+                        break
 
         # ── 2. spaCy NER for persons and locations (ONLY as fallback) ────────
         self._load_spacy()
@@ -361,12 +401,13 @@ class FieldExtractor:
 
         # ── 3. Keyword matching for land type and transaction type ─────────────
         text_lower = ocr_text.lower()
+        search_corpus_nospaces = re.sub(r"\s+", "", search_corpus.lower())
         for lt, keywords in LAND_TYPE_KEYWORDS.items():
-            if any(kw in text_lower for kw in keywords):
+            if any(kw.lower() in text_lower or re.sub(r"\s+", "", kw.lower()) in search_corpus_nospaces for kw in keywords):
                 result.land_type = ExtractedField(value=lt, confidence=0.85, method="keyword", flags=[])
                 break
         for tt, keywords in TRANSACTION_KEYWORDS.items():
-            if any(kw in text_lower for kw in keywords):
+            if any(kw.lower() in text_lower or re.sub(r"\s+", "", kw.lower()) in search_corpus_nospaces for kw in keywords):
                 result.transaction_type = ExtractedField(value=tt, confidence=0.85, method="keyword", flags=[])
                 break
 

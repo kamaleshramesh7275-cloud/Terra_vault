@@ -74,8 +74,8 @@ def _sha256_file(path: str) -> str:
 
 
 # ── Helper: convert PDF pages to image files ──────────────────────────────
-def _pdf_to_images(pdf_path: str, output_dir: str, record_id: str) -> List[str]:
-    """Convert each page of a PDF to a PNG file and return the list of paths.
+def _pdf_to_images(pdf_path: str, output_dir: str, record_id: str, max_pages: Optional[int] = None) -> List[str]:
+    """Convert pages of a PDF to PNG files and return list of paths.
     Uses PyMuPDF (fitz) if available for fast rendering, falling back to pdf2image.
     """
     try:
@@ -84,7 +84,9 @@ def _pdf_to_images(pdf_path: str, output_dir: str, record_id: str) -> List[str]:
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         paths = []
-        for i, page in enumerate(doc):
+        limit = min(len(doc), max_pages) if max_pages else len(doc)
+        for i in range(limit):
+            page = doc[i]
             pix = page.get_pixmap(dpi=200)
             img_path = str(out / f"{record_id}_page{i+1}.png")
             pix.save(img_path)
@@ -99,7 +101,7 @@ def _pdf_to_images(pdf_path: str, output_dir: str, record_id: str) -> List[str]:
 
     try:
         from pdf2image import convert_from_path  # requires poppler
-        pages = convert_from_path(pdf_path, dpi=200, fmt="png")
+        pages = convert_from_path(pdf_path, dpi=200, fmt="png", first_page=1, last_page=max_pages)
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         paths = []
@@ -172,7 +174,7 @@ def process_document(self, record_id: str, file_path: str):
         eval_img_path = file_path
         if file_path.lower().endswith(".pdf"):
             pages_dir = str(Path(cfg.DATA_DIR) / "pages")
-            pdf_imgs = _pdf_to_images(file_path, pages_dir, record_id)
+            pdf_imgs = _pdf_to_images(file_path, pages_dir, record_id, max_pages=1)
             if pdf_imgs and pdf_imgs[0] != file_path:
                 eval_img_path = pdf_imgs[0]
 
@@ -196,22 +198,12 @@ def process_document(self, record_id: str, file_path: str):
         record.doc_sha256 = _sha256_file(file_path)
         session.commit()
 
-        # ── Step 2: Script Classification ─────────────────────────────────────
-        self.update_state(state="PROGRESS", meta={"step": "script_classify", "pct": 25})
-        classifier = ScriptClassifier(model_dir=cfg.ML_MODELS_DIR)
-        script_result = classifier.classify(restoration_result.enhanced_path)
-        record.detected_script = script_result.script
-        session.commit()
-
-        # ── Step 3: Text Acquisition (Native PDF Stream + OCR Router) ─────────
-        self.update_state(state="PROGRESS", meta={"step": "ocr", "pct": 45})
-        
+        # ── Step 2: Native PDF Text Pre-check ─────────────────────────────────
         full_text = ""
         words = []
         avg_conf = 0.0
         img_paths = [restoration_result.enhanced_path]
 
-        # If PDF, attempt native digital text extraction first
         if file_path.lower().endswith(".pdf"):
             try:
                 import pypdf
@@ -229,6 +221,16 @@ def process_document(self, record_id: str, file_path: str):
                     log.info("pipeline.pdf_native_text_extracted", pages=len(reader.pages), chars=len(full_text))
             except Exception as e:
                 log.warning("pipeline.pdf_native_text_failed", error=str(e))
+
+        # ── Step 3: Script Classification ─────────────────────────────────────
+        self.update_state(state="PROGRESS", meta={"step": "script_classify", "pct": 25})
+        classifier = ScriptClassifier(model_dir=cfg.ML_MODELS_DIR)
+        script_result = classifier.classify(restoration_result.enhanced_path, text=full_text)
+        record.detected_script = script_result.script
+        session.commit()
+
+        # ── Step 4: Text Acquisition (OCR Fallback if needed) ────────────────
+        self.update_state(state="PROGRESS", meta={"step": "ocr", "pct": 45})
 
         # If not a PDF or if PDF has no digital text layer (scanned/raster), run OCR engines
         if not full_text or len(full_text.strip()) < 30:
