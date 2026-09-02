@@ -1,43 +1,43 @@
-"""Terra_vault — SQLAlchemy Async Database Engine + Base"""
+import os
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
 from core.config import settings
 
-db_url = settings.DATABASE_URL
+# On Windows (local environment where port 5432 is often blocked) default to SQLite
+# On Linux / Docker production (Render cloud), use Neon PostgreSQL
+USE_LOCAL_SQLITE = (
+    os.environ.get("USE_LOCAL_SQLITE", "").lower() in ("1", "true")
+    or (os.name == "nt" and os.environ.get("USE_LOCAL_SQLITE", "").lower() != "false")
+    or "sqlite" in settings.DATABASE_URL
+)
 
-# Normalise scheme so asyncpg driver is always used for postgres
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
-elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
-    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-
-# Strip any query params that asyncpg does not understand
-# (sslmode, channel_binding) — SSL is passed via connect_args instead
-if "?" in db_url and db_url.startswith("postgresql+asyncpg://"):
-    db_url = db_url.split("?")[0]
-
-_is_sqlite = db_url.startswith("sqlite")
-
-engine_kwargs: dict = {
-    "echo": False,
-}
-
-if not _is_sqlite:
-    engine_kwargs.update({
+if USE_LOCAL_SQLITE:
+    db_url = "sqlite+aiosqlite:///./terravault_local.db"
+    sync_db_url = "sqlite:///./terravault_local.db"
+    _is_sqlite = True
+    engine_kwargs = {"echo": False}
+    sync_engine = create_engine(sync_db_url, echo=False)
+else:
+    db_url = settings.DATABASE_URL
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if "?" in db_url and db_url.startswith("postgresql+asyncpg://"):
+        db_url = db_url.split("?")[0]
+    _is_sqlite = False
+    engine_kwargs = {
+        "echo": False,
         "pool_pre_ping": True,
-        # Neon's PgBouncer pooler manages its own pool — keep SA pool small
         "pool_size": 5,
         "max_overflow": 10,
-        # Neon requires SSL — pass via connect_args (asyncpg style) with 4s timeout
-        "connect_args": {"ssl": "require", "timeout": 4},
-    })
+        "connect_args": {"ssl": "require", "timeout": 10},
+    }
+    sync_engine = create_engine(settings.SYNC_DATABASE_URL)
 
-try:
-    engine = create_async_engine(db_url, **engine_kwargs)
-except Exception:
-    db_url = "sqlite+aiosqlite:///./terravault_local.db"
-    engine = create_async_engine(db_url, echo=False)
+engine = create_async_engine(db_url, **engine_kwargs)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,

@@ -178,6 +178,9 @@ export default function UploadPage() {
     try {
       const result = await api.uploadDocument(file, state, district);
       setUploadResult(result);
+      if (result.record) {
+        setCompletedRecord(result.record);
+      }
       // Begin real-time polling
       startPolling(result.record_id);
     } catch (e: any) {

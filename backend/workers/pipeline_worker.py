@@ -131,7 +131,7 @@ def process_document(self, record_id: str, file_path: str):
     from core.models import LandRecord, FieldConfidence, ReviewTask
     from core.config import settings as cfg
 
-    engine = create_engine(cfg.SYNC_DATABASE_URL)
+    from core.database import sync_engine as engine
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -351,7 +351,7 @@ def compute_maturity_scores():
     from core.config import settings as cfg
     from datetime import datetime
 
-    engine = create_engine(cfg.SYNC_DATABASE_URL)
+    from core.database import sync_engine as engine
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
@@ -400,7 +400,7 @@ def run_fraud_scan():
     from validation.graph_fraud_detector import FraudGraph
     from core.config import settings as cfg
 
-    engine = create_engine(cfg.SYNC_DATABASE_URL)
+    from core.database import sync_engine as engine
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
