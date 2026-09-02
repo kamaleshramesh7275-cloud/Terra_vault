@@ -580,3 +580,218 @@ export function addUploadedParcel(rec: Partial<CoimbatoreParcel>): CoimbatorePar
   MOCK_COIMBATORE_PARCELS.unshift(newParcel);
   return newParcel;
 }
+
+export interface CollectorCourtCase {
+  id: string;
+  case_no: string;
+  appeal_type: string;
+  petitioner: string;
+  petitioner_ta: string;
+  respondent: string;
+  respondent_ta: string;
+  survey_no: string;
+  village: string;
+  taluk: string;
+  extent_acres: number;
+  filed_date: string;
+  hearing_date: string;
+  stage: "HEARING" | "STAY_ORDER_ACTIVE" | "SURVEY_PENDING" | "RESERVED" | "DECREE_ISSUED";
+  dispute_summary: string;
+  dispute_summary_ta: string;
+  petitioner_claim: string;
+  respondent_claim: string;
+  ai_fraud_risk: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  ai_findings: string[];
+  stay_order_issued?: boolean;
+  survey_summons_issued?: boolean;
+  decree_order?: string;
+  blockchain_decree_hash?: string;
+}
+
+export const MOCK_COLLECTOR_COURT_CASES: CollectorCourtCase[] = [
+  {
+    id: "CASE-2026-001",
+    case_no: "REV-APL-2026/0412",
+    appeal_type: "இரண்டாம் மேல்முறையீடு (Second Appeal - Disputed Patta Transfer)",
+    petitioner: "M. Palanisamy Gounder / எம். பழனிசாமி கவுண்டர்",
+    petitioner_ta: "எம். பழனிசாமி கவுண்டர்",
+    respondent: "K. Subramaniam & Sons / கே. சுப்பிரமணியம்",
+    respondent_ta: "கே. சுப்பிரமணியம்",
+    survey_no: "SF 245/3B-2",
+    village: "Kinathukadavu Town",
+    taluk: "Kinathukadavu",
+    extent_acres: 2.15,
+    filed_date: "2026-01-14",
+    hearing_date: "2026-09-08 (11:30 AM)",
+    stage: "HEARING",
+    dispute_summary: "Appeal against RDO Pollachi order allowing mutation based on contested 1998 ancestral partition deed without petitioner's consent.",
+    dispute_summary_ta: "1998 பாகப்பிரிவினை பத்திரத்தில் மனுதாரர் கையொப்பம் இன்றி போலியாக உருவாக்கப்பட்டதாக தொடரப்பட்ட மேல்முறையீடு.",
+    petitioner_claim: "Registered Ancestral Partition Deed Doc 1104/1998 entitles petitioner to 2.15 acres full possession.",
+    respondent_claim: "Subsequent unregistered family settlement deed of 2004 transferred 1.10 acres to respondent.",
+    ai_fraud_risk: "CRITICAL",
+    ai_findings: [
+      "Rapid mutation attempt flagged: 2 rival transfer applications filed within 21 days",
+      "Signature discrepancy: 78% mismatch on 2004 unregistered settlement document",
+      "FMB boundary collision: 0.18 acre physical overlap detected on Cadastral Digital Twin"
+    ]
+  },
+  {
+    id: "CASE-2026-002",
+    case_no: "REV-APL-2026/0388",
+    appeal_type: "மோசடி பட்டா ரத்து கோரிக்கை (Fraudulent Patta Cancellation Under Sec 13)",
+    petitioner: "Valli A. / வள்ளி அ.",
+    petitioner_ta: "வள்ளி அ.",
+    respondent: "S. K. Murugesan / எஸ். கே. முருகேசன்",
+    respondent_ta: "எஸ். கே. முருகேசன்",
+    survey_no: "SF 62/1A",
+    village: "Solavampalayam",
+    taluk: "Kinathukadavu",
+    extent_acres: 3.40,
+    filed_date: "2025-11-20",
+    hearing_date: "2026-09-09 (02:00 PM)",
+    stage: "STAY_ORDER_ACTIVE",
+    stay_order_issued: true,
+    dispute_summary: "Fraudulent creation of parallel Patta #4102 by suppressing legal heir certificates after demise of original pattadar Arumugam.",
+    dispute_summary_ta: "அசல் பட்டாதாரர் மறைவுக்குப் பின் வாரிசுச் சான்றிதழை மறைத்து போலி பட்டா #4102 பெற்றதற்கு எதிரான வழக்கு.",
+    petitioner_claim: "Sole surviving direct legal heir with Tahsildar Legal Heirship Certificate #LHC-2025-9912.",
+    respondent_claim: "Claims title via General Power of Attorney purportedly executed in 2012.",
+    ai_fraud_risk: "HIGH",
+    ai_findings: [
+      "Power of Attorney principal deceased prior to registered conveyance deed execution",
+      "Duplicate Patta #4102 flagged with zero prior parent deed trail in SRO Index-II"
+    ]
+  },
+  {
+    id: "CASE-2026-003",
+    case_no: "REV-APL-2026/0295",
+    appeal_type: "நீர்வழி புறம்போக்கு ஆக்கிரமிப்பு மேல்முறையீடு (Waterbody Poramboke Restoration)",
+    petitioner: "Kinathukadavu Farmers Welfare Association",
+    petitioner_ta: "கிணத்துக்கடவு விவசாயிகள் நலச் சங்கம்",
+    respondent: "Sri Balaji Brick Industries / ஸ்ரீ பாலாஜி செங்கல் சூளை",
+    respondent_ta: "ஸ்ரீ பாலாஜி செங்கல் சூளை",
+    survey_no: "SF 18/4 (Kulam Poramboke)",
+    village: "Kondampatti",
+    taluk: "Kinathukadavu",
+    extent_acres: 4.85,
+    filed_date: "2025-10-05",
+    hearing_date: "2026-09-12 (10:30 AM)",
+    stage: "SURVEY_PENDING",
+    survey_summons_issued: true,
+    dispute_summary: "Commercial brick kiln encroachment inside supply channel feeding Kondampatti irrigation tank.",
+    dispute_summary_ta: "கொண்டம்பட்டி பாசனக் குளத்திற்கு நீர் வரும் ஓடை மற்றும் புறம்போக்கு நிலத்தில் செங்கல் சூளை ஆக்கிரமிப்பு.",
+    petitioner_claim: "Kondampatti Tank Resurvey 1984 classifies SF 18/4 as Water Channel (நீர்வழி புறம்போக்கு).",
+    respondent_claim: "Operating under 2005 Natham Assignment order issued by then Special Tahsildar.",
+    ai_fraud_risk: "CRITICAL",
+    ai_findings: [
+      "Satellite Drone Twin confirms 1.45 acres permanent brick kiln structures inside water catchment boundary",
+      "Supreme Court Hinch Lal Tiwari mandate violation: Waterbody Poramboke land assignment is legally void"
+    ]
+  },
+  {
+    id: "CASE-2026-004",
+    case_no: "REV-APL-2026/0501",
+    appeal_type: "உட்பிரிவு எல்லைத் தகராறு (FMB Sub-Division Boundary Correction)",
+    petitioner: "Dr. K. Swaminathan / டாக்டர் கே. சுவாமிநாதன்",
+    petitioner_ta: "டாக்டர் கே. சுவாமிநாதன்",
+    respondent: "Texmo Foundations / டெக்ஸ்மோ ஃபவுண்டேஷன்ஸ்",
+    respondent_ta: "டெக்ஸ்மோ ஃபவுண்டேஷன்ஸ்",
+    survey_no: "SF 104/1B",
+    village: "Singayanputhur",
+    taluk: "Kinathukadavu",
+    extent_acres: 1.80,
+    filed_date: "2026-02-02",
+    hearing_date: "2026-09-15 (03:30 PM)",
+    stage: "HEARING",
+    dispute_summary: "Sub-division stone alignment dispute between SF 104/1B and SF 104/1C resulting in 12-foot cart track blockage.",
+    dispute_summary_ta: "உட்பிரிவு எல்லைக் கற்கள் தவறாக நடப்பட்டு 12 அடி பொது வண்டிப்பாதை அடைக்கப்பட்டதாக தொடரப்பட்ட வழக்கு.",
+    petitioner_claim: "FMB Ladder diagram of 1972 proves 12ft easement cart track along Western boundary.",
+    respondent_claim: "Latest DGPS survey of 2024 revised boundary line based on perimeter wall construction.",
+    ai_fraud_risk: "MEDIUM",
+    ai_findings: [
+      "Cart track width narrowed from 3.65m (1994 baseline) to 1.10m (2026 Drone Twin)",
+      "Boundary ladder coordinates require ETS re-calibration against village tri-junction pillar"
+    ]
+  }
+];
+
+export const MOCK_PORAMBOKE_ASSIGNMENTS = [
+  {
+    id: "POR-2026-081",
+    village: "Nallattipalayam",
+    taluk: "Kinathukadavu",
+    survey_no: "SF 88/2",
+    land_class: "Grama Natham Poramboke (கிராம நத்தம்)",
+    extent_acres: 0.03, // 3 cents
+    extent_cents: 3,
+    beneficiary: "K. Mariyammal / கே. மாரியம்மாள் (Landless Agricultural Laborer)",
+    scheme: "CM Free House-Site Patta Scheme (முதலமைச்சரின் இலவச வீட்டுமனைப் பட்டா)",
+    eligibility_status: "VERIFIED_ELIGIBLE",
+    status: "PENDING_COLLECTOR_APPROVAL"
+  },
+  {
+    id: "POR-2026-082",
+    village: "Arasampalayam",
+    taluk: "Kinathukadavu",
+    survey_no: "SF 142/3",
+    land_class: "Meikkal Poramboke (மேய்க்கால் புறம்போக்கு)",
+    extent_acres: 0.025,
+    extent_cents: 2.5,
+    beneficiary: "S. Murugan / எஸ். முருகன் (Scheduled Caste / PMAY-G Beneficiary)",
+    scheme: "Pradhan Mantri Awas Yojana (PMAY-G)",
+    eligibility_status: "VERIFIED_ELIGIBLE",
+    status: "APPROVED_AND_ISSUED"
+  },
+  {
+    id: "POR-2026-083",
+    village: "Vadachittor",
+    taluk: "Kinathukadavu",
+    survey_no: "SF 219/1",
+    land_class: "Assessed Waste Dry (அனாதீனம் / தரிசு)",
+    extent_acres: 0.04,
+    extent_cents: 4,
+    beneficiary: "P. Lakshmi / பி. லட்சுமி (Widowed Destitute)",
+    scheme: "State Social Welfare Destitute Land Scheme",
+    eligibility_status: "VERIFIED_ELIGIBLE",
+    status: "PENDING_COLLECTOR_APPROVAL"
+  }
+];
+
+export const MOCK_TALUK_LEAGUE_TABLE = [
+  { rank: 1, taluk: "Kinathukadavu", officer: "P. Subramanian (Tahsildar)", patta_sla_days: 6.2, clearance_rate: "98.4%", grievances_resolved: 412, revenue_cr: 18.4, status: "EXEMPLARY" },
+  { rank: 2, taluk: "Annur", officer: "S. Jayanthi (Tahsildar)", patta_sla_days: 8.1, clearance_rate: "95.2%", grievances_resolved: 320, revenue_cr: 14.8, status: "EXEMPLARY" },
+  { rank: 3, taluk: "Pollachi", officer: "K. Mohanraj (Tahsildar)", patta_sla_days: 9.4, clearance_rate: "92.8%", grievances_resolved: 580, revenue_cr: 26.2, status: "GOOD" },
+  { rank: 4, taluk: "Coimbatore North", officer: "R. Venkatesh (Tahsildar)", patta_sla_days: 11.2, clearance_rate: "89.5%", grievances_resolved: 740, revenue_cr: 64.5, status: "GOOD" },
+  { rank: 5, taluk: "Sulur", officer: "M. Nanthakumar (Tahsildar)", patta_sla_days: 12.0, clearance_rate: "88.1%", grievances_resolved: 490, revenue_cr: 32.1, status: "AVERAGE" },
+  { rank: 6, taluk: "Coimbatore South", officer: "T. Selvaraj (Tahsildar)", patta_sla_days: 14.5, clearance_rate: "84.3%", grievances_resolved: 810, revenue_cr: 78.9, status: "NEEDS_IMPROVEMENT" },
+  { rank: 7, taluk: "Mettupalayam", officer: "A. Chandran (Tahsildar)", patta_sla_days: 15.8, clearance_rate: "81.0%", grievances_resolved: 380, revenue_cr: 19.5, status: "NEEDS_IMPROVEMENT" },
+];
+
+export const MOCK_LAND_ACQUISITION_PROJECTS = [
+  {
+    id: "LA-CBE-01",
+    project_name: "Coimbatore Western Ring Road Phase-II (NHAI)",
+    project_name_ta: "கோவை மேற்கு புறவழிச்சாலை திட்டம் (கட்டம்-2)",
+    authority: "National Highways Authority of India (NHAI)",
+    total_extent_acres: 142.5,
+    parcels_acquired: 84,
+    total_parcels: 112,
+    compensation_budget_cr: 284.50,
+    disbursed_cr: 218.20,
+    multiplier_factor: "2.0x (Rural Section 26 RFCTLARR 2013)",
+    status: "DISBURSEMENT_IN_PROGRESS"
+  },
+  {
+    id: "LA-CBE-02",
+    project_name: "TIDCO Defence & Aerospace Industrial Corridor (Sulur)",
+    project_name_ta: "டிட்கோ பாதுகாப்பு மற்றும் விண்வெளி தொழில் பூங்கா",
+    authority: "Tamil Nadu Industrial Development Corp (TIDCO)",
+    total_extent_acres: 380.0,
+    parcels_acquired: 195,
+    total_parcels: 210,
+    compensation_budget_cr: 512.00,
+    disbursed_cr: 489.40,
+    multiplier_factor: "1.5x (Urban-Periphery RFCTLARR)",
+    status: "NEARING_COMPLETION"
+  }
+];
+
