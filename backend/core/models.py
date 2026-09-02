@@ -9,22 +9,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-import os
-db_url = os.getenv("DATABASE_URL", "")
-if not db_url or "sqlite" in db_url:
-    class Geometry:
-        def __new__(cls, *args, **kwargs):
-            from sqlalchemy import Text
-            return Text()
-else:
-    try:
-        from geoalchemy2 import Geometry
-    except ImportError:
-        class Geometry:
-            def __new__(cls, *args, **kwargs):
-                from sqlalchemy import Text
-                return Text()
-
 from core.database import Base
 
 
@@ -152,7 +136,6 @@ class GISPlot(Base):
     village_lgd_code = Column(String(10))
     district = Column(String(100))
     state = Column(String(100), default="Tamil Nadu")
-    geom = Column(Geometry("POLYGON", srid=4326))
     geojson_str = Column(Text)  # GeoJSON cache for quick retrieval without PostGIS dependency
     area_sqm = Column(Float)
     extra_metadata = Column(JSON)  # For storing mutation, inheritance, land_type, value

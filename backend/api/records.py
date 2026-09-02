@@ -103,6 +103,11 @@ def _serialize(r: LandRecord) -> dict:
     }
 
 
+def _serialize_record(r: LandRecord) -> dict:
+    """Alias of _serialize used by title-lineage / title-pdf endpoints."""
+    return _serialize(r)
+
+
 def _serialize_fc(fc: FieldConfidence) -> dict:
     return {
         "id": fc.id, "field_name": fc.field_name,

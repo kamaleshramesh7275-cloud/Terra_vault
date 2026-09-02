@@ -1,14 +1,15 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Globe, ShieldCheck, FileText, Landmark, User, FileCheck, Phone, Building2, Layers } from "lucide-react";
 import { useLanguage, LangCode } from "@/context/LanguageContext";
+import { useFont } from "@/context/FontContext";
 
 export function GovHeader() {
   const pathname = usePathname();
   const { lang, setLang, t, getDignitaries } = useLanguage();
-  const [fontSize, setFontSize] = useState<"normal" | "large" | "xlarge">("normal");
+  const { fontSize, setFontSize } = useFont();
 
   // Detect state key from URL path
   let stateKey = "national";
@@ -35,11 +36,11 @@ export function GovHeader() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {/* Accessibility Controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.1)", padding: "1px 6px", borderRadius: 4 }}>
-            <span style={{ color: "#94a3b8", fontSize: 10, marginRight: 4 }}>Text:</span>
-            <button onClick={() => setFontSize("normal")} style={{ background: "none", border: "none", color: "#ffffff", fontSize: 10, cursor: "pointer", fontWeight: 700 }}>A-</button>
-            <button onClick={() => setFontSize("large")} style={{ background: "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>A</button>
-            <button onClick={() => setFontSize("xlarge")} style={{ background: "none", border: "none", color: "#ffffff", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>A+</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.15)", padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.2)" }}>
+            <span style={{ color: "#94a3b8", fontSize: 10, marginRight: 4, fontWeight: 600 }}>Font Size:</span>
+            <button onClick={() => setFontSize("normal")} style={{ background: fontSize === "normal" ? "#3b82f6" : "none", border: "none", color: "#ffffff", fontSize: 10, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 2 }}>A-</button>
+            <button onClick={() => setFontSize("large")} style={{ background: fontSize === "large" ? "#3b82f6" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 2 }}>A</button>
+            <button onClick={() => setFontSize("xlarge")} style={{ background: fontSize === "xlarge" ? "#3b82f6" : "none", border: "none", color: "#ffffff", fontSize: 12, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 2 }}>A+</button>
           </div>
 
           {/* Multi-State Language Switcher Dropdown */}
@@ -112,16 +113,17 @@ export function GovHeader() {
       {/* ── Service Categorization Bar: G2C / G2G / G2B ────────────────────── */}
       <div style={{ background: "#f8fafc", padding: "4px 24px", borderBottom: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", gap: 10 }}>
-          <Link href="/citizen" style={{ fontSize: 12, fontWeight: 700, color: "#0f2942", textDecoration: "none", padding: "4px 12px", background: "#ffffff", borderRadius: 4, border: "1px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6 }}>
-            <User size={13} color="#0f2942" /> {t("citizen_services")}
+          <Link href="/citizen" style={{ fontSize: 12, fontWeight: 700, color: pathname === "/citizen" ? "#1e3a8a" : "#0f2942", textDecoration: "none", padding: "4px 12px", background: pathname === "/citizen" ? "#e0e7ff" : "#ffffff", borderRadius: 4, border: "1px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6 }}>
+            <User size={13} color="#0f2942" /> G2C: {t("citizen_services")}
           </Link>
-          <Link href="/portal/tahsildar" style={{ fontSize: 12, fontWeight: 700, color: "#0f2942", textDecoration: "none", padding: "4px 12px", background: "#ffffff", borderRadius: 4, border: "1px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6 }}>
-            <FileCheck size={13} color="#0f2942" /> {t("officer_desks")}
+          <Link href="/portal/tahsildar" style={{ fontSize: 12, fontWeight: 700, color: pathname.startsWith("/portal") ? "#1e3a8a" : "#0f2942", textDecoration: "none", padding: "4px 12px", background: pathname.startsWith("/portal") ? "#e0e7ff" : "#ffffff", borderRadius: 4, border: "1px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6 }}>
+            <FileCheck size={13} color="#0f2942" /> G2G: {t("officer_desks")}
           </Link>
-          <Link href="/citizen" style={{ fontSize: 12, fontWeight: 700, color: "#0f2942", textDecoration: "none", padding: "4px 12px", background: "#ffffff", borderRadius: 4, border: "1px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6 }}>
-            <Building2 size={13} color="#0f2942" /> {t("business_sro")}
+          <Link href="/business" style={{ fontSize: 12, fontWeight: 700, color: pathname === "/business" ? "#1e3a8a" : "#0f2942", textDecoration: "none", padding: "4px 12px", background: pathname === "/business" ? "#e0e7ff" : "#ffffff", borderRadius: 4, border: "1px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6 }}>
+            <Building2 size={13} color="#0f2942" /> G2B: Commercial & Banks
           </Link>
         </div>
+
 
         <div style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>
           Digital India Land Records Modernization Programme (DILRMP 2.0)

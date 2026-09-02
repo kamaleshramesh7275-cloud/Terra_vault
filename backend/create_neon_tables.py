@@ -180,7 +180,7 @@ def main():
     cur = conn.cursor()
     print("Connected! Creating tables...")
     cur.execute(DDL)
-    print("\n✅ All tables created successfully on Neon!\n")
+    print("\n[OK] All tables created successfully on Neon!\n")
 
     # List created tables
     cur.execute("""
@@ -188,13 +188,13 @@ def main():
         WHERE table_schema = 'public' ORDER BY table_name;
     """)
     tables = cur.fetchall()
-    print("📋 Tables in Neon database:")
+    print("Tables in Neon database:")
     for t in tables:
-        print(f"   • {t[0]}")
+        print(f"   - {t[0]}")
 
     cur.close()
     conn.close()
-    print("\n🎉 Neon database is ready!")
+    print("\n[DONE] Neon database is ready!")
 
 if __name__ == "__main__":
     main()

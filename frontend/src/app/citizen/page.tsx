@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
+import Link from "next/link";
 import {
   FileText, Download, Lock, CheckCircle2, Search, ArrowRight,
   ShieldCheck, Layers, ExternalLink, User, Calculator, FileCheck, Check,
-  Building2, AlertCircle, RefreshCw
+  Building2, AlertCircle, RefreshCw, Send, CheckSquare
 } from "lucide-react";
 import { MOCK_COIMBATORE_PARCELS, CoimbatoreParcel } from "@/lib/mockData";
 import { useLanguage } from "@/context/LanguageContext";
@@ -11,30 +12,57 @@ import { useLanguage } from "@/context/LanguageContext";
 export default function CitizenPortalPage() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"search" | "mutation" | "sro" | "zk">("search");
-  
+
   // Search Form Input States
   const [pattaNoInput, setPattaNoInput] = useState("1042");
   const [surveyNoInput, setSurveyNoInput] = useState("409/A1");
   const [villageInput, setVillageInput] = useState("Kinathukadavu Town");
-  const [selectedSample, setSelectedSample] = useState<string>("cbe-plot-000");
+  const [ownerSearchInput, setOwnerSearchInput] = useState("");
+  const [selectedVillageChip, setSelectedVillageChip] = useState<string>("Kinathukadavu Town");
 
   const [searching, setSearching] = useState(false);
   const [searchNotice, setSearchNotice] = useState<string>("");
 
-  // Matched Parcel State (Defaulted to Parcel 000)
+  // Matched Parcel State (Defaulted to Parcel 0)
   const [matchedParcel, setMatchedParcel] = useState<CoimbatoreParcel>(MOCK_COIMBATORE_PARCELS[0]);
 
   // Action States
   const [downloadMsg, setDownloadMsg] = useState("");
   const [mutationSubmitted, setMutationSubmitted] = useState(false);
+  const [mutationRefId, setMutationRefId] = useState("");
+
+  // Multi-SRO Calculator State
+  const [selectedSro, setSelectedSro] = useState("Kinathukadavu SRO");
   const [calcExtent, setCalcExtent] = useState<string>(MOCK_COIMBATORE_PARCELS[0].area_sqm.toString());
-  const [calcResult, setCalcResult] = useState<number | null>(
-    Math.round(MOCK_COIMBATORE_PARCELS[0].area_sqm * MOCK_COIMBATORE_PARCELS[0].guideline_value_sqft)
-  );
+  const [sroBreakdown, setSroBreakdown] = useState<{
+    rateSqft: number;
+    guidelineVal: number;
+    stampDuty: number;
+    regFee: number;
+    totalPayable: number;
+  } | null>(null);
+
+  // ZK Proof State
   const [zkProofGen, setZkProofGen] = useState(false);
   const [zkProofDone, setZkProofDone] = useState(false);
+  const [bankApproved, setBankApproved] = useState(false);
 
-  // Dynamic Search Handler
+  // SRO Rates dictionary
+  const SRO_RATES: Record<string, number> = {
+    "Kinathukadavu SRO": 2200,
+    "Thudiyalur SRO": 3500,
+    "Pollachi SRO": 1950,
+    "Peelamedu SRO": 4800,
+    "Coimbatore Joint-I SRO": 5800,
+  };
+
+  // Village list for quick chips
+  const QUICK_VILLAGES = [
+    "Kinathukadavu Town", "Kothavadi", "Vadachittor",
+    "Soolakkal", "Panapatti", "Nallattipalayam"
+  ];
+
+  // Dynamic Search Handler with full text filtering
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setSearching(true);
@@ -45,48 +73,47 @@ export default function CitizenPortalPage() {
       const pattaTrim = pattaNoInput.trim().toLowerCase();
       const surveyTrim = surveyNoInput.trim().toLowerCase();
       const villageTrim = villageInput.trim().toLowerCase();
+      const ownerTrim = ownerSearchInput.trim().toLowerCase();
 
-      // Search in 108 Coimbatore Parcels
       let found = MOCK_COIMBATORE_PARCELS.find(p => {
         const pPatta = p.patta_no.toLowerCase();
         const pSurvey = p.survey_no.toLowerCase();
         const pVillage = p.village.toLowerCase();
+        const pOwner = p.owner_name.toLowerCase();
 
         return (pattaTrim && pPatta.includes(pattaTrim)) ||
                (surveyTrim && pSurvey.includes(surveyTrim)) ||
-               (villageTrim && pVillage.includes(villageTrim));
+               (villageTrim && pVillage.includes(villageTrim)) ||
+               (ownerTrim && pOwner.includes(ownerTrim));
       });
 
       if (found) {
         setMatchedParcel(found);
-        setSearchNotice(`✓ Matched official Land Record in ${found.village} (Patta #${found.patta_no})`);
+        setSearchNotice(`✓ Matched official Land Record in ${found.village} (Patta #${found.patta_no} • ${found.owner_name.split("/")[0]})`);
         setCalcExtent(found.area_sqm.toString());
-        setCalcResult(Math.round(found.area_sqm * found.guideline_value_sqft));
       } else {
-        // Fallback to Parcel 0
         setMatchedParcel(MOCK_COIMBATORE_PARCELS[0]);
-        setSearchNotice(`ℹ No exact record found for Patta #${pattaNoInput}. Displaying default Kinathukadavu Town SF.409/A1 (Patta #1042).`);
+        setSearchNotice(`ℹ No exact record matching query. Displaying default Kinathukadavu Town SF.409/A1 (Patta #1042).`);
       }
       setSearching(false);
-    }, 350);
+    }, 300);
   };
 
-  // Sample Selection Handler
-  const handleSampleSelect = (parcelId: string) => {
-    setSelectedSample(parcelId);
-    const found = MOCK_COIMBATORE_PARCELS.find(p => p.id === parcelId);
+  // Sample Selection Handler by Village Chip
+  const handleVillageChipSelect = (villageName: string) => {
+    setSelectedVillageChip(villageName);
+    const found = MOCK_COIMBATORE_PARCELS.find(p => p.village.toLowerCase().includes(villageName.toLowerCase()));
     if (found) {
       setPattaNoInput(found.patta_no);
       setSurveyNoInput(found.survey_no);
       setVillageInput(found.village);
       setMatchedParcel(found);
-      setSearchNotice(`✓ Loaded Sample Record: Patta #${found.patta_no} — ${found.survey_no} (${found.village})`);
+      setSearchNotice(`✓ Selected ${villageName} Sample Parcel: Patta #${found.patta_no} (${found.survey_no})`);
       setCalcExtent(found.area_sqm.toString());
-      setCalcResult(Math.round(found.area_sqm * found.guideline_value_sqft));
     }
   };
 
-  // Certified Patta PDF File Downloader
+  // Certified Patta PDF Downloader
   const downloadCertifiedPdf = () => {
     setDownloadMsg("Generating Certified Patta / Chitta PDF with Digital Signature Stamp...");
 
@@ -143,14 +170,58 @@ Security Verification QR Code: https://tn.gov.in/verify?hash=${matchedParcel.blo
       window.URL.revokeObjectURL(url);
 
       setDownloadMsg(`✓ Downloaded Certified Patta #${matchedParcel.patta_no} File!`);
-    }, 600);
+    }, 500);
   };
 
+  // Submit Mutation Application
+  const handleMutationSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const refId = `TN-MUT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    setMutationRefId(refId);
+    setMutationSubmitted(true);
+
+    // Save to local storage for VAO desk retrieval
+    try {
+      const existing = JSON.parse(localStorage.getItem("terravault_vao_tasks") || "[]");
+      existing.unshift({
+        id: refId,
+        applicant: matchedParcel.owner_name.split("/")[0],
+        survey_no: matchedParcel.survey_no,
+        village: matchedParcel.village,
+        patta_no: matchedParcel.patta_no,
+        submitted_at: new Date().toLocaleString(),
+        status: "Pending Field Inspection by VAO"
+      });
+      localStorage.setItem("terravault_vao_tasks", JSON.stringify(existing));
+    } catch (err) {}
+  };
+
+  // SRO Calculator Handler
+  const handleCalculateSRO = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const sqm = parseFloat(calcExtent) || 1000;
+    const sqft = sqm * 10.7639;
+    const rate = SRO_RATES[selectedSro] || 2200;
+    const guidelineVal = Math.round(sqft * rate);
+    const stampDuty = Math.round(guidelineVal * 0.07);
+    const regFee = Math.round(guidelineVal * 0.02);
+
+    setSroBreakdown({
+      rateSqft: rate,
+      guidelineVal,
+      stampDuty,
+      regFee,
+      totalPayable: guidelineVal + stampDuty + regFee
+    });
+  };
+
+  // ZK Proof Handler
   const handleZkProof = () => {
     setZkProofGen(true);
     setTimeout(() => {
       setZkProofGen(false);
       setZkProofDone(true);
+      setBankApproved(true);
     }, 600);
   };
 
@@ -206,40 +277,54 @@ Security Verification QR Code: https://tn.gov.in/verify?hash=${matchedParcel.blo
               <Search size={18} color="#0f2942" /> Search Patta / Chitta Records (பட்டா / சிட்டா தேடல்)
             </h2>
 
-            {/* Quick Sample Selector Dropdown */}
-            <div style={{ marginBottom: 16, padding: "10px 14px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#0f2942", display: "flex", alignItems: "center", gap: 6 }}>
-                <RefreshCw size={14} color="#0f2942" /> Quick Sample Parcel Selector:
+            {/* Quick Sample Selector Village Chips */}
+            <div style={{ marginBottom: 16, padding: "12px 14px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <RefreshCw size={13} color="#0f2942" /> QUICK SAMPLE PARCEL VILLAGE SELECTOR:
               </div>
-              <select
-                value={selectedSample}
-                onChange={(e) => handleSampleSelect(e.target.value)}
-                style={{ background: "#ffffff", color: "#0f2942", border: "1px solid #cbd5e1", borderRadius: 4, padding: "4px 10px", fontSize: 12, fontWeight: 600, maxWidth: 450 }}
-              >
-                {MOCK_COIMBATORE_PARCELS.slice(0, 12).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    Patta #{p.patta_no} — {p.survey_no} ({p.village}) • {p.owner_name.split("/")[0]}
-                  </option>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {QUICK_VILLAGES.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => handleVillageChipSelect(v)}
+                    style={{
+                      padding: "4px 12px",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      borderRadius: 16,
+                      border: "1px solid #cbd5e1",
+                      background: selectedVillageChip === v ? "#0f2942" : "#ffffff",
+                      color: selectedVillageChip === v ? "#ffffff" : "#0f2942",
+                      cursor: "pointer"
+                    }}
+                  >
+                    📍 {v}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
 
             {/* Search Input Form */}
-            <form onSubmit={handleSearch} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 160px", gap: 14, alignItems: "end" }}>
+            <form onSubmit={handleSearch} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 140px", gap: 12, alignItems: "end" }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Revenue Village</label>
-                <input type="text" value={villageInput} onChange={(e) => setVillageInput(e.target.value)} className="input" style={{ width: "100%" }} required />
+                <input type="text" placeholder="e.g. Kinathukadavu Town" value={villageInput} onChange={(e) => setVillageInput(e.target.value)} className="input" style={{ width: "100%" }} />
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Patta Number (பட்டா எண்)</label>
-                <input type="text" value={pattaNoInput} onChange={(e) => setPattaNoInput(e.target.value)} className="input" style={{ width: "100%" }} required />
+                <input type="text" placeholder="e.g. 1042" value={pattaNoInput} onChange={(e) => setPattaNoInput(e.target.value)} className="input" style={{ width: "100%" }} />
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Survey Field No. (புல எண்)</label>
-                <input type="text" value={surveyNoInput} onChange={(e) => setSurveyNoInput(e.target.value)} className="input" style={{ width: "100%" }} required />
+                <input type="text" placeholder="e.g. SF.409/A1" value={surveyNoInput} onChange={(e) => setSurveyNoInput(e.target.value)} className="input" style={{ width: "100%" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Owner Name (optional)</label>
+                <input type="text" placeholder="e.g. Kandasamy" value={ownerSearchInput} onChange={(e) => setOwnerSearchInput(e.target.value)} className="input" style={{ width: "100%" }} />
               </div>
               <button type="submit" disabled={searching} className="btn btn-primary" style={{ justifyContent: "center", padding: 10, fontSize: 13, background: "#0f2942", borderColor: "#1e293b" }}>
-                {searching ? "Searching..." : "Search Land RoR"}
+                {searching ? "Searching..." : "Search RoR"}
               </button>
             </form>
           </div>
@@ -301,30 +386,48 @@ Security Verification QR Code: https://tn.gov.in/verify?hash=${matchedParcel.blo
         </div>
       )}
 
-      {/* Tab 2: Apply Mutation */}
+      {/* Tab 2: Apply Mutation & Forward to VAO */}
       {activeTab === "mutation" && (
         <div className="glass-card" style={{ padding: 24, background: "#ffffff", borderColor: "#cbd5e1" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f2942", marginBottom: 14 }}>
-            Apply Online Patta Subdivision & Title Transfer (பட்டா மாறுதல் விண்ணப்பம்)
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f2942", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+            <FileCheck size={18} color="#0f2942" /> Apply Online Patta Subdivision & Title Transfer (பட்டா மாறுதல் விண்ணப்பம்)
           </h2>
+          <p style={{ fontSize: 12, color: "#64748b", marginBottom: 20 }}>
+            Applications are assigned directly to the Village Administrative Officer (VAO) of {matchedParcel.village} for field boundary verification.
+          </p>
+
           {mutationSubmitted ? (
-            <div style={{ padding: 16, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 6, color: "#0f2942", fontWeight: 700, fontSize: 13 }}>
-              ✓ Application Submitted! Reference ID: <strong>TN-MUT-2026-8819</strong>. Forwarded to VAO {matchedParcel.village} for ground scrutiny.
+            <div style={{ padding: 20, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, color: "#166534" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800, marginBottom: 8 }}>
+                <CheckSquare size={20} color="#16a34a" /> APPLICATION SUBMITTED & FORWARDED TO VAO
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 12 }}>
+                Reference Application ID: <strong>{mutationRefId}</strong>
+              </div>
+              <div style={{ fontSize: 12, color: "#15803d", background: "#ffffff", padding: 12, borderRadius: 6, border: "1px solid #bbf7d0" }}>
+                📍 <strong>Workflow Status:</strong> Assigned to Village Administrative Officer (VAO — {matchedParcel.village}). The officer will review ground boundary measurements and forward recommendations to the Revenue Inspector (RI) and Tahsildar.
+              </div>
             </div>
           ) : (
-            <form onSubmit={(e) => { e.preventDefault(); setMutationSubmitted(true); }} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <form onSubmit={handleMutationSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Applicant Name</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>APPLICANT NAME</label>
                   <input type="text" defaultValue={matchedParcel.owner_name.split("/")[0]} className="input" style={{ width: "100%" }} required />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Registered Sale Deed / Survey Field No.</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>REGISTERED SALE DEED / SURVEY FIELD NO.</label>
                   <input type="text" defaultValue={`SF.${matchedParcel.survey_no} (${matchedParcel.village})`} className="input" style={{ width: "100%" }} required />
                 </div>
               </div>
-              <button type="submit" className="btn btn-primary" style={{ background: "#0f2942", borderColor: "#1e293b", width: 240 }}>
-                Submit Mutation Application
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>TARGET REVENUE VILLAGE & VAO JURISDICTION</label>
+                <input type="text" value={`${matchedParcel.village} Revenue Village • Kinathukadavu Taluk`} disabled className="input" style={{ width: "100%", background: "#f8fafc" }} />
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ background: "#0f2942", borderColor: "#1e293b", padding: "10px 20px", fontSize: 13, alignSelf: "flex-start", display: "flex", alignItems: "center", gap: 8 }}>
+                <Send size={15} /> Forward Application to VAO Desk
               </button>
             </form>
           )}
@@ -334,32 +437,72 @@ Security Verification QR Code: https://tn.gov.in/verify?hash=${matchedParcel.blo
       {/* Tab 3: SRO Guideline Calculator */}
       {activeTab === "sro" && (
         <div className="glass-card" style={{ padding: 24, background: "#ffffff", borderColor: "#cbd5e1" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f2942", marginBottom: 14 }}>
-            SRO Guideline Land Valuation Calculator (சார்பதிவாளர் வழிகாட்டி மதிப்பு)
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f2942", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+            <Calculator size={18} color="#0f2942" /> SRO Multi-Station Guideline Valuation Calculator
           </h2>
-          <div style={{ display: "flex", gap: 16, alignItems: "end", marginBottom: 20 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>Plot Area Extent (sq. meters / sq. ft)</label>
-              <input
-                type="number"
-                value={calcExtent}
-                onChange={(e) => {
-                  setCalcExtent(e.target.value);
-                  setCalcResult(Math.round(Number(e.target.value) * matchedParcel.guideline_value_sqft));
-                }}
-                className="input"
-                style={{ width: "100%" }}
-              />
+          <p style={{ fontSize: 12, color: "#64748b", marginBottom: 20 }}>
+            Select any Sub-Registrar Office (SRO) in Coimbatore District to calculate official land valuation, 7% stamp duty, and 2% registration fees.
+          </p>
+
+          <form onSubmit={handleCalculateSRO}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>SELECT SUB-REGISTRAR OFFICE (SRO)</label>
+                <select
+                  value={selectedSro}
+                  onChange={(e) => setSelectedSro(e.target.value)}
+                  className="input"
+                  style={{ width: "100%", background: "#ffffff" }}
+                >
+                  <option value="Kinathukadavu SRO">Kinathukadavu SRO (கிணத்துக்கடவு)</option>
+                  <option value="Thudiyalur SRO">Thudiyalur SRO (துடியலூர்)</option>
+                  <option value="Pollachi SRO">Pollachi SRO (பொள்ளாச்சி)</option>
+                  <option value="Peelamedu SRO">Peelamedu SRO (பீளமேடு)</option>
+                  <option value="Coimbatore Joint-I SRO">Coimbatore Joint-I SRO (கோவை)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>PLOT EXTENT (IN SQ. METERS)</label>
+                <input
+                  type="number"
+                  value={calcExtent}
+                  onChange={(e) => setCalcExtent(e.target.value)}
+                  className="input"
+                  style={{ width: "100%" }}
+                  required
+                />
+              </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#475569", display: "block", marginBottom: 4 }}>SRO Guideline Rate for {matchedParcel.village}</label>
-              <input type="text" value={`₹ ${matchedParcel.guideline_value_sqft.toLocaleString("en-IN")} / sq. ft`} disabled className="input" style={{ width: "100%", background: "#f8fafc" }} />
-            </div>
-          </div>
-          {calcResult && (
-            <div style={{ padding: 16, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 6 }}>
-              <div style={{ fontSize: 11, color: "#475569" }}>Total Estimated Minimum Registration Valuation ({matchedParcel.village})</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: "#0f2942", marginTop: 4 }}>₹ {calcResult.toLocaleString("en-IN")}</div>
+
+            <button type="submit" className="btn btn-primary" style={{ background: "#0f2942", borderColor: "#1e293b", padding: "10px 20px", fontSize: 13, marginBottom: 20 }}>
+              Calculate Stamp Duty & Guideline Value
+            </button>
+          </form>
+
+          {sroBreakdown && (
+            <div style={{ padding: 20, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0f2942", marginBottom: 12 }}>
+                Valuation Summary — {selectedSro}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, fontSize: 13 }}>
+                <div>
+                  <span style={{ color: "#64748b", display: "block" }}>Guideline Rate:</span>
+                  <strong>₹ {sroBreakdown.rateSqft} / sq.ft</strong>
+                </div>
+                <div>
+                  <span style={{ color: "#64748b", display: "block" }}>Base Valuation:</span>
+                  <strong>₹ {sroBreakdown.guidelineVal.toLocaleString("en-IN")}</strong>
+                </div>
+                <div>
+                  <span style={{ color: "#64748b", display: "block" }}>TN Stamp Duty (7%):</span>
+                  <strong style={{ color: "#c2410c" }}>₹ {sroBreakdown.stampDuty.toLocaleString("en-IN")}</strong>
+                </div>
+                <div>
+                  <span style={{ color: "#64748b", display: "block" }}>Reg. Fee (2%):</span>
+                  <strong style={{ color: "#c2410c" }}>₹ {sroBreakdown.regFee.toLocaleString("en-IN")}</strong>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -368,19 +511,32 @@ Security Verification QR Code: https://tn.gov.in/verify?hash=${matchedParcel.blo
       {/* Tab 4: ZK Proof */}
       {activeTab === "zk" && (
         <div className="glass-card" style={{ padding: 24, background: "#ffffff", borderColor: "#cbd5e1" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f2942", marginBottom: 14 }}>
-            Zero-Knowledge Title Privacy Proof (Bank Mortgage Verification)
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0f2942", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+            <Lock size={18} color="#0f2942" /> Zero-Knowledge Title Privacy Proof (Bank Mortgage Verification)
           </h2>
-          <p style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
             Generate cryptographic ZK-SNARK proof of clean land title for Patta #{matchedParcel.patta_no} ({matchedParcel.survey_no}) without revealing confidential identity details.
           </p>
 
           {zkProofDone ? (
-            <div style={{ padding: 16, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 6, color: "#0f2942", fontWeight: 700, fontSize: 13 }}>
-              ✓ ZK-SNARK Cryptographic Proof Generated! Hash: <strong style={{ fontFamily: "monospace" }}>{matchedParcel.blockchain_hash.substring(0, 24)}...</strong>. Valid for all Scheduled Commercial Banks.
+            <div>
+              <div style={{ padding: 16, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, color: "#166534", marginBottom: 16 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>
+                  ✓ ZK-SNARK CRYPTOGRAPHIC PROOF GENERATED & APPROVED
+                </div>
+                <div style={{ fontSize: 12, fontFamily: "monospace", color: "#15803d" }}>
+                  Proof Token Hash: 0x7f8a9b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <Link href="/business" className="btn btn-primary" style={{ background: "#16a34a", borderColor: "#15803d", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                  <Building2 size={15} /> Verify on G2B Commercial Bank Portal <ArrowRight size={14} />
+                </Link>
+              </div>
             </div>
           ) : (
-            <button className="btn btn-primary" style={{ background: "#0f2942", borderColor: "#1e293b" }} onClick={handleZkProof} disabled={zkProofGen}>
+            <button className="btn btn-primary" style={{ background: "#0f2942", borderColor: "#1e293b", padding: "10px 20px", fontSize: 13 }} onClick={handleZkProof} disabled={zkProofGen}>
               {zkProofGen ? "Generating ZK Proof..." : "Generate Bank ZK Title Proof"}
             </button>
           )}

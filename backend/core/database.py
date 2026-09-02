@@ -20,7 +20,7 @@ if "?" in db_url and db_url.startswith("postgresql+asyncpg://"):
 _is_sqlite = db_url.startswith("sqlite")
 
 engine_kwargs: dict = {
-    "echo": (settings.ENVIRONMENT == "development"),
+    "echo": False,
 }
 
 if not _is_sqlite:
