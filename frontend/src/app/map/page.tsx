@@ -214,179 +214,209 @@ export default function MapPage() {
   const totalValuation = plotsData?.features?.reduce((acc: number, f: any) => acc + (f.properties?.market_value_inr || 0), 0) || 0;
 
   return (
-    <div style={{ maxWidth: 1440, margin: "0 auto", paddingBottom: 40 }}>
-      {/* Header */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 26 }}>🌿</span>
-              <h1 style={{ fontFamily: "var(--font-head)", fontSize: 24, fontWeight: 800, color: "#0f2942", margin: 0 }}>
+    <div style={{ maxWidth: 1560, margin: "0 auto", padding: "0 12px 16px 12px" }}>
+      {/* ── Laptop-Optimized Compact Command Header ── */}
+      <div style={{
+        background: "#ffffff",
+        borderRadius: 12,
+        padding: "10px 16px",
+        marginBottom: 12,
+        border: "1.5px solid #cbd5e1",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.04)"
+      }}>
+        {/* Row 1: Title, Search & KPI Counters */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 22 }}>🌿</span>
+            <div>
+              <h1 style={{ fontFamily: "var(--font-head)", fontSize: 18, fontWeight: 900, color: "#0a192f", margin: 0, letterSpacing: "-0.01em" }}>
                 Coimbatore District Cadastral GIS & Land Registry
               </h1>
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>
+                கோயம்புத்தூர் மாவட்ட நில அளவை, பட்டா & உரிமை மாற்றம் பதிவேடு • 9 Taluks
+              </div>
             </div>
-            <p style={{ color: "#334155", fontSize: 13, fontWeight: 600, marginTop: 4, marginBottom: 0 }}>
-              கோயம்புத்தூர் மாவட்ட நில அளவை, பட்டா மற்றும் வாரிசுரிமை பதிவேடு — Covering all 9 Taluks with FMB Survey Boundaries, Mutation Chains & Inheritance Trees
-            </p>
           </div>
 
-          {/* Search Input Form */}
-          <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: 8 }}>
-            <div style={{ position: "relative", width: 280 }}>
-              <Search size={15} color="#475569" style={{ position: "absolute", left: 10, top: 10 }} />
-              <input
-                type="text"
-                placeholder="Search SF No, Patta or Owner..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+          {/* Search Form + 3D Twin Button */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: 6 }}>
+              <div style={{ position: "relative", width: 240 }}>
+                <Search size={14} color="#475569" style={{ position: "absolute", left: 9, top: 8 }} />
+                <input
+                  type="text"
+                  placeholder="Search SF No, Patta or Owner..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px 6px 30px",
+                    borderRadius: 8,
+                    border: "1.5px solid #cbd5e1",
+                    background: "#f8fafc",
+                    color: "#0f172a",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    outline: "none"
+                  }}
+                />
+              </div>
+              <button
+                type="submit"
                 style={{
-                  width: "100%",
-                  padding: "8px 12px 8px 32px",
+                  padding: "6px 12px",
                   borderRadius: 8,
-                  border: "1px solid #cbd5e1",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  outline: "none"
+                  background: "linear-gradient(135deg, #0a192f, #1d4ed8)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  fontSize: 11,
+                  border: "none",
+                  cursor: "pointer"
                 }}
-              />
-            </div>
-            <button
-              type="submit"
+              >
+                Search
+              </button>
+            </form>
+
+            <Link
+              href="/map/digital-twin"
               style={{
-                padding: "8px 14px",
-                borderRadius: 8,
-                background: "#0f2942",
-                color: "#ffffff",
-                fontWeight: 700,
-                fontSize: 12,
-                border: "1px solid #1e293b",
-                cursor: "pointer"
-              }}
-            >
-              Search
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Coimbatore District KPI Summary Strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 16 }}>
-        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Taluks Covered</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#0a192f", marginTop: 3 }}>9 Taluks (வட்டங்கள்)</div>
-          <div style={{ fontSize: 11, color: "#059669", fontWeight: 700, marginTop: 1 }}>Coimbatore North to Valparai</div>
-        </div>
-
-        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Active Parcels in View</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#1d4ed8", marginTop: 3 }}>{totalParcels} FMB Parcels</div>
-          <div style={{ fontSize: 11, color: "#334155", fontWeight: 700, marginTop: 1 }}>Total Extent: {totalAcres.toFixed(1)} Acres</div>
-        </div>
-
-        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Average Maturity Score</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#059669", marginTop: 3 }}>94.2% Verified</div>
-          <div style={{ fontSize: 11, color: "#059669", fontWeight: 700, marginTop: 1 }}>High Digitization Quality</div>
-        </div>
-
-        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Total Land Asset Value</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#d97706", marginTop: 3 }}>₹{(totalValuation / 10000000).toFixed(1)} Crores</div>
-          <div style={{ fontSize: 11, color: "#334155", fontWeight: 700, marginTop: 1 }}>Based on Guideline & Fair Market</div>
-        </div>
-
-        <div className="glass-card" style={{ padding: "12px 16px", borderRadius: 10, border: "1.5px solid #cbd5e1", background: "#ffffff" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.03em" }}>Blockchain Anchor Proof</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#7c3aed", marginTop: 3 }}>100% Anchored</div>
-          <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700, marginTop: 1 }}>Polygon Amoy Testnet (80002)</div>
-        </div>
-      </div>
-
-      {/* 9 Taluks Filter Strip */}
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 12 }}>
-        {COIMBATORE_TALUKS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setSelectedTaluk(t.id)}
-            style={{
-              padding: "7px 14px",
-              fontSize: 12,
-              fontWeight: 800,
-              borderRadius: 8,
-              whiteSpace: "nowrap",
-              border: selectedTaluk === t.id ? "1.5px solid #1e40af" : "1.5px solid #cbd5e1",
-              background: selectedTaluk === t.id ? "linear-gradient(135deg, #0a192f, #1d4ed8)" : "#ffffff",
-              color: selectedTaluk === t.id ? "#ffffff" : "#0f172a",
-              boxShadow: selectedTaluk === t.id ? "0 2px 8px rgba(29,78,216,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
-              cursor: "pointer",
-              transition: "all 0.15s"
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Land Category Filter Strip */}
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 16 }}>
-        {LAND_CATEGORIES.map((c) => {
-          const Icon = c.icon;
-          const isSelected = selectedCategory === c.id;
-          return (
-            <button
-              key={c.id}
-              onClick={() => setSelectedCategory(c.id)}
-              style={{
-                padding: "6px 14px",
-                fontSize: 12,
-                fontWeight: 800,
-                borderRadius: 20,
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
-                border: isSelected ? "1.5px solid #1d4ed8" : "1.5px solid #cbd5e1",
-                background: isSelected ? "linear-gradient(135deg, #1d4ed8, #2563eb)" : "#ffffff",
-                color: isSelected ? "#ffffff" : "#0f172a",
-                boxShadow: isSelected ? "0 2px 8px rgba(37,99,235,0.3)" : "0 1px 2px rgba(0,0,0,0.04)",
-                cursor: "pointer",
-                transition: "all 0.15s"
+                gap: 5,
+                padding: "6px 12px",
+                borderRadius: 8,
+                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                color: "#ffffff",
+                fontSize: 11,
+                fontWeight: 800,
+                textDecoration: "none",
+                boxShadow: "0 2px 6px rgba(14,165,233,0.3)"
               }}
             >
-              <Icon size={14} color={isSelected ? "#ffffff" : "#1d4ed8"} />
-              {c.label}
-            </button>
-          );
-        })}
+              <Mountain size={13} />
+              3D Digital Twin
+            </Link>
+          </div>
+        </div>
+
+        {/* Row 2: Unified KPI Metrics Strip */}
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", marginTop: 8, paddingTop: 8, borderTop: "1px solid #e2e8f0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 6, background: "#f1f5f9", fontSize: 11, fontWeight: 800, color: "#0f172a", whiteSpace: "nowrap" }}>
+            <span style={{ color: "#059669" }}>●</span> 9 Taluks (வட்டங்கள்)
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 6, background: "#f1f5f9", fontSize: 11, fontWeight: 800, color: "#1d4ed8", whiteSpace: "nowrap" }}>
+            <span>🗺️</span> {totalParcels} FMB Parcels ({totalAcres.toFixed(1)} Acres)
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 6, background: "#f1f5f9", fontSize: 11, fontWeight: 800, color: "#059669", whiteSpace: "nowrap" }}>
+            <span>✅</span> 94.2% AI Maturity Score
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 6, background: "#f1f5f9", fontSize: 11, fontWeight: 800, color: "#d97706", whiteSpace: "nowrap" }}>
+            <span>💰</span> Total Asset: ₹{(totalValuation / 10000000).toFixed(1)} Cr
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 6, background: "#f1f5f9", fontSize: 11, fontWeight: 800, color: "#7c3aed", whiteSpace: "nowrap" }}>
+            <span>⛓️</span> Polygon Amoy (80002)
+          </div>
+        </div>
+
+        {/* Row 3: Taluk Selector & Category Filters */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+          <div style={{ display: "flex", gap: 5, overflowX: "auto" }}>
+            {COIMBATORE_TALUKS.slice(0, 7).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedTaluk(t.id)}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  borderRadius: 6,
+                  whiteSpace: "nowrap",
+                  border: selectedTaluk === t.id ? "1.5px solid #1d4ed8" : "1px solid #cbd5e1",
+                  background: selectedTaluk === t.id ? "linear-gradient(135deg, #0a192f, #1d4ed8)" : "#ffffff",
+                  color: selectedTaluk === t.id ? "#ffffff" : "#334155",
+                  cursor: "pointer",
+                  transition: "all 0.15s"
+                }}
+              >
+                {t.label.split("(")[0].trim()}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 5, overflowX: "auto" }}>
+            {LAND_CATEGORIES.map((c) => {
+              const Icon = c.icon;
+              const isSelected = selectedCategory === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCategory(c.id)}
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    borderRadius: 16,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    border: isSelected ? "1.5px solid #1d4ed8" : "1px solid #cbd5e1",
+                    background: isSelected ? "linear-gradient(135deg, #1d4ed8, #2563eb)" : "#ffffff",
+                    color: isSelected ? "#ffffff" : "#334155",
+                    cursor: "pointer",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  <Icon size={12} color={isSelected ? "#ffffff" : "#1d4ed8"} />
+                  {c.label.split("(")[0].trim()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Main Grid: Map (Left) + Site Dossier Inspector (Right) */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 20, alignItems: "start" }}>
-        
-        {/* Left: Map Card & Quick Site Selector */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* ── Map Upgrades Toolbar ── */}
-          <div className="glass-card" style={{ padding: "10px 14px", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, border: "1px solid rgba(99,102,241,0.3)" }}>
+      {/* ── Main Dual-Pane Side-by-Side Screen ── */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1.15fr 0.85fr",
+        gap: 14,
+        alignItems: "stretch",
+        height: "calc(100vh - 200px)",
+        minHeight: 560
+      }}>
+        {/* Left: Map Pane */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, height: "100%" }}>
+          {/* Map Controls Toolbar */}
+          <div style={{
+            padding: "8px 12px",
+            borderRadius: 10,
+            background: "#0f172a",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 8,
+            border: "1px solid #1e293b"
+          }}>
             {/* Base Tile Switcher */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#818cf8", textTransform: "uppercase", letterSpacing: "0.05em" }}>Base Map:</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {[
                 { id: "dark", label: "🌌 Dark" },
-                { id: "esri", label: "🛰️ Esri Satellite" },
+                { id: "esri", label: "🛰️ Satellite" },
                 { id: "street", label: "🗺️ Street" },
               ].map((b) => (
                 <button
                   key={b.id}
                   onClick={() => setBaseMapType(b.id as any)}
                   style={{
-                    padding: "3px 10px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    borderRadius: 6,
-                    border: baseMapType === b.id ? "1px solid #818cf8" : "1px solid rgba(255,255,255,0.1)",
-                    background: baseMapType === b.id ? "rgba(99,102,241,0.25)" : "rgba(0,0,0,0.3)",
-                    color: baseMapType === b.id ? "#a5b4fc" : "#94a3b8",
+                    padding: "3px 8px",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    borderRadius: 5,
+                    border: baseMapType === b.id ? "1px solid #38bdf8" : "1px solid #334155",
+                    background: baseMapType === b.id ? "#0284c7" : "#1e293b",
+                    color: "#ffffff",
                     cursor: "pointer",
                   }}
                 >
@@ -396,17 +426,17 @@ export default function MapPage() {
             </div>
 
             {/* Overlay Toggles */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <button
                 onClick={() => setShowFraudHeatmap(!showFraudHeatmap)}
                 style={{
-                  padding: "3px 10px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                  border: showFraudHeatmap ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)",
-                  background: showFraudHeatmap ? "rgba(239,68,68,0.2)" : "rgba(0,0,0,0.3)",
-                  color: showFraudHeatmap ? "#fca5a5" : "#94a3b8",
+                  padding: "3px 8px",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  borderRadius: 5,
+                  border: showFraudHeatmap ? "1px solid #ef4444" : "1px solid #334155",
+                  background: showFraudHeatmap ? "#dc2626" : "#1e293b",
+                  color: "#ffffff",
                   cursor: "pointer",
                 }}
               >
@@ -415,159 +445,68 @@ export default function MapPage() {
               <button
                 onClick={() => setShowFMBGrid(!showFMBGrid)}
                 style={{
-                  padding: "3px 10px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                  border: showFMBGrid ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
-                  background: showFMBGrid ? "rgba(16,185,129,0.2)" : "rgba(0,0,0,0.3)",
-                  color: showFMBGrid ? "#34d399" : "#94a3b8",
+                  padding: "3px 8px",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  borderRadius: 5,
+                  border: showFMBGrid ? "1px solid #10b981" : "1px solid #334155",
+                  background: showFMBGrid ? "#059669" : "#1e293b",
+                  color: "#ffffff",
                   cursor: "pointer",
                 }}
               >
                 📐 FMB Grid
               </button>
-            </div>
-
-            {/* Measurement Tools */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <button
                 onClick={() => setMeasureMode(measureMode === "distance" ? "none" : "distance")}
                 style={{
-                  padding: "3px 10px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                  border: measureMode === "distance" ? "1px solid #f59e0b" : "1px solid rgba(255,255,255,0.1)",
-                  background: measureMode === "distance" ? "rgba(245,158,11,0.2)" : "rgba(0,0,0,0.3)",
-                  color: measureMode === "distance" ? "#fcd34d" : "#94a3b8",
+                  padding: "3px 8px",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  borderRadius: 5,
+                  border: measureMode === "distance" ? "1px solid #f59e0b" : "1px solid #334155",
+                  background: measureMode === "distance" ? "#d97706" : "#1e293b",
+                  color: "#ffffff",
                   cursor: "pointer",
                 }}
               >
-                📏 Measure Distance
+                📏 Measure
               </button>
-              <button
-                onClick={() => setMeasureMode(measureMode === "area" ? "none" : "area")}
-                style={{
-                  padding: "3px 10px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                  border: measureMode === "area" ? "1px solid #10b981" : "1px solid rgba(255,255,255,0.1)",
-                  background: measureMode === "area" ? "rgba(16,185,129,0.2)" : "rgba(0,0,0,0.3)",
-                  color: measureMode === "area" ? "#34d399" : "#94a3b8",
-                  cursor: "pointer",
-                }}
-              >
-                📐 Measure Area
-              </button>
-              {measureMode !== "none" && (
-                <button
-                  onClick={() => setMeasureMode("none")}
-                  style={{ padding: "3px 8px", fontSize: 10, borderRadius: 6, background: "rgba(239,68,68,0.2)", color: "#f87171", border: "1px solid rgba(239,68,68,0.4)", cursor: "pointer" }}
-                >
-                  Clear
-                </button>
-              )}
             </div>
-            {/* Interactive Command Center Extra Controls */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              {/* Buffer Ring Selector */}
-              <select
-                value={bufferRadius}
-                onChange={(e) => setBufferRadius(Number(e.target.value))}
-                style={{ background: "rgba(0,0,0,0.4)", color: "#38bdf8", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "1px solid rgba(56,189,248,0.3)", outline: "none" }}
-              >
-                <option value={0}>⭕ Buffer Ring: Off</option>
-                <option value={100}>⭕ 100m Buffer</option>
-                <option value={500}>⭕ 500m Buffer</option>
-                <option value={1000}>⭕ 1000m Buffer</option>
-              </select>
 
-              {/* Sub-Division Split Mode Toggle */}
-              <button
-                onClick={() => {
-                  setIsSplitMode(!isSplitMode);
-                  if (isSplitMode) setSplitResult(null);
-                }}
-                style={{
-                  padding: "3px 10px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                  border: isSplitMode ? "1px solid #ec4899" : "1px solid rgba(255,255,255,0.1)",
-                  background: isSplitMode ? "rgba(236,72,153,0.2)" : "rgba(0,0,0,0.3)",
-                  color: isSplitMode ? "#f472b6" : "#94a3b8",
-                  cursor: "pointer",
-                }}
-              >
-                ✂️ Split Parcel
-              </button>
-            </div>
-          </div>
-
-          {/* ── Historical Satellite Timeline Slider Bar (2018–2026) ── */}
-          <div className="glass-card" style={{ padding: "8px 14px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(15,23,42,0.7)", border: "1px solid rgba(129,140,248,0.25)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#a5b4fc", display: "flex", alignItems: "center", gap: 6 }}>
-              <span>🛰️</span> Historical Satellite Imagery Timeline:
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {[2018, 2020, 2022, 2024, 2026].map((yr) => (
+            {/* Timeline Slider */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {[2018, 2022, 2026].map((yr) => (
                 <button
                   key={yr}
                   onClick={() => setTimelineYear(yr)}
                   style={{
-                    padding: "2px 10px",
+                    padding: "2px 6px",
                     fontSize: 10,
                     fontWeight: 700,
-                    borderRadius: 6,
-                    border: timelineYear === yr ? "1px solid #818cf8" : "1px solid rgba(255,255,255,0.08)",
-                    background: timelineYear === yr ? "#6366f1" : "rgba(0,0,0,0.3)",
-                    color: timelineYear === yr ? "#ffffff" : "#94a3b8",
+                    borderRadius: 4,
+                    border: timelineYear === yr ? "1px solid #38bdf8" : "1px solid #334155",
+                    background: timelineYear === yr ? "#0284c7" : "#1e293b",
+                    color: "#ffffff",
                     cursor: "pointer",
                   }}
                 >
-                  {yr} {yr === 2026 ? "(Live)" : ""}
+                  {yr}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Measurement Result Banner */}
-          {measurementText && (
-            <div style={{ background: "rgba(245,158,11,0.15)", padding: "6px 14px", borderRadius: 8, border: "1px solid rgba(245,158,11,0.4)", color: "#fcd34d", fontSize: 12, fontWeight: 700 }}>
-              {measurementText}
-            </div>
-          )}
-
-          {/* Sub-Division Interactive Result Banner */}
-          {splitResult && (
-            <div className="animate-fade-up" style={{ background: "rgba(236,72,153,0.12)", padding: 12, borderRadius: 10, border: "1px solid rgba(236,72,153,0.4)", color: "#f472b6" }}>
-              <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>✂️ Interactive FMB Sub-Division Split Complete</span>
-                <span className="badge" style={{ background: "rgba(236,72,153,0.2)", color: "#f472b6", fontSize: 10 }}>Survey #{splitResult.originalSurvey}</span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 11, marginBottom: 8 }}>
-                <div style={{ background: "rgba(0,0,0,0.3)", padding: 8, borderRadius: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div style={{ fontWeight: 700, color: "#38bdf8" }}>Sub-Plot {splitResult.subPlotA1.survey_no}</div>
-                  <div>Area: <strong>{splitResult.subPlotA1.area_acres} acres</strong> ({splitResult.subPlotA1.share})</div>
-                </div>
-                <div style={{ background: "rgba(0,0,0,0.3)", padding: 8, borderRadius: 6, border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div style={{ fontWeight: 700, color: "#34d399" }}>Sub-Plot {splitResult.subPlotA2.survey_no}</div>
-                  <div>Area: <strong>{splitResult.subPlotA2.area_acres} acres</strong> ({splitResult.subPlotA2.share})</div>
-                </div>
-              </div>
-              <button
-                onClick={() => alert(`Sub-Division Survey #${splitResult.originalSurvey} split submitted to Revenue Authority for approval!`)}
-                className="btn btn-primary"
-                style={{ width: "100%", justifyContent: "center", padding: "6px", fontSize: 11, fontWeight: 700 }}
-              >
-                Submit FMB Sub-Division to Revenue Authority
-              </button>
-            </div>
-          )}
-
-          <div className="glass-card" style={{ overflow: "hidden", borderRadius: 16, height: 580, position: "relative", border: "1px solid rgba(255,255,255,0.08)" }}>
+          {/* Leaflet Map Canvas Container */}
+          <div style={{
+            flex: 1,
+            overflow: "hidden",
+            borderRadius: 12,
+            position: "relative",
+            border: "1.5px solid #cbd5e1",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+            background: "#0f172a"
+          }}>
             {loading ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
                 <Loader2 size={32} color="#10b981" className="spinner" />
@@ -595,171 +534,147 @@ export default function MapPage() {
             {/* Floating Map Legend Overlay */}
             <div style={{
               position: "absolute",
-              bottom: 16,
-              left: 16,
-              background: "rgba(15, 23, 42, 0.88)",
-              backdropFilter: "blur(10px)",
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.1)",
+              bottom: 12,
+              left: 12,
+              background: "rgba(15, 23, 42, 0.92)",
+              backdropFilter: "blur(8px)",
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "1px solid rgba(255,255,255,0.15)",
               zIndex: 1000,
-              fontSize: 11,
+              fontSize: 10,
               color: "#cbd5e1"
             }}>
-              <div style={{ fontWeight: 700, marginBottom: 6, color: "#f8fafc", display: "flex", alignItems: "center", gap: 5 }}>
-                <Layers size={13} color="#38bdf8" /> Land Classification Color Key
+              <div style={{ fontWeight: 800, marginBottom: 4, color: "#f8fafc", display: "flex", alignItems: "center", gap: 5 }}>
+                <Layers size={12} color="#38bdf8" /> Land Classification Key
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 2, background: "#10b981" }} />
-                  <span>Coconut / தோட்டம்</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: "#10b981" }} />
+                  <span>Agriculture</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 2, background: "#38bdf8" }} />
-                  <span>Residential / மனை</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: "#38bdf8" }} />
+                  <span>Residential</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 2, background: "#f59e0b" }} />
-                  <span>Commercial & IT</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: "#f59e0b" }} />
+                  <span>Commercial</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 2, background: "#a78bfa" }} />
-                  <span>Industrial & Mills</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: "#a78bfa" }} />
+                  <span>Industrial</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Quick Select Parcels Strip */}
-          <div className="glass-card" style={{ padding: 14, borderRadius: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              ⚡ Coimbatore Survey Parcels ({plotsData?.features?.length || 0})
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, maxHeight: 180, overflowY: "auto" }}>
-              {plotsData?.features?.map((f: any) => {
-                const p = f.properties;
-                const isSelected = selectedPlot?.survey_no === p.survey_no;
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => handlePlotSelect(p)}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      background: isSelected ? "rgba(56, 189, 248, 0.15)" : "rgba(255,255,255,0.03)",
-                      border: isSelected ? "1px solid #38bdf8" : "1px solid rgba(255,255,255,0.06)",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontWeight: 700, fontSize: 13, color: isSelected ? "#38bdf8" : "#f1f5f9" }}>
-                        SF. {p.survey_no}
-                      </span>
-                      <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(16, 185, 129, 0.2)", color: "#10b981", fontWeight: 600 }}>
-                        {p.taluk}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {p.owner_name?.split('/')[0]}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>
 
-        {/* Right: Rich Parcel Dossier Inspector */}
-        <div className="glass-card" style={{ padding: 20, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", minHeight: 650 }}>
+        {/* Right: Rich Parcel Dossier Inspector with Internal Scroll */}
+        <div style={{
+          background: "#ffffff",
+          borderRadius: 12,
+          border: "1.5px solid #cbd5e1",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          overflow: "hidden"
+        }}>
           {detailsLoading ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 450, gap: 12 }}>
-              <Loader2 size={32} color="#38bdf8" className="spinner" />
-              <div style={{ color: "#94a3b8", fontSize: 13 }}>Fetching Cadastral Parcel Dossier...</div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12 }}>
+              <Loader2 size={32} color="#1d4ed8" className="spinner" />
+              <div style={{ color: "#475569", fontSize: 13, fontWeight: 700 }}>Fetching Cadastral Parcel Dossier...</div>
             </div>
           ) : plotDetails ? (
-            <div>
-              {/* Parcel Main Header Badge */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16, marginBottom: 16 }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ background: "#0284c7", color: "#fff", padding: "3px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
-                      SF No. {plotDetails.survey_no}
-                    </span>
-                    <span style={{ background: "rgba(16, 185, 129, 0.2)", color: "#10b981", padding: "3px 8px", borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-                      பட்டா எண்: {plotDetails.patta_no}
-                    </span>
-                    <span style={{ background: "rgba(245, 158, 11, 0.2)", color: "#f59e0b", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }}>
-                      {plotDetails.taluk} Taluk
-                    </span>
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+              {/* Sticky Dossier Header */}
+              <div style={{
+                padding: "12px 16px",
+                background: "#f8fafc",
+                borderBottom: "1.5px solid #e2e8f0",
+                flexShrink: 0
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <span style={{ background: "#1d4ed8", color: "#fff", padding: "2px 7px", borderRadius: 5, fontSize: 11, fontWeight: 800 }}>
+                        SF {plotDetails.survey_no}
+                      </span>
+                      <span style={{ background: "#059669", color: "#fff", padding: "2px 7px", borderRadius: 5, fontSize: 11, fontWeight: 800 }}>
+                        Patta #{plotDetails.patta_no}
+                      </span>
+                      <span style={{ background: "#e2e8f0", color: "#0f172a", padding: "2px 7px", borderRadius: 5, fontSize: 11, fontWeight: 800 }}>
+                        {plotDetails.taluk}
+                      </span>
+                    </div>
+                    <h2 style={{ fontSize: 16, fontWeight: 900, margin: 0, color: "#0a192f" }}>
+                      {plotDetails.owner_name}
+                    </h2>
+                    <div style={{ fontSize: 11, color: "#475569", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                      <MapPin size={12} color="#d97706" />
+                      {plotDetails.village}, {plotDetails.taluk} Taluk, Coimbatore
+                    </div>
                   </div>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#f8fafc" }}>
-                    {plotDetails.owner_name}
-                  </h2>
-                  <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
-                    <MapPin size={13} color="#f59e0b" />
-                    {plotDetails.village}, {plotDetails.taluk} Taluk, Coimbatore District, Tamil Nadu
+
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 10, color: "#475569", fontWeight: 700, textTransform: "uppercase" }}>Land Extent</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "#1d4ed8" }}>
+                      {plotDetails.area_acres} <span style={{ fontSize: 11, fontWeight: 700 }}>Acres</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b" }}>({plotDetails.area_cents} Cents)</div>
                   </div>
                 </div>
 
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, color: "#94a3b8" }}>Area / பரப்பளவு</div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: "#38bdf8" }}>
-                    {plotDetails.area_acres} <span style={{ fontSize: 12, fontWeight: 600 }}>Acres</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>({plotDetails.area_cents} Cents / {plotDetails.area_sqm?.toFixed(0)} m²)</div>
+                {/* Dossier Navigation Tabs */}
+                <div className="no-scrollbar" style={{ display: "flex", gap: 4, marginTop: 10, overflowX: "auto" }}>
+                  {[
+                    { id: "mutation", label: "📜 Transfer History", icon: Clock },
+                    { id: "overview", label: "📋 Overview", icon: FileText },
+                    { id: "inheritance", label: "🌳 Lineage & Heirs", icon: GitFork },
+                    { id: "satellite", label: "🛰️ GeoAI Satellite", icon: Layers },
+                    { id: "blockchain", label: "⛓️ Proof", icon: ShieldCheck },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setActiveTab(t.id as any);
+                        if (t.id === "satellite" && !geoaiData && plotDetails) {
+                          setGeoaiLoading(true);
+                          api.verifySatelliteBoundary({
+                            khasra_no: plotDetails.survey_no,
+                            village: plotDetails.village,
+                            district: plotDetails.district || "Coimbatore",
+                            land_type: plotDetails.land_type || "agricultural",
+                            area_value: plotDetails.area_acres || 1.0,
+                            area_unit: "acre"
+                          }).then((res) => {
+                            setGeoaiData(res);
+                            setGeoaiLoading(false);
+                          });
+                        }
+                      }}
+                      style={{
+                        padding: "5px 10px",
+                        fontSize: 11,
+                        fontWeight: 800,
+                        borderRadius: 6,
+                        border: "none",
+                        background: activeTab === t.id ? "linear-gradient(135deg, #0a192f, #1d4ed8)" : "transparent",
+                        color: activeTab === t.id ? "#ffffff" : "#475569",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all 0.15s"
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Navigation Tabs for Dossier */}
-              <div className="no-scrollbar" style={{ display: "flex", gap: 6, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 10, marginBottom: 16, overflowX: "auto" }}>
-                {[
-                  { id: "mutation", label: "📜 Land Transfer History (உரிமை மாற்றம்)", icon: Clock },
-                  { id: "overview", label: "📋 Overview", icon: FileText },
-                  { id: "inheritance", label: "🌳 Lineage & Heirs", icon: GitFork },
-                  { id: "satellite", label: "🛰️ GeoAI Satellite", icon: Layers },
-                  { id: "3d_twin", label: "🏔️ 3D Digital Twin", icon: Mountain },
-                  { id: "blockchain", label: "⛓️ Proof", icon: ShieldCheck },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      setActiveTab(t.id as any);
-                      if (t.id === "satellite" && !geoaiData && plotDetails) {
-                        setGeoaiLoading(true);
-                        api.verifySatelliteBoundary({
-                          khasra_no: plotDetails.survey_no,
-                          village: plotDetails.village,
-                          district: plotDetails.district || "Coimbatore",
-                          land_type: plotDetails.land_type || "agricultural",
-                          area_value: plotDetails.area_acres || 1.0,
-                          area_unit: "acre"
-                        }).then((res) => {
-                          setGeoaiData(res);
-                          setGeoaiLoading(false);
-                        });
-                      }
-                    }}
-                    style={{
-                      padding: "6px 12px",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      borderRadius: 8,
-                      border: "none",
-                      background: activeTab === t.id ? "rgba(56, 189, 248, 0.2)" : "transparent",
-                      color: activeTab === t.id ? "#38bdf8" : "#94a3b8",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      whiteSpace: "nowrap",
-                      transition: "all 0.15s"
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
+              {/* Scrollable Dossier Content Body */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 24px 16px" }}>
 
               {/* Tab 1: Overview */}
               {activeTab === "overview" && (
@@ -1448,11 +1363,12 @@ export default function MapPage() {
                 </a>
               </div>
             </div>
+            </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 450, color: "#94a3b8", textAlign: "center", padding: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "#94a3b8", textAlign: "center", padding: 20 }}>
               <MapIcon size={40} color="#64748b" style={{ marginBottom: 12 }} />
-              <div style={{ fontWeight: 600, fontSize: 15, color: "#cbd5e1" }}>No Survey Parcel Selected</div>
-              <p style={{ fontSize: 13, maxWidth: 320, marginTop: 6 }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#0f172a" }}>No Survey Parcel Selected</div>
+              <p style={{ fontSize: 13, maxWidth: 320, marginTop: 6, color: "#475569" }}>
                 Click on any cadastral parcel on the Coimbatore map or pick one from the taluk filter above.
               </p>
             </div>
