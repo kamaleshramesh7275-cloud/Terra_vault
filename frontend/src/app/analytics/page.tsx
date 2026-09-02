@@ -28,10 +28,15 @@ const MODEL_ACCURACY = [
 ];
 
 export default function AnalyticsPage() {
+  const [mounted, setMounted] = useState(false);
   const [fraudStats, setFraudStats] = useState<any>(null);
   const [fraudAlerts, setFraudAlerts] = useState<any[]>([]);
   const [recordStats, setRecordStats] = useState<any>(null);
   const [scriptData, setScriptData] = useState<any[]>(FALLBACK_SCRIPT_DATA);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -237,35 +242,42 @@ export default function AnalyticsPage() {
           </thead>
           <tbody>
             {fraudAlerts.length > 0 ? (
-              fraudAlerts.map((f) => (
-                <tr key={f.id}>
-                  <td style={{ fontWeight: 500, textTransform: "capitalize" }}>{f.alert_type.replace(/_/g, " ")}</td>
-                  <td style={{ fontSize: 12, color: "var(--color-text-muted)", maxWidth: 300 }}>
-                    {f.description || `Affected records: ${(f.record_ids || []).join(", ")}`}
-                  </td>
-                  <td>
-                    <span className={`badge badge-${f.severity === "critical" ? "disputed" : f.severity === "high" ? "review" : "processing"}`}>
-                      {f.severity}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${f.resolved ? "badge-verified" : "badge-review"}`}>
-                      {f.resolved ? "Resolved" : "Open"}
-                    </span>
-                  </td>
-                  <td>
-                    {!f.resolved ? (
-                      <button onClick={() => handleResolveAlert(f.id)} className="btn-secondary" style={{ padding: "4px 12px", fontSize: 11 }}>
-                        Resolve
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: 11, color: "#10b981", display: "flex", alignItems: "center", gap: 4 }}>
-                        <CheckCircle2 size={12} /> Resolved
+              fraudAlerts.map((f) => {
+                const alertTypeStr = String(f.alert_type || f.title || "fraud_alert").replace(/_/g, " ");
+                const isResolved = Boolean(f.resolved || f.status === "resolved");
+                const descStr = f.description || f.title || `Affected records: ${(f.record_ids || []).join(", ") || "General Scan"}`;
+                const severityStr = f.severity || "high";
+
+                return (
+                  <tr key={f.id}>
+                    <td style={{ fontWeight: 500, textTransform: "capitalize" }}>{alertTypeStr}</td>
+                    <td style={{ fontSize: 12, color: "var(--color-text-muted)", maxWidth: 300 }}>
+                      {descStr}
+                    </td>
+                    <td>
+                      <span className={`badge badge-${severityStr === "critical" ? "disputed" : severityStr === "high" ? "review" : "processing"}`}>
+                        {severityStr}
                       </span>
-                    )}
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td>
+                      <span className={`badge ${isResolved ? "badge-verified" : "badge-review"}`}>
+                        {isResolved ? "Resolved" : "Open"}
+                      </span>
+                    </td>
+                    <td>
+                      {!isResolved ? (
+                        <button onClick={() => handleResolveAlert(f.id)} className="btn-secondary" style={{ padding: "4px 12px", fontSize: 11 }}>
+                          Resolve
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "#10b981", display: "flex", alignItems: "center", gap: 4 }}>
+                          <CheckCircle2 size={12} /> Resolved
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan={5} style={{ textAlign: "center", color: "var(--color-text-muted)", padding: 20 }}>

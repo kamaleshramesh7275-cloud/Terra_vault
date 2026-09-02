@@ -274,9 +274,9 @@ export const api = {
     const q = new URLSearchParams(params).toString();
     return apiFetch<any>(`/api/fraud/alerts?${q}`, {}, true).catch(() => ({
       items: [
-        { id: "FA-8012", title: "Overlap Conflict in S.No 245/3B", severity: "critical", status: "unresolved", created_at: new Date().toISOString() },
-        { id: "FA-8013", title: "Stamp Duty Mismatch (Recorded ₹50k vs Guideline ₹1.2L)", severity: "high", status: "unresolved", created_at: new Date().toISOString() },
-        { id: "FA-8014", title: "Dual Patta Registration Detection", severity: "medium", status: "unresolved", created_at: new Date().toISOString() },
+        { id: "FA-8012", alert_type: "spatial_overlap", title: "Overlap Conflict in S.No 245/3B", description: "Cadastral polygon overlap detected in SF.245/3B-2", severity: "critical", status: "unresolved", resolved: false, created_at: new Date().toISOString() },
+        { id: "FA-8013", alert_type: "stamp_duty_undervaluation", title: "Stamp Duty Mismatch", description: "Recorded ₹50k vs Statutory Guideline ₹1.29L", severity: "high", status: "unresolved", resolved: false, created_at: new Date().toISOString() },
+        { id: "FA-8014", alert_type: "dual_patta_registration", title: "Dual Patta Registration Detection", description: "Simultaneous sub-division mutation pending", severity: "medium", status: "unresolved", resolved: false, created_at: new Date().toISOString() },
       ],
       total: 3
     }));
