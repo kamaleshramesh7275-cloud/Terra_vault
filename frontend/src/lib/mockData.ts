@@ -438,48 +438,71 @@ export const MOCK_REVIEW_QUEUE = [
   {
     id: "task-001",
     record_id: "rec-cbe-005",
-    assigned_at: "2026-08-31T07:30:00Z",
+    priority: 0.85,
     status: "pending",
-    doc_url: "/data/sample_patta_faded.png",
-    flagged_fields: ["owner_name", "area_value"],
-    confidence_scores: {
-      owner_name: 0.62,
-      father_name: 0.88,
-      khasra_no: 0.91,
-      area_value: 0.58,
-      village: 0.95
+    assigned_at: "2026-08-31T07:30:00Z",
+    created_at: "2026-08-31T07:30:00Z",
+    doc_url: "/data/static/enhanced/9598661f-c633-42e9-96bf-8f7b12f29325.png",
+    flags: [
+      { field: "owner_name", severity: "error", message: "Faded Tamil script in Pattadar name field (வள்ளி அ. / Muthulakshmi)" },
+      { field: "area_acres", severity: "warning", message: "Extent boundary requires verification (4.46 Acres vs 4.45 Acres)" }
+    ],
+    record: {
+      id: "rec-cbe-005",
+      survey_no: "245/3B-2",
+      patta_no: "7947",
+      owner_name: "வள்ளி அ. / Muthulakshmi K.",
+      father_name: "பெருமாள்செட்டியார் (Perumal Chettiar)",
+      village: "Puduppalayam (புதுப்பாளையம்)",
+      taluk: "Kinathukadavu",
+      district: "Coimbatore",
+      area_acres: 4.46,
+      land_type: "நன்செய் (Wetland Agriculture)",
+      enhanced_doc_url: "http://127.0.0.1:8000/static/enhanced/9598661f-c633-42e9-96bf-8f7b12f29325.png",
+      raw_doc_url: "http://127.0.0.1:8000/static/enhanced/9598661f-c633-42e9-96bf-8f7b12f29325.png"
     },
-    suggested_values: {
-      owner_name: "M. பழனிசாமி / M. Palanisamy",
-      father_name: "Muthusamy Gounder",
-      khasra_no: "102/3B",
-      area_value: "1.75",
-      village: "Annur West"
-    },
-    raw_ocr_text: "பட்டா எண்: 102/3B உரிமையாளர்: M.பழ...சாமி பரப்பளவு: 1.75 ஏக்கர்"
+    field_confidences: [
+      { field_name: "owner_name", raw_ocr_value: "வள்ளி அ.", corrected_value: "வள்ளி அ. / Muthulakshmi K.", confidence: 0.62, bounding_box: [40, 110, 260, 40] },
+      { field_name: "father_name", raw_ocr_value: "பெருமாள்செட்டியார்", corrected_value: "பெருமாள்செட்டியார்", confidence: 0.88, bounding_box: [40, 160, 240, 35] },
+      { field_name: "survey_no", raw_ocr_value: "245/3B-2", corrected_value: "245/3B-2", confidence: 0.91, bounding_box: [40, 205, 140, 30] },
+      { field_name: "patta_no", raw_ocr_value: "7947", corrected_value: "7947", confidence: 0.94, bounding_box: [200, 205, 100, 30] },
+      { field_name: "area_acres", raw_ocr_value: "4.46", corrected_value: "4.46", confidence: 0.58, bounding_box: [40, 245, 120, 30] },
+      { field_name: "village", raw_ocr_value: "புதுப்பாளையம்", corrected_value: "புதுப்பாளையம் (Puduppalayam)", confidence: 0.95, bounding_box: [180, 245, 180, 30] }
+    ]
   },
   {
     id: "task-002",
     record_id: "rec-cbe-006",
-    assigned_at: "2026-08-31T08:15:00Z",
+    priority: 0.72,
     status: "pending",
-    doc_url: "/data/sample_deed_stamp.png",
-    flagged_fields: ["khasra_no"],
-    confidence_scores: {
-      owner_name: 0.92,
-      father_name: 0.90,
-      khasra_no: 0.64,
-      area_value: 0.89,
-      village: 0.93
+    assigned_at: "2026-08-31T08:15:00Z",
+    created_at: "2026-08-31T08:15:00Z",
+    doc_url: "/data/static/enhanced/077abcac-44cd-4d8f-a441-25710f56edb3.png",
+    flags: [
+      { field: "survey_no", severity: "warning", message: "Revenue stamp seal partially overlaps Survey No SF 77/1A" }
+    ],
+    record: {
+      id: "rec-cbe-006",
+      survey_no: "77/1A",
+      patta_no: "4921",
+      owner_name: "S. K. முருகேசன் / S. K. Murugesan",
+      father_name: "Kandhasamy Gounder / கந்தசாமி கவுண்டர்",
+      village: "Madukkarai (மதுக்கரை)",
+      taluk: "Coimbatore South",
+      district: "Coimbatore",
+      area_acres: 2.10,
+      land_type: "தோட்டம் (Coconut Garden)",
+      enhanced_doc_url: "http://127.0.0.1:8000/static/enhanced/077abcac-44cd-4d8f-a441-25710f56edb3.png",
+      raw_doc_url: "http://127.0.0.1:8000/static/enhanced/077abcac-44cd-4d8f-a441-25710f56edb3.png"
     },
-    suggested_values: {
-      owner_name: "S. K. Murugesan",
-      father_name: "Kandhasamy",
-      khasra_no: "77/1A",
-      area_value: "2.10",
-      village: "Madukkarai"
-    },
-    raw_ocr_text: "சர்வே எண்: 77/1A (மங்கலான முத்திரை) உரிமையாளர்: S.K.முருகேசன்"
+    field_confidences: [
+      { field_name: "owner_name", raw_ocr_value: "S. K. முருகேசன்", corrected_value: "S. K. முருகேசன் / S. K. Murugesan", confidence: 0.92, bounding_box: [40, 110, 260, 40] },
+      { field_name: "father_name", raw_ocr_value: "Kandhasamy", corrected_value: "Kandhasamy Gounder", confidence: 0.90, bounding_box: [40, 160, 220, 35] },
+      { field_name: "survey_no", raw_ocr_value: "77/1A", corrected_value: "77/1A", confidence: 0.64, bounding_box: [40, 205, 130, 30] },
+      { field_name: "patta_no", raw_ocr_value: "4921", corrected_value: "4921", confidence: 0.89, bounding_box: [200, 205, 100, 30] },
+      { field_name: "area_acres", raw_ocr_value: "2.10", corrected_value: "2.10", confidence: 0.89, bounding_box: [40, 245, 120, 30] },
+      { field_name: "village", raw_ocr_value: "மதுக்கரை", corrected_value: "மதுக்கரை (Madukkarai)", confidence: 0.93, bounding_box: [180, 245, 180, 30] }
+    ]
   }
 ];
 
