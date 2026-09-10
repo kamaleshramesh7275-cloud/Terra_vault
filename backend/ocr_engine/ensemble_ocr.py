@@ -44,6 +44,74 @@ class EnsembleOCRResult:
 from core.config import settings
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Image preprocessing helpers (OpenCV-native — no external ML pipeline needed)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _remove_fold_shadows(img):
+    """Erases crease gradients and fold-line shadows using morphological top-hat."""
+    import cv2
+    import numpy as np
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+    # Large kernel morphological opening to estimate background illumination
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (51, 51))
+    bg = cv2.morphologyEx(gray, cv2.MORPH_DILATE, kernel)
+    # Normalize against background to flatten fold shadows
+    normalized = cv2.divide(gray, bg, scale=255)
+    return cv2.cvtColor(normalized, cv2.COLOR_GRAY2BGR) if len(img.shape) == 3 else normalized
+
+
+def _sauvola_stain_filter(img):
+    """
+    Sauvola-style local adaptive binarization to extract text from under ink blotches.
+    Uses Gaussian-windowed local mean/std to threshold each pixel individually.
+    """
+    import cv2
+    import numpy as np
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+    # Compute local mean and std using Gaussian blur approximation
+    gray_f = gray.astype(np.float32)
+    local_mean = cv2.GaussianBlur(gray_f, (25, 25), 0)
+    diff_sq = (gray_f - local_mean) ** 2
+    local_std = np.sqrt(cv2.GaussianBlur(diff_sq, (25, 25), 0) + 1e-6)
+    # Sauvola threshold: T = mean * (1 + k * (std/R - 1))
+    k, R = 0.34, 128.0
+    threshold = local_mean * (1 + k * (local_std / R - 1))
+    binary = np.where(gray_f <= threshold, 0, 255).astype(np.uint8)
+    return cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR) if len(img.shape) == 3 else binary
+
+
+def _reconnect_creased_strokes(img):
+    """Morphological closing to bridge character strokes broken by creases."""
+    import cv2
+    import numpy as np
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 1))
+    closed = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, kernel)
+    return cv2.cvtColor(closed, cv2.COLOR_GRAY2BGR) if len(img.shape) == 3 else closed
+
+
+def _correct_lighting(img):
+    """CLAHE contrast enhancement to recover faded historical ink."""
+    import cv2
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+    clahe = cv2.createCLAHE(clipLimit=3.5, tileGridSize=(8, 8))
+    enhanced = clahe.apply(gray)
+    return cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR) if len(img.shape) == 3 else enhanced
+
+
+def _suppress_ink_bleed(img):
+    """Unsharp masking + morphological opening to suppress ink bleed-through."""
+    import cv2
+    import numpy as np
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+    blurred = cv2.GaussianBlur(gray, (9, 9), 10.0)
+    unsharp = cv2.addWeighted(gray, 1.5, blurred, -0.5, 0)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    opened = cv2.morphologyEx(unsharp, cv2.MORPH_OPEN, kernel)
+    return cv2.cvtColor(opened, cv2.COLOR_GRAY2BGR) if len(img.shape) == 3 else opened
+
+
 class MultiPassEnsembleOCR:
     """Multi-pass voting OCR engine with LGD gazetteer fuzzy post-correction.
     Fine-tuned: Weighted voting (TrOCR weight × 1.5), adaptive LGD threshold.
@@ -59,10 +127,6 @@ class MultiPassEnsembleOCR:
         """
         import cv2
         from pathlib import Path
-        from ml_pipeline.restoration import (
-            remove_fold_shadows, sauvola_stain_filter,
-            reconnect_creased_strokes, correct_lighting, suppress_ink_bleed
-        )
 
         out_path = Path(output_dir)
         out_path.mkdir(parents=True, exist_ok=True)
@@ -73,19 +137,20 @@ class MultiPassEnsembleOCR:
             return {"raw": img_path}
 
         # Stream 1: Fold Shadow Removal
-        fold_img = remove_fold_shadows(img)
+        fold_img = _remove_fold_shadows(img)
         p1 = str(out_path / f"{stem}_fold_erased.png")
         cv2.imwrite(p1, fold_img)
 
         # Stream 2: Sauvola Stain Filter + Stroke Reconnect (for ink spills and thumbprints)
-        stain_img = sauvola_stain_filter(img)
-        stain_img = reconnect_creased_strokes(stain_img)
+        stain_img = _sauvola_stain_filter(img)
+        stain_img_bgr = cv2.cvtColor(stain_img, cv2.COLOR_GRAY2BGR) if len(stain_img.shape) == 2 else stain_img
+        stain_img_bgr = _reconnect_creased_strokes(stain_img_bgr)
         p2 = str(out_path / f"{stem}_stain_filtered.png")
-        cv2.imwrite(p2, stain_img)
+        cv2.imwrite(p2, stain_img_bgr)
 
         # Stream 3: High-contrast CLAHE + Bleed Suppression (for faded ink)
-        clahe_img = correct_lighting(img)
-        clahe_img = suppress_ink_bleed(clahe_img)
+        clahe_img = _correct_lighting(img)
+        clahe_img = _suppress_ink_bleed(clahe_img)
         p3 = str(out_path / f"{stem}_clahe_enhanced.png")
         cv2.imwrite(p3, clahe_img)
 
@@ -94,7 +159,6 @@ class MultiPassEnsembleOCR:
             "stain_filtered": p2,
             "clahe_enhanced": p3,
         }
-
 
     def process_ensemble(self, pass_texts: List[Tuple[str, float]]) -> EnsembleOCRResult:
         """
@@ -193,3 +257,66 @@ class MultiPassEnsembleOCR:
                 return match, {"original": word, "corrected": match, "source": f"lgd_gazetteer (score: {score}%)"}
 
         return word, None
+
+
+def run_multi_stream_ocr(img_path: str, ocr_router, ocr_config: dict) -> EnsembleOCRResult:
+    """
+    Runs full multi-stream OCR for degraded/inked documents.
+
+    Pipeline:
+      1. Generate 3 preprocessed image variants (fold-erased, stain-filtered, CLAHE-enhanced).
+      2. Run OCR engine on each variant.
+      3. Ensemble all pass results via process_ensemble() voting.
+
+    Args:
+        img_path:   Path to the (already restoration-processed) image.
+        ocr_router: An OCRRouter instance.
+        ocr_config: OCR engine config dict from script_classifier.
+
+    Returns:
+        EnsembleOCRResult with the best voted text and per-word confidence heatmap.
+    """
+    import structlog
+    log = structlog.get_logger(__name__)
+
+    ensemble = MultiPassEnsembleOCR()
+
+    # Step 1: Generate preprocessing streams
+    try:
+        streams = ensemble.create_degradation_streams(img_path)
+    except Exception as e:
+        log.warning("multi_stream_ocr.stream_generation_failed", error=str(e), img=img_path)
+        streams = {"raw": img_path}
+
+    # Step 2: Run OCR on each stream
+    pass_texts: List[Tuple[str, float]] = []
+    passes_run: List[str] = []
+
+    for stream_name, stream_path in streams.items():
+        try:
+            result = ocr_router.recognize(stream_path, ocr_config=ocr_config, is_handwriting=False)
+            if result.full_text.strip():
+                pass_texts.append((result.full_text, result.avg_confidence))
+                passes_run.append(stream_name)
+                log.debug(
+                    "multi_stream_ocr.pass_done",
+                    stream=stream_name,
+                    chars=len(result.full_text),
+                    conf=round(result.avg_confidence, 3),
+                )
+        except Exception as e:
+            log.warning("multi_stream_ocr.pass_failed", stream=stream_name, error=str(e))
+
+    if not pass_texts:
+        return EnsembleOCRResult(
+            full_text="",
+            consensus_confidence=0.0,
+            passes_run=passes_run,
+            corrections_applied=[],
+            confidence_heatmap=[],
+        )
+
+    # Step 3: Ensemble vote across all pass texts
+    result = ensemble.process_ensemble(pass_texts)
+    result.passes_run = passes_run  # Replace with actual stream names
+    return result

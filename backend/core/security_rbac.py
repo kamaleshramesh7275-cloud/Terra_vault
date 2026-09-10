@@ -10,13 +10,17 @@ Statutory Hierarchy:
 6. DISTRICT_COLLECTOR (மாவட்ட ஆட்சியர்) -> District Apex Scope (Revision, Fraud Override & Audits)
 """
 from enum import Enum
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional, Set, Any
 from fastapi import HTTPException, Security, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-SECRET_KEY = "terravault_dilrmp_secret_key_change_in_prod"
-ALGORITHM = "HS256"
+from core.config import settings
+from core.database import get_db
+from core.models import User
+from core.firebase_auth import verify_firebase_id_token
+
 security = HTTPBearer(auto_error=False)
 
 
@@ -94,26 +98,83 @@ def check_territorial_boundary(
     return True
 
 
-def get_current_user_claims(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict:
-    """Decodes JWT claims or returns active demo role persona."""
+async def get_current_user_claims(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Decodes Firebase ID token or active verified claims.
+    Maps authenticated user to statutory revenue roles & territorial jurisdictions in DB.
+    """
     if not credentials:
-        # Default fallback persona
-        return {
-            "sub": "demo_user",
-            "role": RevenueRole.TAHSILDAR.value,
-            "district": "Coimbatore",
-            "taluk": "Kinathukadavu",
-            "firka": "Kinathukadavu Firka",
-            "village_code": "630401"
-        }
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except Exception:
+        if settings.ENABLE_DEMO_AUTH_FALLBACK:
+            # Default development fallback persona
+            return {
+                "sub": "demo_user",
+                "uid": "demo_tahsildar_uid",
+                "email": "tahsildar@terravault.tn.gov.in",
+                "name": "Tahsildar (Sandbox Demo)",
+                "role": RevenueRole.TAHSILDAR.value,
+                "district": "Coimbatore",
+                "taluk": "Kinathukadavu",
+                "firka": "Kinathukadavu Firka",
+                "village_code": "630401",
+                "permissions": list(PERMISSION_MATRIX[RevenueRole.TAHSILDAR])
+            }
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired authentication credentials"
+            detail="Authentication token required"
         )
+
+    # Verify with Firebase / Token Validator
+    token_claims = verify_firebase_id_token(credentials.credentials)
+    uid = token_claims.get("uid")
+    email = token_claims.get("email")
+
+    # Lookup user in DB to fetch assigned statutory role and jurisdiction
+    user_record = None
+    if uid or email:
+        stmt = select(User).where((User.firebase_uid == uid) | (User.email == email))
+        res = await db.execute(stmt)
+        user_record = res.scalar_one_or_none()
+
+    if user_record:
+        role_str = (user_record.role or "CITIZEN").upper()
+        district = user_record.district or "Coimbatore"
+        taluk = user_record.taluk or "Kinathukadavu"
+        firka = user_record.firka or "Kinathukadavu Firka"
+        village_code = user_record.village_code or "630401"
+        display_name = user_record.display_name or token_claims.get("name") or user_record.username
+    else:
+        # Derive role from claim if demo token, else default to CITIZEN
+        role_str = token_claims.get("role", "CITIZEN").upper()
+        district = "Coimbatore"
+        taluk = "Kinathukadavu"
+        firka = "Kinathukadavu Firka"
+        village_code = "630401"
+        display_name = token_claims.get("name") or (email.split("@")[0] if email else "Citizen User")
+
+    try:
+        role_enum = RevenueRole(role_str)
+    except ValueError:
+        role_enum = RevenueRole.CITIZEN
+
+    permissions = list(PERMISSION_MATRIX.get(role_enum, set()))
+
+    return {
+        "sub": uid or email or "user",
+        "uid": uid,
+        "email": email,
+        "name": display_name,
+        "picture": token_claims.get("picture"),
+        "role": role_enum.value,
+        "district": district,
+        "taluk": taluk,
+        "firka": firka,
+        "village_code": village_code,
+        "permissions": permissions,
+        "email_verified": token_claims.get("email_verified", False)
+    }
 
 
 def require_permission(required_perm: str):

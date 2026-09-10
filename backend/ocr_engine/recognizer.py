@@ -191,9 +191,7 @@ class TrOCREngine:
 
 def ensemble_merge(results_a: List[OCRWord], results_b: List[OCRWord]) -> List[OCRWord]:
     """
-    Simple confidence-based ensemble: prefer higher-confidence token
-    when two engines produce overlapping bounding boxes.
-    Falls back to union if no overlap found.
+    
     """
     if not results_a:
         return results_b

@@ -11,9 +11,19 @@ from blockchain.anchor import verify_record as bc_verify
 router = APIRouter()
 
 
+STATE_CODE_MAP = {
+    "ap": "Andhra Pradesh", "ar": "Arunachal Pradesh", "as": "Assam", "br": "Bihar",
+    "cg": "Chhattisgarh", "ga": "Goa", "gj": "Gujarat", "hr": "Haryana", "hp": "Himachal Pradesh",
+    "jh": "Jharkhand", "ka": "Karnataka", "kl": "Kerala", "mp": "Madhya Pradesh", "mh": "Maharashtra",
+    "mn": "Manipur", "ml": "Meghalaya", "mz": "Mizoram", "nl": "Nagaland", "od": "Odisha",
+    "pb": "Punjab", "rj": "Rajasthan", "sk": "Sikkim", "tn": "Tamil Nadu", "ts": "Telangana",
+    "tr": "Tripura", "up": "Uttar Pradesh", "uk": "Uttarakhand", "wb": "West Bengal"
+}
+
 @router.get("/")
 async def list_records(
     q: Optional[str] = Query(None, description="Full-text search"),
+    state: Optional[str] = None,
     district: Optional[str] = None,
     tehsil: Optional[str] = None,
     village: Optional[str] = None,
@@ -30,6 +40,10 @@ async def list_records(
             LandRecord.khasra_no.ilike(f"%{q}%") |
             LandRecord.survey_no.ilike(f"%{q}%")
         )
+    if state:
+        st_clean = state.strip().lower()
+        full_st = STATE_CODE_MAP.get(st_clean, state.strip())
+        stmt = stmt.where(LandRecord.state.ilike(f"%{full_st}%") | LandRecord.state.ilike(f"%{st_clean}%"))
     if district:  stmt = stmt.where(LandRecord.district.ilike(f"%{district}%"))
     if tehsil:    stmt = stmt.where(LandRecord.tehsil.ilike(f"%{tehsil}%"))
     if village:   stmt = stmt.where(LandRecord.village.ilike(f"%{village}%"))

@@ -67,11 +67,7 @@ def _get_web3() -> Web3:
 
 
 def compute_record_hash(record: dict, verifier_id: str) -> str:
-    """
-    Computes SHA3-256 of the canonical record JSON + verifier + timestamp.
-    Returns hex string (0x-prefixed, 32 bytes).
-    """
-    # Canonical serialization: sorted keys, no whitespace
+  
     payload = {
         "id":               record.get("id"),
         "owner_name":       record.get("owner_name"),

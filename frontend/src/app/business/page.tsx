@@ -113,13 +113,13 @@ export default function BusinessPortalPage() {
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 40 }}>
       {/* ── Header Banner ─────────────────────────────────────────────────── */}
       <div style={{
-        background: "linear-[#0f2942]",
+        background: "linear-gradient(135deg, #0f2942 0%, #1e3a8a 100%)",
         color: "#ffffff",
         padding: "24px 32px",
         borderRadius: 8,
         marginBottom: 24,
         display: "flex",
-        justify: "space-between",
+        justifyContent: "space-between",
         alignItems: "center"
       }}>
         <div>

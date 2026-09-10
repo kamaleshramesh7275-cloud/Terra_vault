@@ -24,7 +24,16 @@ export async function GET(req: NextRequest) {
 
   // 2. Return high-quality seeded records
   const q = searchParams.get("q")?.toLowerCase();
+  const stateParam = searchParams.get("state")?.toLowerCase();
   let records = MOCK_RECORDS;
+
+  if (stateParam) {
+    records = records.filter(
+      (r) =>
+        r.state?.toLowerCase().includes(stateParam) ||
+        (stateParam === "tn" && (r.state?.toLowerCase().includes("tamil nadu") || !r.state))
+    );
+  }
 
   if (q) {
     records = records.filter(

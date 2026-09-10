@@ -22,10 +22,12 @@ log = structlog.get_logger(__name__)
 @dataclass
 class QualityReport:
     quality_score: float          # 0.0 (terrible) → 1.0 (perfect)
-    issues: List[str]             # ["blur", "skew", "glare", "low_res", "crease"]
+    issues: List[str]             # ["blur", "skew", "glare", "low_res", "crease", "stains", "low_contrast", "torn_margins"]
     needs_restoration: bool
     skew_angle: float = 0.0
     estimated_dpi: int = 0
+    metrics: dict = field(default_factory=dict)
+    restoration_steps: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -44,13 +46,15 @@ class RestorationResult:
 class QualityTriage:
     """
     Scores image quality and identifies degradation issues.
-    Uses heuristic metrics (Laplacian variance, histogram stats, DPI estimate)
-    combined with a fine-tuned MobileNetV3 classifier (loaded lazily).
+    Supports JPG, PNG, TIFF, and PDF (via PyMuPDF/pypdfium2 rasterization).
+    Uses heuristic metrics (Laplacian variance, histogram stats, DPI estimate,
+    ink blotch stain analysis) combined with a fine-tuned MobileNetV3 classifier.
     """
 
     BLUR_THRESHOLD = 80.0          # Laplacian variance below this → blurry
     LOW_RES_THRESHOLD = 150        # DPI below this → low-res
-    SKEW_THRESHOLD = 1.5           # degrees
+    SKEW_THRESHOLD = 1.2           # degrees
+    LOW_CONTRAST_THRESHOLD = 45.0  # std dev of pixel intensities
 
     def __init__(self, model_dir: str = None):
         self.model_dir = model_dir
@@ -76,72 +80,186 @@ class QualityTriage:
         except Exception as e:
             log.warning("quality_triage.cnn_load_failed", error=str(e))
 
-    def assess(self, img_path: str) -> QualityReport:
+    def _load_image(self, img_path: str) -> np.ndarray:
+        """Load image array from raster image or PDF first page."""
+        # Try direct OpenCV read first
         img_bgr = cv2.imread(img_path)
-        if img_bgr is None:
-            raise ValueError(f"Cannot read image: {img_path}")
+        if img_bgr is not None:
+            return img_bgr
 
+        # Check if PDF
+        if img_path.lower().endswith(".pdf") or True:
+            try:
+                import fitz  # PyMuPDF
+                doc = fitz.open(img_path)
+                if len(doc) > 0:
+                    page = doc[0]
+                    pix = page.get_pixmap(dpi=200)
+                    img_np = np.frombuffer(pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, pix.n))
+                    if pix.n == 4:
+                        return cv2.cvtColor(img_np, cv2.COLOR_RGBA2BGR)
+                    elif pix.n == 3:
+                        return cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+                    elif pix.n == 1:
+                        return cv2.cvtColor(img_np, cv2.COLOR_GRAY2BGR)
+            except Exception as e:
+                log.warning("quality_triage.pymupdf_failed", error=str(e))
+
+            try:
+                import pypdfium2 as pdfium
+                pdf = pdfium.PdfDocument(img_path)
+                if len(pdf) > 0:
+                    page = pdf[0]
+                    bitmap = page.render(scale=2.0)
+                    pil_image = bitmap.to_pil()
+                    return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+            except Exception as e:
+                log.warning("quality_triage.pdfium_failed", error=str(e))
+
+        raise ValueError(f"Cannot read image or render PDF: {img_path}")
+
+    def assess(self, img_path: str) -> QualityReport:
+        img_bgr = self._load_image(img_path)
         gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        h, w = gray.shape
         issues = []
         score_factors = []
+        restoration_steps = []
 
-        # ── Blur detection (Laplacian variance) ──────────────────────────────
-        lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+        # ── 1. Blur detection (Laplacian variance) ──────────────────────────────
+        lap_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
         if lap_var < self.BLUR_THRESHOLD:
             issues.append("blur")
-            score_factors.append(max(0.0, lap_var / self.BLUR_THRESHOLD))
+            score_factors.append(max(0.2, lap_var / self.BLUR_THRESHOLD))
+            restoration_steps.append("Real-ESRGAN Super-Resolution & Unsharp Mask")
         else:
             score_factors.append(1.0)
 
-        # ── Skew detection (Hough lines) ──────────────────────────────────────
+        # ── 2. Skew detection (Hough lines) ──────────────────────────────────────
         skew_angle = self._detect_skew(gray)
         if abs(skew_angle) > self.SKEW_THRESHOLD:
             issues.append("skew")
-            score_factors.append(max(0.0, 1.0 - abs(skew_angle) / 45.0))
+            score_factors.append(max(0.3, 1.0 - min(1.0, abs(skew_angle) / 25.0)))
+            restoration_steps.append(f"Hough Deskew Alignment ({skew_angle:+.1f}°)")
         else:
             score_factors.append(1.0)
 
-        # ── Glare / overexposure detection ────────────────────────────────────
+        # ── 3. Glare / specular flash hotspot detection ──────────────────────────
+        # White document page background is expected (>240 px). True glare is uneven hotspot.
         hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
-        overexposed_ratio = hist[240:].sum() / gray.size
-        if overexposed_ratio > 0.08:
+        pure_white_ratio = float(hist[250:].sum() / gray.size)
+        mid_tones_ratio = float(hist[50:200].sum() / gray.size)
+        if pure_white_ratio > 0.45 and mid_tones_ratio > 0.20 and float(gray.std()) > 75:
             issues.append("glare")
-            score_factors.append(max(0.0, 1.0 - overexposed_ratio * 5))
+            score_factors.append(0.75)
+            restoration_steps.append("Adaptive Gamma & Highlight Suppression")
         else:
             score_factors.append(1.0)
 
-        # ── Low resolution estimate ───────────────────────────────────────────
-        h, w = gray.shape
-        est_dpi = min(h, w) // 8   # rough heuristic for A4 scan
-        if est_dpi < self.LOW_RES_THRESHOLD:
+        # ── 4. Low resolution estimate ───────────────────────────────────────────
+        est_dpi = int(min(600, max(72, min(h, w) // 3.3)))
+        if est_dpi < 180:
             issues.append("low_res")
-            score_factors.append(max(0.0, est_dpi / self.LOW_RES_THRESHOLD))
+            score_factors.append(max(0.5, est_dpi / 180.0))
+            restoration_steps.append("Neural 4x Upscaling (Real-ESRGAN)")
         else:
             score_factors.append(1.0)
 
-        # ── Crease / shadow detection (local contrast variance) ───────────────
+        # ── 5. Contrast & dynamic range ──────────────────────────────────────────
+        contrast_std = float(gray.std())
+        dynamic_range = float(gray.max()) - float(gray.min())
+        if contrast_std < 28.0 or dynamic_range < 70.0:
+            issues.append("low_contrast")
+            score_factors.append(max(0.4, contrast_std / 28.0))
+            restoration_steps.append("CLAHE Contrast Equalization")
+        else:
+            score_factors.append(1.0)
+
+        # ── 6. Ink stain / dark blotch detection ─────────────────────────────────
+        # Scale-invariant stain & dark blotch detection using normalized thumbnail
+        thumb_h, thumb_w = 550, max(10, int(550 * (w / max(1, h))))
+        thumb_gray = cv2.resize(gray, (thumb_w, thumb_h), interpolation=cv2.INTER_AREA)
+        blur_bg = cv2.medianBlur(thumb_gray, 35)
+        diff = cv2.absdiff(blur_bg, thumb_gray)
+        _, stain_mask = cv2.threshold(diff, 40, 255, cv2.THRESH_BINARY)
+        # Also detect dark ink clusters
+        dark_clusters = (thumb_gray < 90) & (blur_bg > 130)
+        stain_mask[dark_clusters] = 255
+        stain_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        stain_mask_clean = cv2.morphologyEx(stain_mask, cv2.MORPH_OPEN, stain_kernel)
+        stain_ratio = float(np.count_nonzero(stain_mask_clean) / thumb_gray.size)
+
+        mean_lum = float(np.mean(thumb_gray))
+        if stain_ratio > 0.012 or (mean_lum < 175 and stain_ratio > 0.005):
+            issues.append("stains")
+            score_factors.append(max(0.35, 1.0 - min(0.65, stain_ratio * 7.0)))
+            restoration_steps.append("Sauvola Adaptive Binarization & Ink Stain Filter")
+        else:
+            score_factors.append(1.0)
+
+        # ── 7. Crease / fold shadow detection ───────────────────────────────────
         block_vars = []
-        bh, bw = h // 8, w // 8
+        bh, bw = max(1, h // 8), max(1, w // 8)
         for r in range(8):
             for c in range(8):
                 block = gray[r*bh:(r+1)*bh, c*bw:(c+1)*bw]
                 block_vars.append(float(block.var()))
-        cv_score = np.std(block_vars) / (np.mean(block_vars) + 1e-6)
-        if cv_score > 1.5:
-            issues.append("crease")
-            score_factors.append(max(0.0, 1.0 - (cv_score - 1.5) / 3.0))
+        cv_score = float(np.std(block_vars) / (np.mean(block_vars) + 1e-6))
+        if cv_score > 2.2 and float(gray.std()) > 40:
+            issues.append("crease_folds")
+            score_factors.append(max(0.5, 1.0 - (cv_score - 2.2) / 5.0))
+            restoration_steps.append("Illumination Division & Shadow Erasure")
         else:
             score_factors.append(1.0)
 
+        # ── 8. Torn margins / boundary wear ─────────────────────────────────────
+        border_thickness = 15
+        border_pixels = np.concatenate([
+            gray[:border_thickness, :].flatten(),
+            gray[-border_thickness:, :].flatten(),
+            gray[:, :border_thickness].flatten(),
+            gray[:, -border_thickness:].flatten()
+        ])
+        if float(np.std(border_pixels)) > 50.0:
+            issues.append("torn_margins")
+            score_factors.append(0.85)
+            restoration_steps.append("Telea Morphological Inpainting (Border Repair)")
+
+        # Overall composite health score
         quality_score = float(np.mean(score_factors))
-        needs_restoration = quality_score < 0.70 or len(issues) > 0
+        # Ensure quality score reflects significant penalties if multiple severe issues present
+        if len(issues) >= 3:
+            quality_score = min(quality_score, 0.65)
+        elif len(issues) >= 2:
+            quality_score = min(quality_score, 0.78)
+        elif len(issues) == 0:
+            quality_score = max(quality_score, 0.94)
+
+        quality_score = round(max(0.15, min(0.99, quality_score)), 3)
+        needs_restoration = quality_score < 0.80 or len(issues) > 0
+
+        # Deduplicate steps
+        unique_steps = list(dict.fromkeys(restoration_steps))
+        if not unique_steps:
+            unique_steps = ["Scan Fidelity Verified (Direct Ingestion)"]
+
+        metrics_dict = {
+            "blur_variance": round(lap_var, 1),
+            "skew_angle_deg": round(skew_angle, 2),
+            "contrast_ratio": round(contrast_std, 1),
+            "stain_area_pct": round(stain_ratio * 100, 2),
+            "estimated_dpi": est_dpi,
+            "dimensions": f"{w}x{h} px",
+        }
 
         return QualityReport(
-            quality_score=round(quality_score, 4),
+            quality_score=quality_score,
             issues=issues,
             needs_restoration=needs_restoration,
             skew_angle=round(skew_angle, 2),
             estimated_dpi=est_dpi,
+            metrics=metrics_dict,
+            restoration_steps=unique_steps,
         )
 
     def _detect_skew(self, gray: np.ndarray) -> float:

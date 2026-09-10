@@ -23,8 +23,9 @@ router = APIRouter()
 # ── Admin role guard ──────────────────────────────────────────────────────────
 
 async def _require_admin(user=Depends(get_current_user)):
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin role required")
+    user_role = (user.role or "").upper()
+    if user_role not in ["ADMIN", "COLLECTOR", "DISTRICT_COLLECTOR", "TAHSILDAR"]:
+        raise HTTPException(status_code=403, detail="District Collector / Admin role required")
     return user
 
 
@@ -32,12 +33,19 @@ async def _require_admin(user=Depends(get_current_user)):
 
 def _user_out(u: User) -> dict:
     return {
-        "id":         u.id,
-        "username":   u.username,
-        "email":      u.email,
-        "role":       u.role,
-        "is_active":  u.is_active,
-        "created_at": u.created_at.isoformat() if u.created_at else None,
+        "id":           u.id,
+        "firebase_uid": u.firebase_uid,
+        "username":     u.username,
+        "display_name": u.display_name or u.username,
+        "email":        u.email,
+        "role":         u.role,
+        "district":     u.district,
+        "taluk":        u.taluk,
+        "firka":        u.firka,
+        "village_code": u.village_code,
+        "is_active":    u.is_active,
+        "created_at":   u.created_at.isoformat() if u.created_at else None,
+        "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
     }
 
 

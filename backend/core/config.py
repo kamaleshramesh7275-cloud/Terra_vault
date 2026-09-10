@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change_me"
     LOG_LEVEL: str = "INFO"
 
+    # Firebase Authentication
+    FIREBASE_PROJECT_ID: str = "terra-vault-3141c"
+    FIREBASE_CREDENTIALS_PATH: str = ""
+    ENABLE_DEMO_AUTH_FALLBACK: bool = True
+
     # Database (Defaults to SQLite; will use PostgreSQL if DATABASE_URL env var is provided)
     DATABASE_URL: str = "sqlite+aiosqlite:////app/data/terravault.db"
     SYNC_DATABASE_URL: str = "sqlite:////app/data/terravault.db"
@@ -61,6 +66,13 @@ class Settings(BaseSettings):
     OCR_STANDARD_FIELD_CONF_THRESHOLD: float = 0.90  # Standard fields ≥90% = green
     OCR_HEATMAP_AMBER_THRESHOLD: float = 0.70   # Below this = red
     ENSEMBLE_TROCR_WEIGHT: float = 1.5          # TrOCR weight multiplier for printed text
+
+    # ── Fine-Tuning Thresholds: Degraded / Inked Document Recovery ────────────
+    # Ink coverage = fraction of pixels classified as dark ink blobs by HSV segmentation
+    OCR_INK_COVERAGE_DEGRADED_THRESHOLD: float = 0.05   # >5% ink pixels → use multi-stream OCR
+    OCR_INK_COVERAGE_RECOVERY_THRESHOLD: float = 0.12   # >12% ink pixels → trigger degraded field recovery
+    OCR_DEGRADED_HEALTH_SCORE_THRESHOLD: float = 70.0   # health_score < 70 → force multi-stream OCR
+    OCR_DEGRADED_CONF_THRESHOLD: float = 0.55           # OCR avg_conf < 0.55 → trigger degraded recovery
 
     # ── Fine-Tuning Thresholds: Upload Quality Gatekeeper ─────────────────────
     IQA_BLUR_THRESHOLD_96DPI: float = 60.0      # Laplacian variance threshold at 96dpi

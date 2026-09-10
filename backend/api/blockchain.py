@@ -39,8 +39,6 @@ async def anchor(record_id: str, verifier_id: str, db: AsyncSession = Depends(ge
         await db.commit()
 
     return result
-
-
 @router.get("/{record_id}/verify")
 async def verify(record_id: str, db: AsyncSession = Depends(get_db)):
     """Verify a record's blockchain anchor — detect tampering."""

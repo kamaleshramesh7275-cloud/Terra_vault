@@ -12,6 +12,7 @@
     "@types/leaflet": "^1.9.22",
     "@types/pdf-parse": "^1.1.5",
     "ethers": "^6.17.0",
+    "firebase": "^12.18.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.37.0",
     "maplibre-gl": "^6.7.0",

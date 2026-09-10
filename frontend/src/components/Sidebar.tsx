@@ -7,6 +7,7 @@ import {
   User, Sprout, Search, FileCheck, Scale, Building2
 } from "lucide-react";
 import { useAuth } from "@/components/AuthGuard";
+import { useLanguage } from "@/context/LanguageContext";
 
 const NAV = [
   { href: "/citizen", icon: User, label: "Citizen / Pattadar Desk" },
@@ -116,6 +117,7 @@ const ROLE_ALLOWED_ROUTES: Record<string, string[]> = {
 export function Sidebar() {
   const path = usePathname();
   const { role, username, logout } = useAuth();
+  const { t } = useLanguage();
 
   const userRole = role?.toLowerCase() || "citizen";
   const allowed = ROLE_ALLOWED_ROUTES[userRole] || ROLE_ALLOWED_ROUTES.citizen;
@@ -180,7 +182,7 @@ export function Sidebar() {
               }}
             >
               <Icon size={15} color={isActive ? "#ffffff" : "#475569"} />
-              {label}
+              {t(label)}
             </Link>
           );
         })}
@@ -189,28 +191,29 @@ export function Sidebar() {
       {/* Sidebar Footer User Box */}
       <div style={{ padding: "12px 14px 28px 14px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
             <div style={{
-              width: 26, height: 26, borderRadius: "50%", background: "#0f2942",
-              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #1e293b"
+              width: 28, height: 28, borderRadius: "50%", background: "#0f2942",
+              display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #1e293b",
+              flexShrink: 0
             }}>
-              <UserIcon size={13} color="#ffffff" />
+              <UserIcon size={14} color="#ffffff" />
             </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#0f2942", lineHeight: 1.2 }}>
+            <div style={{ overflow: "hidden" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#0f2942", lineHeight: 1.2, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
                 {username}
               </div>
-              <div style={{ fontSize: 10, color: "#1e3a8a", textTransform: "capitalize", fontWeight: 700 }}>
+              <div style={{ fontSize: 10, color: "#1e3a8a", textTransform: "uppercase", fontWeight: 700 }}>
                 {role}
               </div>
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={() => logout()}
             title="Log Out"
             style={{
               background: "transparent", border: "none", cursor: "pointer",
-              color: "#475569", padding: 4, borderRadius: 6, display: "flex", alignItems: "center"
+              color: "#dc2626", padding: 4, borderRadius: 6, display: "flex", alignItems: "center"
             }}
           >
             <LogOut size={14} />
@@ -218,12 +221,12 @@ export function Sidebar() {
         </div>
 
         <div style={{ fontSize: 10, color: "#475569", display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 4, borderTop: "1px solid #cbd5e1" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#16a34a", fontWeight: 700 }}><span>●</span> Polygon Seal</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#16a34a", fontWeight: 700 }}><span>●</span> SSO Verified</span>
           <select
             style={{ background: "#ffffff", color: "#0f2942", fontSize: 10, borderRadius: 4, border: "1px solid #cbd5e1", padding: "2px 4px", fontWeight: 600 }}
-            value={role}
+            value={userRole}
             onChange={(e) => {
-              const newRole = e.target.value;
+              const newRole = e.target.value.toLowerCase();
               localStorage.setItem("tv_role", newRole);
               const targetUrl = ROLE_REDIRECT_MAP[newRole] || "/";
               fetch(`/api/auth/persona-token?role=${encodeURIComponent(newRole)}`, { method: "POST" })
@@ -244,7 +247,7 @@ export function Sidebar() {
             <option value="ri">RI Firka Desk</option>
             <option value="tahsildar">Tahsildar Portal</option>
             <option value="rdo">RDO Tribunal</option>
-            <option value="admin">District Collector</option>
+            <option value="collector">District Collector</option>
           </select>
         </div>
       </div>

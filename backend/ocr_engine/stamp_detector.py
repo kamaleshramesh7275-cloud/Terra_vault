@@ -89,20 +89,24 @@ class StampDetector:
                     color="red/purple"
                 ))
 
-        # Synthetic fallback detection if running on clean grayscale without color
+        # Process black / grayscale circular seals if no color stamps detected
         if len(detections) == 0:
-            # Check bottom-right region for registrar signature/stamp
-            detections.append(StampDetection(
-                label="official_seal",
-                confidence=0.88,
-                bbox=[int(w * 0.72), int(h * 0.75), int(w * 0.22), int(h * 0.18)],
-                color="blue"
-            ))
-            detections.append(StampDetection(
-                label="signature",
-                confidence=0.85,
-                bbox=[int(w * 0.15), int(h * 0.82), int(w * 0.25), int(h * 0.12)],
-                color="black"
-            ))
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+            thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 12)
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            for c in contours:
+                area = cv2.contourArea(c)
+                if 1200 < area < (w * h * 0.15):
+                    perimeter = cv2.arcLength(c, True)
+                    if perimeter > 0:
+                        circularity = 4 * np.pi * (area / (perimeter * perimeter))
+                        if circularity > 0.60:
+                            x, y, bw, bh = cv2.boundingRect(c)
+                            detections.append(StampDetection(
+                                label="official_seal",
+                                confidence=0.84,
+                                bbox=[int(x), int(y), int(bw), int(bh)],
+                                color="black"
+                            ))
 
         return detections

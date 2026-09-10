@@ -1,8 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Search, Filter, Download, ChevronRight, CheckCircle2, Clock, AlertTriangle, XCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { getAllStatesList } from "@/lib/stateRegistry";
 
 const STATUS_BADGE: Record<string, string> = {
   processing: "badge badge-processing",
@@ -15,12 +17,19 @@ const STATUS_BADGE: Record<string, string> = {
 const CONF_CLASS = (c: number) =>
   c >= 0.85 ? "conf-high" : c >= 0.65 ? "conf-medium" : "conf-low";
 
-export default function RecordsPage() {
+function RecordsPageContent() {
+  const searchParams = useSearchParams();
+  const stateQuery = searchParams ? searchParams.get("state") : null;
+  const allStates = getAllStatesList();
+
   const [records, setRecords] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [selectedState, setSelectedState] = useState<string>(
+    (stateQuery || (typeof window !== "undefined" ? localStorage.getItem("tv_state") : null) || "").toLowerCase()
+  );
   const [page, setPage] = useState(1);
 
   const load = async () => {
@@ -29,6 +38,7 @@ export default function RecordsPage() {
       const params: any = { page, page_size: 15 };
       if (search) params.q = search;
       if (status) params.status = status;
+      if (selectedState) params.state = selectedState;
       const data = await api.listRecords(params);
       if (Array.isArray(data)) {
         setRecords(data);
@@ -42,7 +52,7 @@ export default function RecordsPage() {
     }
   };
 
-  useEffect(() => { load(); }, [page, status]);
+  useEffect(() => { load(); }, [page, status, selectedState]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); setPage(1); load(); };
 
@@ -53,13 +63,13 @@ export default function RecordsPage() {
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontFamily: "var(--font-head)", fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Land Records</h1>
         <p style={{ color: "var(--color-text-muted)", fontSize: 14 }}>
-          {total.toLocaleString()} records — search, filter, and inspect extracted fields
+          {total.toLocaleString()} records — search, filter by state, and inspect extracted fields
         </p>
       </div>
 
       {/* Search + filter bar */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-        <form onSubmit={handleSearch} style={{ flex: 1, display: "flex", gap: 10 }}>
+      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+        <form onSubmit={handleSearch} style={{ flex: 1, display: "flex", gap: 10, minWidth: 280 }}>
           <div style={{ flex: 1, position: "relative" }}>
             <Search size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--color-text-muted)" }} />
             <input className="input" value={search} onChange={e => setSearch(e.target.value)}
@@ -68,8 +78,17 @@ export default function RecordsPage() {
           </div>
           <button type="submit" className="btn-primary">Search</button>
         </form>
+
+        <select value={selectedState} onChange={e => { setSelectedState(e.target.value); setPage(1); }}
+          className="input" style={{ width: 170, background: "var(--color-surface-2)" }}>
+          <option value="">All States (36 UTs)</option>
+          {allStates.map(s => (
+            <option key={s.code} value={s.code}>{s.name}</option>
+          ))}
+        </select>
+
         <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}
-          className="input" style={{ width: 160, background: "var(--color-surface-2)" }}>
+          className="input" style={{ width: 140, background: "var(--color-surface-2)" }}>
           <option value="">All Status</option>
           {["processing","review","verified","disputed","rejected"].map(s => (
             <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>
@@ -168,5 +187,18 @@ export default function RecordsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RecordsPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ textAlign: "center", padding: "50px 0" }}>
+        <Loader2 className="spin" size={32} color="#0f2942" />
+        <div style={{ fontSize: 14, marginTop: 12, color: "var(--color-text-muted)" }}>Loading Land Records...</div>
+      </div>
+    }>
+      <RecordsPageContent />
+    </Suspense>
   );
 }

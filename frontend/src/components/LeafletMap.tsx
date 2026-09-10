@@ -115,6 +115,14 @@ export default function LeafletMap({
     }
   }, []);
 
+  // Sync Map View whenever center or zoom props change
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && center && center.length === 2) {
+      map.setView(center, zoom || 15);
+    }
+  }, [center?.[0], center?.[1], zoom]);
+
   // 2. Base Map Tile Switcher & Timeline Slider (2018–2026)
   useEffect(() => {
     const map = mapRef.current;
@@ -378,8 +386,10 @@ export default function LeafletMap({
                 </div>
                 <div style="font-size:12px;margin-bottom:3px;"><strong>தற்போதைய உரிமையாளர் (Owner):</strong> ${p.owner_name}</div>
                 ${p.father_name ? `<div style="font-size:12px;margin-bottom:3px;"><strong>தந்தை/கணவர்:</strong> ${p.father_name}</div>` : ""}
-                <div style="font-size:12px;margin-bottom:3px;"><strong>கிராமம் & வட்டம்:</strong> ${p.village}, ${p.taluk || p.district}</div>
-                <div style="font-size:12px;margin-bottom:3px;"><strong>விஸ்தீரணம் (Extent):</strong> ${p.area_acres} Acres</div>
+                ${p.seller_name ? `<div style="font-size:12px;margin-bottom:3px;"><strong>விற்பவர் (Seller):</strong> ${p.seller_name}</div>` : ""}
+                <div style="font-size:12px;margin-bottom:3px;"><strong>கிராமம் & வட்டம்:</strong> ${p.village}, ${p.taluk || p.district} (${p.district || "Tamil Nadu"})</div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>விஸ்தீரணம் (Extent):</strong> ${p.area_acres} Acres (${p.area_cents || Math.round(p.area_acres * 100)} Cents)</div>
+                <div style="font-size:12px;margin-bottom:3px;"><strong>நில வகைப்பாடு:</strong> ${p.land_type || "புஞ்சை நிலம்"}</div>
 
                 <div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;">
                   <div style="font-size:10px;font-weight:800;color:#0f2942;text-transform:uppercase;margin-bottom:4px;display:flex;justify-content:space-between;">
@@ -387,12 +397,12 @@ export default function LeafletMap({
                     <span style="color:#16a34a;font-weight:700;">CERTIFIED</span>
                   </div>
                   <div style="font-size:11px;color:#0f172a;display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-weight:600;">
-                    <span style="color:#b91c1c;background:#fee2e2;padding:1px 5px;border-radius:3px;">${latestMutation?.transferor?.split('/')[0] || 'முந்தையவர்'}</span>
+                    <span style="color:#b91c1c;background:#fee2e2;padding:1px 5px;border-radius:3px;">${p.seller_name?.split('/')[0] || latestMutation?.transferor?.split('/')[0] || 'முந்தையவர்'}</span>
                     <span style="color:#64748b;font-weight:800;">➔</span>
-                    <span style="color:#15803d;background:#dcfce7;padding:1px 5px;border-radius:3px;">${latestMutation?.transferee?.split('/')[0] || p.owner_name?.split('/')[0]}</span>
+                    <span style="color:#15803d;background:#dcfce7;padding:1px 5px;border-radius:3px;">${p.owner_name?.split('/')[0]}</span>
                   </div>
                   <div style="font-size:10px;color:#475569;margin-top:4px;">
-                    ${latestMutation?.deed_type?.split('(')[0] || 'கிரையப் பத்திரம்'} • ${latestMutation?.date || '2026-02-18'}
+                    ${p.transaction_type?.split('(')[0] || latestMutation?.deed_type?.split('(')[0] || 'கிரையப் பத்திரம்'} • ${p.mutation_date || latestMutation?.date || '2026-09-28'}
                   </div>
                 </div>
 
@@ -478,25 +488,25 @@ export default function LeafletMap({
 
       geojsonLayerRef.current = layer;
 
-      // Auto-fly to highlighted feature or fit bounds
-      const highlightedFeature = plotsData?.features?.find(
+      // Auto-fly to highlighted feature or selected plot or fit bounds
+      const targetFeature = plotsData?.features?.find(
         (f: any) => f.properties?.highlighted || f.properties?.id === selectedPlotId || f.properties?.survey_no === selectedPlotId
-      );
+      ) || plotsData?.features?.[0];
 
-      if (highlightedFeature && highlightSelected) {
+      if (targetFeature) {
         try {
-          const coords = highlightedFeature.geometry.coordinates[0];
+          const coords = targetFeature.geometry.coordinates[0];
           const lats = coords.map((c: any) => c[1]);
           const lngs = coords.map((c: any) => c[0]);
           const cLat = lats.reduce((a: number, b: number) => a + b, 0) / lats.length;
           const cLng = lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length;
 
-          map.flyTo([cLat, cLng], 14, { duration: 1.2 });
+          map.setView([cLat, cLng], 15);
           boundsInitializedRef.current = true;
         } catch {
-          map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 14 });
+          map.fitBounds(layer.getBounds(), { padding: [40, 40], maxZoom: 15 });
         }
-      } else if (!boundsInitializedRef.current) {
+      } else if (plotsData?.features?.length > 0) {
         try {
           const bounds = layer.getBounds();
           if (bounds.isValid()) {

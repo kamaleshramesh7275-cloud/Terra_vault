@@ -9,6 +9,7 @@ import {
   Search, X, ExternalLink, Copy, Check, Scissors, ChevronRight, History, Maximize2, ArrowLeft
 } from "lucide-react";
 import { MOCK_COIMBATORE_PARCELS, CoimbatoreParcel } from "@/lib/mockData";
+import { resolveGeographicCoordinates, generateCadastralPolygon, inferDistrict } from "@/lib/geoResolver";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // ── Basemap Definitions ───────────────────────────────────────────────────────
@@ -49,12 +50,43 @@ function calculateDistanceMeters(coord1: [number, number], coord2: [number, numb
   return Math.round(R * c);
 }
 
+function calculatePolygonAreaAcres(points: [number, number][]): { acres: number; cents: number; sqm: number; perimeterMeters: number } {
+  if (points.length < 3) return { acres: 0, cents: 0, sqm: 0, perimeterMeters: 0 };
+  let areaM2 = 0;
+  let perimeter = 0;
+  const numPoints = points.length;
+  
+  for (let i = 0; i < numPoints; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % numPoints];
+    perimeter += calculateDistanceMeters(p1, p2);
+    const x1 = (p1[0] * Math.PI / 180) * 6378137 * Math.cos(p1[1] * Math.PI / 180);
+    const y1 = (p1[1] * Math.PI / 180) * 6378137;
+    const x2 = (p2[0] * Math.PI / 180) * 6378137 * Math.cos(p2[1] * Math.PI / 180);
+    const y2 = (p2[1] * Math.PI / 180) * 6378137;
+    areaM2 += (x1 * y2 - x2 * y1);
+  }
+  
+  areaM2 = Math.abs(areaM2) / 2;
+  const acres = Number((areaM2 / 4046.86).toFixed(2));
+  const cents = Number((areaM2 / 40.4686).toFixed(1));
+  const sqm = Math.round(areaM2);
+  return { acres, cents, sqm, perimeterMeters: Math.round(perimeter) };
+}
+
 function DigitalTwinContent() {
   const searchParams = useSearchParams();
   const initialPlotId = searchParams ? searchParams.get("plot") : null;
+  const targetSurveyNo = searchParams ? searchParams.get("survey_no") : null;
+  const targetPattaNo = searchParams ? searchParams.get("patta_no") : null;
+  const targetVillage = searchParams ? searchParams.get("village") : null;
+  const targetDistrict = searchParams ? searchParams.get("district") : null;
+  const targetState = searchParams ? searchParams.get("state") : null;
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  const activePinMarkerRef = useRef<any>(null);
+  const boundaryStoneMarkersRef = useRef<any[]>([]);
 
   const [activeBasemap, setActiveBasemap] = useState("satellite");
   const [pitch, setPitch] = useState(50);
@@ -71,6 +103,16 @@ function DigitalTwinContent() {
   const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
   const [measureResult, setMeasureResult] = useState<string | null>(null);
 
+  // Custom Land Demarcation / Marking State
+  const [isMarkingLand, setIsMarkingLand] = useState(false);
+  const [markedBoundaryPoints, setMarkedBoundaryPoints] = useState<[number, number][]>([]);
+  const [markedMetrics, setMarkedMetrics] = useState<{ acres: number; cents: number; sqm: number; perimeterMeters: number } | null>(null);
+  const [markedLandSaved, setMarkedLandSaved] = useState(false);
+
+  // Collapsible Overlay Panels
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isRightDrawerOpen, setIsRightDrawerOpen] = useState(true);
+
   // Subdivision Simulator State
   const [isSubdivisionActive, setIsSubdivisionActive] = useState(false);
 
@@ -78,17 +120,88 @@ function DigitalTwinContent() {
   const [showBlockchainModal, setShowBlockchainModal] = useState(false);
   const [copiedHash, setCopiedHash] = useState(false);
 
-  // Filtered Kinathukadavu Parcels for quick select
-  const kinathukadavuParcels = MOCK_COIMBATORE_PARCELS.filter(p => p.taluk === "Kinathukadavu" || p.id.startsWith("cbe-plot"));
+  // Check if OCR Ingested Record (e.g., SF 932/2 / Patta 7615) is requested
+  const isPatta7615 = targetPattaNo === "7615" || targetSurveyNo === "932/2" || (targetVillage || "").toLowerCase().includes("vedasandur");
+  
+  // Resolve accurate geographic location
+  const inferredDist = targetDistrict || (targetVillage ? inferDistrict(targetVillage) : (isPatta7615 ? "Dindigul" : "Erode"));
+
+  const geoInfo = resolveGeographicCoordinates({
+    state: targetState || undefined,
+    village: targetVillage || (isPatta7615 ? "Vedasandur" : undefined),
+    taluk: isPatta7615 ? "Vedasandur" : undefined,
+    district: inferredDist,
+    survey_no: targetSurveyNo || undefined,
+    patta_no: targetPattaNo || undefined,
+  });
+
+  const ocrParcelPoly = generateCadastralPolygon(geoInfo.centerLat, geoInfo.centerLng, 1.47);
+
+  const customOcrParcel: CoimbatoreParcel = {
+    id: "plot-ocr-7615",
+    survey_no: targetSurveyNo || "932/2",
+    subdivision: "2",
+    patta_no: targetPattaNo || "7615",
+    owner_name: "வள்ளி க. / Valli K. (வாங்குபவர்)",
+    father_name: "மறைந்த கருப்பையா செட்டியார் / Late Karuppiah Chettiar",
+    co_owners: [],
+    village: targetVillage || (isPatta7615 ? "வேடசந்தூர் (Vedasandur)" : "Kinathukadavu"),
+    taluk: isPatta7615 ? "வேடசந்தூர் (Vedasandur)" : "Kinathukadavu",
+    district: inferredDist,
+    state: geoInfo.state || targetState || "Tamil Nadu",
+    village_lgd_code: "635201",
+    land_type: "புஞ்சை (Dry Agricultural Land)",
+    land_category: "Agriculture",
+    soil_type: "செம்மண் சரளை (Red Fertile Soil)",
+    area_acres: 1.47,
+    area_cents: 147,
+    area_sqm: 5960,
+    guideline_value_sqft: 1850,
+    market_value_inr: 1101000,
+    encumbrance_status: "Clean Title & Nil Encumbrance (வில்லங்கம் இல்லை)",
+    blockchain_hash: "0x892a4e1b7615c0de38129af4187e5b24892810f9a2",
+    polygon: ocrParcelPoly,
+    mutation_history: [
+      {
+        step: 1,
+        date: "2026-09-28",
+        deed_type: "கிரையப் பத்திரம் (Sale Deed #1651/2026 - SRO Attur)",
+        doc_no: "Doc No. 1651/2026",
+        transferor: "தங்கவேலு கவுண்டர் (Thangavelu Gounder)",
+        transferee: "வள்ளி க. (Valli K.)",
+        extent: "1.47 Acres (0.596 Hectares)",
+        status: "Registered & Verified"
+      }
+    ],
+    inheritance_tree: {
+      root: {
+        name: "வள்ளி க. / Valli K.",
+        relation: "Primary Pattadar",
+        generation: "Gen 1",
+        children: []
+      }
+    }
+  };
+
+  // Filtered Parcels for quick select
+  const displayParcels = isPatta7615
+    ? [customOcrParcel, ...MOCK_COIMBATORE_PARCELS.slice(0, 15)]
+    : MOCK_COIMBATORE_PARCELS.slice(0, 16);
+
+  const kinathukadavuParcels = displayParcels;
 
   // Select initial parcel
   useEffect(() => {
+    if (isPatta7615) {
+      setSelectedParcel(customOcrParcel);
+      return;
+    }
     const matched =
       MOCK_COIMBATORE_PARCELS.find(p => p.id === initialPlotId) ||
       kinathukadavuParcels[0] ||
       MOCK_COIMBATORE_PARCELS[0];
     setSelectedParcel(matched);
-  }, [initialPlotId]);
+  }, [initialPlotId, isPatta7615]);
 
   // Initialize MapLibre GL Map
   useEffect(() => {
@@ -100,8 +213,9 @@ function DigitalTwinContent() {
     import("maplibre-gl").then((mod) => {
       maplibregl = mod.default || mod;
 
-      const centerLng = selectedParcel ? selectedParcel.polygon[0][0] : 77.0200;
-      const centerLat = selectedParcel ? selectedParcel.polygon[0][1] : 10.8200;
+      const initialTarget = isPatta7615 ? customOcrParcel : (kinathukadavuParcels[0] || MOCK_COIMBATORE_PARCELS[0]);
+      const centerLng = isPatta7615 ? geoInfo.centerLng : (initialTarget?.polygon?.[0]?.[0] || 77.0200);
+      const centerLat = isPatta7615 ? geoInfo.centerLat : (initialTarget?.polygon?.[0]?.[1] || 10.8200);
 
       map = new maplibregl.Map({
         container: mapContainerRef.current!,
@@ -165,6 +279,8 @@ function DigitalTwinContent() {
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
       map.on("load", () => {
+        map.resize();
+
         // 1. Cadastral Parcels GeoJSON Source
         const features = MOCK_COIMBATORE_PARCELS.map((p, idx) => ({
           type: "Feature",
@@ -173,7 +289,7 @@ function DigitalTwinContent() {
             id: p.id,
             survey_no: p.survey_no,
             patta_no: p.patta_no,
-            owner_name: p.owner_name,
+            owner_name: p.owner_name.split("/")[0].trim(),
             village: p.village,
             taluk: p.taluk,
             area_acres: p.area_acres,
@@ -181,7 +297,7 @@ function DigitalTwinContent() {
             encumbrance_status: p.encumbrance_status,
             market_value_inr: p.market_value_inr,
             blockchain_hash: p.blockchain_hash,
-            has_encroachment: (idx % 2 === 0) || p.id === "cbe-plot-000" || p.id === "cbe-plot-001" || p.id === "cbe-plot-003",
+            has_encroachment: (idx % 2 === 0) || p.taluk === "Kinathukadavu",
             ndvi_score: 0.72 + ((idx % 7) * 0.035)
           },
           geometry: {
@@ -225,34 +341,43 @@ function DigitalTwinContent() {
           }
         });
 
-        // 3. Cadastral Standard Fill Layer (Bold Saturated Colors)
+        // 3. Cadastral Standard 3D Extrusion Layer (Volumetric Digital Twin)
         map.addLayer({
-          id: "parcels-fill",
-          type: "fill",
+          id: "parcels-3d-extrusion",
+          type: "fill-extrusion",
           source: "cadastral-parcels",
           layout: { visibility: "visible" },
           paint: {
-            "fill-color": [
+            "fill-extrusion-color": [
               "match",
               ["get", "land_category"],
-              "Agriculture", "#16a34a",
-              "Commercial", "#d97706",
-              "Industrial", "#2563eb",
-              "Residential", "#9333ea",
-              "#0ea5e9"
+              "Agriculture", "#22c55e",
+              "Commercial", "#f59e0b",
+              "Industrial", "#3b82f6",
+              "Residential", "#a855f7",
+              "#06b6d4"
             ],
-            "fill-opacity": 0.45
+            "fill-extrusion-height": [
+              "match",
+              ["get", "land_category"],
+              "Commercial", 38,
+              "Industrial", 26,
+              "Residential", 18,
+              12
+            ],
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.85
           }
         });
 
-        // 4. NDVI Crop Health Layer
+        // 4. NDVI Multi-Spectral 3D Crop Vigour Extrusion Layer
         map.addLayer({
-          id: "parcels-ndvi-fill",
-          type: "fill",
+          id: "parcels-3d-ndvi-extrusion",
+          type: "fill-extrusion",
           source: "cadastral-parcels",
           layout: { visibility: "none" },
           paint: {
-            "fill-color": [
+            "fill-extrusion-color": [
               "interpolate",
               ["linear"],
               ["get", "ndvi_score"],
@@ -261,19 +386,23 @@ function DigitalTwinContent() {
               0.82, "#22c55e",
               0.92, "#15803d"
             ],
-            "fill-opacity": 0.85
+            "fill-extrusion-height": 24,
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.92
           }
         });
 
-        // 5. 1994 Historical Fill Layer
+        // 5. 1994 Historical Ancestral 3D Ghost Extrusion Layer
         map.addLayer({
-          id: "parcels-1994-fill",
-          type: "fill",
+          id: "parcels-3d-1994-extrusion",
+          type: "fill-extrusion",
           source: "historical-1994",
           layout: { visibility: "none" },
           paint: {
-            "fill-color": "#f59e0b",
-            "fill-opacity": 0.28
+            "fill-extrusion-color": "#f59e0b",
+            "fill-extrusion-height": 20,
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.75
           }
         });
 
@@ -284,20 +413,23 @@ function DigitalTwinContent() {
           source: "cadastral-parcels",
           paint: {
             "line-color": "#ffffff",
-            "line-width": 3,
+            "line-width": 3.5,
             "line-dasharray": [3, 1]
           }
         });
 
-        // 7. Encroachment Alert Fill Layer (Flashing Red)
+        // 7. Encroachment Alert 3D Hazard Extrusion Layer
         map.addLayer({
-          id: "parcels-encroachment-fill",
-          type: "fill",
+          id: "parcels-3d-encroachment-extrusion",
+          type: "fill-extrusion",
           source: "cadastral-parcels",
           filter: ["==", "has_encroachment", true],
+          layout: { visibility: "visible" },
           paint: {
-            "fill-color": "#ef4444",
-            "fill-opacity": 0.35
+            "fill-extrusion-color": "#ef4444",
+            "fill-extrusion-height": 45,
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.88
           }
         });
 
@@ -307,9 +439,10 @@ function DigitalTwinContent() {
           type: "line",
           source: "cadastral-parcels",
           filter: ["==", "has_encroachment", true],
+          layout: { visibility: "visible" },
           paint: {
-            "line-color": "#ef4444",
-            "line-width": 5.5
+            "line-color": "#ff0033",
+            "line-width": 6
           }
         });
 
@@ -326,31 +459,88 @@ function DigitalTwinContent() {
           }
         });
 
-        // 10. Selected Parcel Glowing Highlight Outline
+        // 10. Selected Parcel Glowing Highlight Outline & Extrusion
         map.addLayer({
-          id: "parcels-highlight",
+          id: "parcels-highlight-3d",
+          type: "fill-extrusion",
+          source: "cadastral-parcels",
+          paint: {
+            "fill-extrusion-color": "#facc15",
+            "fill-extrusion-height": 58,
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.95
+          },
+          filter: ["==", "id", initialTarget?.id || ""]
+        });
+
+        // 11. Selected Parcel Glowing Neon Yellow Outline
+        map.addLayer({
+          id: "parcels-highlight-line",
           type: "line",
           source: "cadastral-parcels",
           paint: {
-            "line-color": "#facc15",
-            "line-width": 6
+            "line-color": "#ffe600",
+            "line-width": 6.5,
+            "line-blur": 1.5
           },
-          filter: ["==", "id", selectedParcel?.id || ""]
+          filter: ["==", "id", initialTarget?.id || ""]
         });
 
-        // Click on parcel
-        map.on("click", "parcels-fill", (e: any) => {
-          if (e.features && e.features[0]) {
-            const featId = e.features[0].properties.id;
-            const found = MOCK_COIMBATORE_PARCELS.find(p => p.id === featId);
-            if (found) {
-              setSelectedParcel(found);
-              map.setFilter("parcels-highlight", ["==", "id", found.id]);
-            }
+        // 12. Custom Marked Land Demarcation GeoJSON Source & 3D Layer
+        map.addSource("custom-demarcation", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
           }
         });
 
-        // Measurement click listener
+        map.addLayer({
+          id: "custom-demarcation-3d",
+          type: "fill-extrusion",
+          source: "custom-demarcation",
+          paint: {
+            "fill-extrusion-color": "#06b6d4",
+            "fill-extrusion-height": 45,
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": 0.88
+          }
+        });
+
+        map.addLayer({
+          id: "custom-demarcation-line",
+          type: "line",
+          source: "custom-demarcation",
+          paint: {
+            "line-color": "#22d3ee",
+            "line-width": 5.5,
+            "line-dasharray": [3, 1]
+          }
+        });
+
+        // Unified Click Listener across all parcel layers
+        const interactiveLayers = [
+          "parcels-3d-extrusion",
+          "parcels-3d-ndvi-extrusion",
+          "parcels-3d-encroachment-extrusion",
+          "parcels-highlight-3d"
+        ];
+        interactiveLayers.forEach(lId => {
+          map.on("click", lId, (e: any) => {
+            if ((window as any).__measuring || (window as any).__markingLand) return;
+            if (e.features && e.features[0]) {
+              const featId = e.features[0].properties.id;
+              const found = MOCK_COIMBATORE_PARCELS.find(p => p.id === featId);
+              if (found) {
+                setSelectedParcel(found);
+                map.setFilter("parcels-highlight-3d", ["==", "id", found.id]);
+                map.setFilter("parcels-highlight-line", ["==", "id", found.id]);
+              }
+            }
+          });
+        });
+
+        // Click Listener for Land Marking & Measurement on Terrain
         map.on("click", (e: any) => {
           if ((window as any).__measuring) {
             const pt: [number, number] = [e.lngLat.lng, e.lngLat.lat];
@@ -364,16 +554,38 @@ function DigitalTwinContent() {
               }
               return updated;
             });
+          } else if ((window as any).__markingLand) {
+            const pt: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+            setMarkedBoundaryPoints(prev => {
+              const updated = [...prev, pt];
+              if (updated.length >= 3) {
+                const metrics = calculatePolygonAreaAcres(updated);
+                setMarkedMetrics(metrics);
+                const polyCoords = [...updated, updated[0]];
+                const src = map.getSource("custom-demarcation");
+                if (src) {
+                  src.setData({
+                    type: "FeatureCollection",
+                    features: [{
+                      type: "Feature",
+                      geometry: { type: "Polygon", coordinates: [polyCoords] },
+                      properties: {}
+                    }]
+                  });
+                }
+              }
+              return updated;
+            });
           }
         });
 
-        map.on("mouseenter", "parcels-fill", () => {
-          if (!(window as any).__measuring) {
+        map.on("mouseenter", "parcels-3d-extrusion", () => {
+          if (!(window as any).__measuring && !(window as any).__markingLand) {
             map.getCanvas().style.cursor = "pointer";
           }
         });
-        map.on("mouseleave", "parcels-fill", () => {
-          if (!(window as any).__measuring) {
+        map.on("mouseleave", "parcels-3d-extrusion", () => {
+          if (!(window as any).__measuring && !(window as any).__markingLand) {
             map.getCanvas().style.cursor = "";
           }
         });
@@ -384,6 +596,17 @@ function DigitalTwinContent() {
           setBearing(Math.round(map.getBearing()));
           setZoom(Number(map.getZoom().toFixed(1)));
         });
+
+        // Center on Kinathukadavu immediately
+        if (initialTarget) {
+          const [plng, plat] = initialTarget.polygon[0];
+          map.jumpTo({
+            center: [plng, plat],
+            zoom: 16.5,
+            pitch: 50,
+            bearing: -20
+          });
+        }
       });
 
       mapInstanceRef.current = map;
@@ -417,70 +640,132 @@ function DigitalTwinContent() {
     }
   };
 
-  // Update NDVI layer visibility
+  // Update NDVI layer visibility with prominent 3D color change
   const toggleNdvi = (val: boolean) => {
     setShowNdvi(val);
     const map = mapInstanceRef.current;
     if (!map) return;
     try {
-      if (map.getLayer("parcels-ndvi-fill")) {
-        map.setLayoutProperty("parcels-ndvi-fill", "visibility", val ? "visible" : "none");
+      if (map.getLayer("parcels-3d-ndvi-extrusion")) {
+        map.setLayoutProperty("parcels-3d-ndvi-extrusion", "visibility", val ? "visible" : "none");
       }
-      if (map.getLayer("parcels-fill")) {
-        map.setLayoutProperty("parcels-fill", "visibility", val ? "none" : "visible");
+      if (map.getLayer("parcels-3d-extrusion")) {
+        map.setLayoutProperty("parcels-3d-extrusion", "visibility", val ? "none" : "visible");
       }
     } catch (e) {
       console.warn("NDVI toggle exception", e);
     }
   };
 
-  // Update Encroachment layer visibility
+  // Update Encroachment layer visibility with 3D hazard extrusion
   const toggleEncroachment = (val: boolean) => {
     setShowEncroachment(val);
     const map = mapInstanceRef.current;
     if (!map) return;
     try {
+      if (map.getLayer("parcels-3d-encroachment-extrusion")) {
+        map.setLayoutProperty("parcels-3d-encroachment-extrusion", "visibility", val ? "visible" : "none");
+      }
       if (map.getLayer("parcels-encroachment")) {
         map.setLayoutProperty("parcels-encroachment", "visibility", val ? "visible" : "none");
-      }
-      if (map.getLayer("parcels-encroachment-fill")) {
-        map.setLayoutProperty("parcels-encroachment-fill", "visibility", val ? "visible" : "none");
       }
     } catch (e) {
       console.warn("Encroachment toggle exception", e);
     }
   };
 
-  // Update Time-Travel baseline
+  // Update Time-Travel baseline with 3D ancestral ghost blocks
   const switchTimeTravel = (year: "1994" | "2026") => {
     setTimeTravelYear(year);
     const map = mapInstanceRef.current;
     if (!map) return;
     try {
+      if (map.getLayer("parcels-3d-1994-extrusion")) {
+        map.setLayoutProperty("parcels-3d-1994-extrusion", "visibility", year === "1994" ? "visible" : "none");
+      }
       if (map.getLayer("parcels-1994-outline")) {
         map.setLayoutProperty("parcels-1994-outline", "visibility", year === "1994" ? "visible" : "none");
-      }
-      if (map.getLayer("parcels-1994-fill")) {
-        map.setLayoutProperty("parcels-1994-fill", "visibility", year === "1994" ? "visible" : "none");
       }
     } catch (e) {
       console.warn("Time travel toggle exception", e);
     }
   };
 
-  // Update highlight and fly-to when selectedParcel changes
+  // Update highlight, 3D pin marker, and fly-to when selectedParcel changes
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !selectedParcel) return;
     try {
-      if (map.getLayer("parcels-highlight")) {
-        map.setFilter("parcels-highlight", ["==", "id", selectedParcel.id]);
+      if (map.getLayer("parcels-highlight-3d")) {
+        map.setFilter("parcels-highlight-3d", ["==", "id", selectedParcel.id]);
       }
-      const [lng, lat] = selectedParcel.polygon[0];
+      if (map.getLayer("parcels-highlight-line")) {
+        map.setFilter("parcels-highlight-line", ["==", "id", selectedParcel.id]);
+      }
+
+      // Compute centroid of parcel polygon
+      const poly = selectedParcel.polygon;
+      let sumLng = 0;
+      let sumLat = 0;
+      poly.forEach(([lng, lat]) => {
+        sumLng += lng;
+        sumLat += lat;
+      });
+      const centerLng = sumLng / poly.length;
+      const centerLat = sumLat / poly.length;
+
+      // Update / Create floating 3D Pin Marker
+      import("maplibre-gl").then(mod => {
+        const maplibregl = mod.default || mod;
+        if (activePinMarkerRef.current) {
+          activePinMarkerRef.current.remove();
+          activePinMarkerRef.current = null;
+        }
+
+        const pinContainer = document.createElement("div");
+        pinContainer.style.display = "flex";
+        pinContainer.style.flexDirection = "column";
+        pinContainer.style.alignItems = "center";
+        pinContainer.style.cursor = "pointer";
+        pinContainer.style.transform = "translateY(-10px)";
+        pinContainer.style.zIndex = "100";
+        pinContainer.innerHTML = `
+          <div style="
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            border: 2px solid #facc15;
+            color: #ffffff;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 12px rgba(250,204,21,0.5);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          ">
+            <span style="color:#facc15;font-size:13px;">📍</span>
+            <span>SF.${selectedParcel.survey_no} • Patta #${selectedParcel.patta_no}</span>
+            <span style="background:#0284c7;color:#fff;padding:1px 5px;border-radius:4px;font-size:9px;">${selectedParcel.area_acres} Ac</span>
+          </div>
+          <div style="
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #facc15;
+          "></div>
+        `;
+
+        activePinMarkerRef.current = new maplibregl.Marker({ element: pinContainer, anchor: "bottom" })
+          .setLngLat([centerLng, centerLat])
+          .addTo(map);
+      });
+
       map.flyTo({
-        center: [lng, lat],
-        zoom: 16.5,
-        pitch: pitch > 0 ? pitch : 50,
+        center: [centerLng, centerLat],
+        zoom: 17,
+        pitch: pitch > 0 ? pitch : 55,
         bearing: bearing,
         speed: 1.2
       });
@@ -531,9 +816,60 @@ function DigitalTwinContent() {
         mapInstanceRef.current.getCanvas().style.cursor = "";
       }
     } else {
+      setIsMarkingLand(false);
+      (window as any).__markingLand = false;
       if (mapInstanceRef.current) {
         mapInstanceRef.current.getCanvas().style.cursor = "crosshair";
       }
+    }
+  };
+
+  // Toggle Land Demarcation & Boundary Marker Tool
+  const toggleLandMarking = () => {
+    const nextState = !isMarkingLand;
+    setIsMarkingLand(nextState);
+    (window as any).__markingLand = nextState;
+    if (nextState) {
+      setIsMeasuring(false);
+      (window as any).__measuring = false;
+      setMarkedLandSaved(false);
+      if (mapInstanceRef.current) mapInstanceRef.current.getCanvas().style.cursor = "crosshair";
+    } else {
+      if (mapInstanceRef.current) mapInstanceRef.current.getCanvas().style.cursor = "";
+    }
+  };
+
+  const clearMarkedLand = () => {
+    setMarkedBoundaryPoints([]);
+    setMarkedMetrics(null);
+    setMarkedLandSaved(false);
+    const map = mapInstanceRef.current;
+    if (map && map.getSource("custom-demarcation")) {
+      map.getSource("custom-demarcation").setData({
+        type: "FeatureCollection",
+        features: []
+      });
+    }
+  };
+
+  const snapToNearestParcel = () => {
+    if (markedBoundaryPoints.length === 0) return;
+    const [lastLng, lastLat] = markedBoundaryPoints[markedBoundaryPoints.length - 1];
+    let bestParcel = MOCK_COIMBATORE_PARCELS[0];
+    let minDistance = Infinity;
+    MOCK_COIMBATORE_PARCELS.forEach(p => {
+      const [plng, plat] = p.polygon[0];
+      const d = calculateDistanceMeters([lastLng, lastLat], [plng, plat]);
+      if (d < minDistance) {
+        minDistance = d;
+        bestParcel = p;
+      }
+    });
+    if (bestParcel) {
+      setSelectedParcel(bestParcel);
+      clearMarkedLand();
+      setIsMarkingLand(false);
+      (window as any).__markingLand = false;
     }
   };
 
@@ -620,7 +956,7 @@ function DigitalTwinContent() {
           </button>
         </div>
 
-        {/* Basemap Switcher */}
+        {/* Basemap Switcher & Demarcation Tools */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {BASEMAPS.map(bm => {
             const Icon = bm.icon;
@@ -644,6 +980,23 @@ function DigitalTwinContent() {
               </button>
             );
           })}
+
+          {/* Interactive Mark Land / Demarcation Button */}
+          <button
+            onClick={toggleLandMarking}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+              background: isMarkingLand ? "linear-gradient(135deg, #0891b2, #06b6d4)" : "#1e293b",
+              color: "#ffffff",
+              border: isMarkingLand ? "1px solid #22d3ee" : "1px solid #334155",
+              boxShadow: isMarkingLand ? "0 0 14px rgba(6,182,212,0.6)" : "none",
+              transition: "all 0.15s"
+            }}
+          >
+            <MapPin size={13} color={isMarkingLand ? "#ffffff" : "#38bdf8"} />
+            {isMarkingLand ? "Marking Active" : "📍 Mark Land"}
+          </button>
 
           {/* Interactive Measurement Button */}
           <button
@@ -669,23 +1022,24 @@ function DigitalTwinContent() {
         {/* MapLibre Canvas */}
         <div ref={mapContainerRef} style={{ flex: 1, width: "100%", height: "100%" }} />
 
-        {/* Floating Measurement Banner */}
+        {/* Floating Measurement Banner — Docked Bottom Center */}
         {isMeasuring && (
           <div style={{
             position: "absolute",
-            top: 14,
+            bottom: 24,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "rgba(15, 23, 42, 0.95)",
-            backdropFilter: "blur(8px)",
+            background: "rgba(15, 23, 42, 0.96)",
+            backdropFilter: "blur(12px)",
             border: "1px solid #38bdf8",
-            padding: "8px 18px",
-            borderRadius: 20,
-            zIndex: 30,
+            padding: "10px 22px",
+            borderRadius: 14,
+            zIndex: 35,
             display: "flex",
             alignItems: "center",
             gap: 12,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
+            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+            maxWidth: "92vw"
           }}>
             <Ruler size={16} color="#38bdf8" />
             <span style={{ fontSize: 12, fontWeight: 800, color: "#ffffff" }}>
@@ -693,128 +1047,249 @@ function DigitalTwinContent() {
             </span>
             <button
               onClick={() => { setMeasurePoints([]); setMeasureResult(null); }}
-              style={{ background: "#334155", border: "none", color: "#ffffff", fontSize: 10, padding: "3px 8px", borderRadius: 4, cursor: "pointer", fontWeight: 800 }}
+              style={{ background: "#334155", border: "none", color: "#ffffff", fontSize: 10, padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontWeight: 800 }}
             >
               Reset
             </button>
           </div>
         )}
 
-        {/* Floating Left Layer & Analysis Toggles */}
-        <div style={{
-          position: "absolute",
-          top: 14,
-          left: 14,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          zIndex: 10,
-          background: "rgba(15, 23, 42, 0.94)",
-          backdropFilter: "blur(10px)",
-          padding: 14,
-          borderRadius: 12,
-          border: "1px solid rgba(255, 255, 255, 0.14)",
-          width: 260,
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)"
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            AI Analytics & Computer Vision
-          </div>
-
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#f87171" }}>
-              <AlertTriangle size={15} color="#ef4444" />
-              Encroachment Alert
-            </span>
-            <input
-              type="checkbox"
-              checked={showEncroachment}
-              onChange={e => toggleEncroachment(e.target.checked)}
-              style={{ cursor: "pointer", width: 17, height: 17, accentColor: "#ef4444" }}
-            />
-          </label>
-
-          {showEncroachment && (
+        {/* Floating Land Demarcation & Boundary Marker HUD Banner — Docked Bottom Center */}
+        {isMarkingLand && (
+          <div style={{
+            position: "absolute",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(15, 23, 42, 0.96)",
+            backdropFilter: "blur(14px)",
+            border: "1px solid #22d3ee",
+            padding: "10px 20px",
+            borderRadius: 14,
+            zIndex: 35,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            boxShadow: "0 8px 36px rgba(6,182,212,0.45)",
+            maxWidth: "92vw"
+          }}>
             <div style={{
-              background: "#450a0a", border: "1px solid #dc2626", borderRadius: 6,
-              padding: "6px 8px", fontSize: 10, color: "#fca5a5", fontWeight: 700
+              width: 32, height: 32, borderRadius: 8,
+              background: "linear-gradient(135deg, #0891b2, #06b6d4)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0
             }}>
-              🚨 <strong>Active Collision Vector:</strong> Flashing neon red zones show high-risk Poramboke & Road buffer overlaps.
+              <MapPin size={18} color="#ffffff" />
             </div>
-          )}
-
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80" }}>
-              <Sprout size={15} color="#22c55e" />
-              NDVI Crop Health
-            </span>
-            <input
-              type="checkbox"
-              checked={showNdvi}
-              onChange={e => toggleNdvi(e.target.checked)}
-              style={{ cursor: "pointer", width: 17, height: 17, accentColor: "#22c55e" }}
-            />
-          </label>
-
-          {showNdvi && (
-            <div style={{
-              background: "rgba(2, 44, 34, 0.8)", border: "1px solid #059669", borderRadius: 6,
-              padding: "6px 8px", fontSize: 10, color: "#86efac", fontWeight: 700
-            }}>
-              <div style={{ marginBottom: 4 }}>🌿 <strong>Sentinel-2 NDVI Scale:</strong></div>
-              <div style={{ height: 6, borderRadius: 3, background: "linear-gradient(to right, #ef4444, #eab308, #22c55e, #15803d)", marginBottom: 4 }} />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#cbd5e1" }}>
-                <span>0.65 Stressed</span>
-                <span>0.92 Vigorous</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "#ffffff" }}>
+                {markedMetrics ? (
+                  <span>
+                    Demarcated Land: <strong style={{ color: "#22d3ee" }}>{markedMetrics.acres} Acres</strong> ({markedMetrics.cents} Cents • {markedMetrics.sqm} m²)
+                  </span>
+                ) : (
+                  <span>Click 3+ points on 3D terrain to draw custom boundary ({markedBoundaryPoints.length} points)</span>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                Perimeter: {markedMetrics ? `${markedMetrics.perimeterMeters} meters (~${Math.round(markedMetrics.perimeterMeters * 3.28)} ft)` : "Pins connect automatically into 3D parcel volume"}
               </div>
             </div>
-          )}
 
-          <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.12)", paddingTop: 10, marginTop: 2 }}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-              Time-Travel Baseline
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
+              {markedBoundaryPoints.length >= 3 && (
+                <>
+                  <button
+                    onClick={snapToNearestParcel}
+                    style={{
+                      background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                      border: "none", color: "#ffffff", fontSize: 11, padding: "6px 12px",
+                      borderRadius: 6, cursor: "pointer", fontWeight: 800,
+                      boxShadow: "0 2px 10px rgba(14,165,233,0.3)",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    ✨ Snap to FMB
+                  </button>
+                  <button
+                    onClick={() => setMarkedLandSaved(true)}
+                    style={{
+                      background: markedLandSaved ? "#16a34a" : "#1e3a8a",
+                      border: "1px solid #38bdf8", color: "#ffffff", fontSize: 11, padding: "6px 12px",
+                      borderRadius: 6, cursor: "pointer", fontWeight: 800,
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {markedLandSaved ? "✓ Saved" : "💾 Save"}
+                  </button>
+                </>
+              )}
               <button
-                onClick={() => switchTimeTravel("1994")}
+                onClick={clearMarkedLand}
                 style={{
-                  padding: "7px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
-                  background: timeTravelYear === "1994" ? "linear-gradient(135deg, #d97706, #f59e0b)" : "#1e293b",
-                  color: "#ffffff", border: timeTravelYear === "1994" ? "1px solid #fde68a" : "1px solid #334155",
-                  boxShadow: timeTravelYear === "1994" ? "0 0 10px rgba(217,119,6,0.4)" : "none"
+                  background: "#334155", border: "none", color: "#ffffff", fontSize: 11,
+                  padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontWeight: 800
                 }}
               >
-                1994 Ancestral
-              </button>
-              <button
-                onClick={() => switchTimeTravel("2026")}
-                style={{
-                  padding: "7px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
-                  background: timeTravelYear === "2026" ? "linear-gradient(135deg, #0284c7, #0ea5e9)" : "#1e293b",
-                  color: "#ffffff", border: timeTravelYear === "2026" ? "1px solid #38bdf8" : "1px solid #334155",
-                  boxShadow: timeTravelYear === "2026" ? "0 0 10px rgba(14,165,233,0.4)" : "none"
-                }}
-              >
-                2026 Drone Twin
+                Clear
               </button>
             </div>
-            {timeTravelYear === "1994" && (
-              <div style={{ marginTop: 6, padding: "4px 8px", background: "#78350f", borderRadius: 6, border: "1px solid #d97706", fontSize: 10, color: "#fef3c7", fontWeight: 700 }}>
-                🕰️ <strong>1994 Cadastral Baseline:</strong> Gold dashed outlines show ancestral boundaries (-42m offset).
+          </div>
+        )}
+
+        {/* Floating Left Layer & Analysis Toggles (Collapsible) */}
+        {isLeftPanelOpen ? (
+          <div style={{
+            position: "absolute",
+            top: 14,
+            left: 14,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+            zIndex: 10,
+            background: "rgba(15, 23, 42, 0.94)",
+            backdropFilter: "blur(10px)",
+            padding: 14,
+            borderRadius: 12,
+            border: "1px solid rgba(255, 255, 255, 0.14)",
+            width: 260,
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                AI Analytics & Vision
+              </div>
+              <button
+                onClick={() => setIsLeftPanelOpen(false)}
+                title="Minimize AI Panel"
+                style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 2 }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#f87171" }}>
+                <AlertTriangle size={15} color="#ef4444" />
+                Encroachment Alert
+              </span>
+              <input
+                type="checkbox"
+                checked={showEncroachment}
+                onChange={e => toggleEncroachment(e.target.checked)}
+                style={{ cursor: "pointer", width: 17, height: 17, accentColor: "#ef4444" }}
+              />
+            </label>
+
+            {showEncroachment && (
+              <div style={{
+                background: "#450a0a", border: "1px solid #dc2626", borderRadius: 6,
+                padding: "6px 8px", fontSize: 10, color: "#fca5a5", fontWeight: 700
+              }}>
+                🚨 <strong>Active Collision Vector:</strong> Flashing neon red zones show high-risk Poramboke & Road buffer overlaps.
               </div>
             )}
+
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80" }}>
+                <Sprout size={15} color="#22c55e" />
+                NDVI Crop Health
+              </span>
+              <input
+                type="checkbox"
+                checked={showNdvi}
+                onChange={e => toggleNdvi(e.target.checked)}
+                style={{ cursor: "pointer", width: 17, height: 17, accentColor: "#22c55e" }}
+              />
+            </label>
+
+            {showNdvi && (
+              <div style={{
+                background: "rgba(2, 44, 34, 0.8)", border: "1px solid #059669", borderRadius: 6,
+                padding: "6px 8px", fontSize: 10, color: "#86efac", fontWeight: 700
+              }}>
+                <div style={{ marginBottom: 4 }}>🌿 <strong>Sentinel-2 NDVI Scale:</strong></div>
+                <div style={{ height: 6, borderRadius: 3, background: "linear-gradient(to right, #ef4444, #eab308, #22c55e, #15803d)", marginBottom: 4 }} />
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#cbd5e1" }}>
+                  <span>0.65 Stressed</span>
+                  <span>0.92 Vigorous</span>
+                </div>
+              </div>
+            )}
+
+            <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.12)", paddingTop: 10, marginTop: 2 }}>
+              <div style={{ fontSize: 11, fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                Time-Travel Baseline
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                <button
+                  onClick={() => switchTimeTravel("1994")}
+                  style={{
+                    padding: "7px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                    background: timeTravelYear === "1994" ? "linear-gradient(135deg, #d97706, #f59e0b)" : "#1e293b",
+                    color: "#ffffff", border: timeTravelYear === "1994" ? "1px solid #fde68a" : "1px solid #334155",
+                    boxShadow: timeTravelYear === "1994" ? "0 0 10px rgba(217,119,6,0.4)" : "none"
+                  }}
+                >
+                  1994 Ancestral
+                </button>
+                <button
+                  onClick={() => switchTimeTravel("2026")}
+                  style={{
+                    padding: "7px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                    background: timeTravelYear === "2026" ? "linear-gradient(135deg, #0284c7, #0ea5e9)" : "#1e293b",
+                    color: "#ffffff", border: timeTravelYear === "2026" ? "1px solid #38bdf8" : "1px solid #334155",
+                    boxShadow: timeTravelYear === "2026" ? "0 0 10px rgba(14,165,233,0.4)" : "none"
+                  }}
+                >
+                  2026 Drone Twin
+                </button>
+              </div>
+              {timeTravelYear === "1994" && (
+                <div style={{ marginTop: 6, padding: "4px 8px", background: "#78350f", borderRadius: 6, border: "1px solid #d97706", fontSize: 10, color: "#fef3c7", fontWeight: 700 }}>
+                  🕰️ <strong>1994 Cadastral Baseline:</strong> Gold dashed outlines show ancestral boundaries (-42m offset).
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <button
+            onClick={() => setIsLeftPanelOpen(true)}
+            style={{
+              position: "absolute",
+              top: 14,
+              left: 14,
+              zIndex: 10,
+              background: "rgba(15, 23, 42, 0.94)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid #38bdf8",
+              color: "#38bdf8",
+              padding: "7px 14px",
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 800,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.4)"
+            }}
+          >
+            <Sparkles size={13} />
+            AI Analytics
+          </button>
+        )}
 
         {/* Floating Map Zoom & Compass Controls */}
         <div style={{
           position: "absolute",
           top: 14,
-          right: selectedParcel ? 390 : 14,
+          right: (isRightDrawerOpen && selectedParcel) ? 390 : 14,
           display: "flex",
           flexDirection: "column",
           gap: 6,
-          zIndex: 15
+          zIndex: 15,
+          transition: "right 0.2s"
         }}>
           <button
             onClick={handleZoomIn}
@@ -851,52 +1326,62 @@ function DigitalTwinContent() {
           </button>
         </div>
 
-        {/* Right Inspection Property Drawer with Scrollable Body */}
+        {/* Right Inspection Property Drawer with Scrollable Body (Collapsible) */}
         {selectedParcel && (
-          <div style={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            bottom: 14,
-            width: 360,
-            background: "rgba(15, 23, 42, 0.96)",
-            backdropFilter: "blur(14px)",
-            borderRadius: 14,
-            border: "1px solid rgba(255, 255, 255, 0.16)",
-            boxShadow: "0 12px 40px rgba(0, 0, 0, 0.6)",
-            display: "flex",
-            flexDirection: "column",
-            zIndex: 10,
-            overflow: "hidden"
-          }}>
-            {/* Drawer Header with Parcel Selector */}
+          isRightDrawerOpen ? (
             <div style={{
-              padding: "14px 16px",
-              background: "linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(37, 99, 235, 0.3))",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+              position: "absolute",
+              top: 14,
+              right: 14,
+              bottom: 14,
+              width: 360,
+              background: "rgba(15, 23, 42, 0.96)",
+              backdropFilter: "blur(14px)",
+              borderRadius: 14,
+              border: "1px solid rgba(255, 255, 255, 0.16)",
+              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.6)",
               display: "flex",
               flexDirection: "column",
-              gap: 8,
-              flexShrink: 0
+              zIndex: 10,
+              overflow: "hidden"
             }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Kinathukadavu Cadastral Parcel
+              {/* Drawer Header with Parcel Selector */}
+              <div style={{
+                padding: "14px 16px",
+                background: "linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(37, 99, 235, 0.3))",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                flexShrink: 0
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Cadastral Parcel
+                    </div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: "#ffffff" }}>
+                      SF {selectedParcel.survey_no} • Patta #{selectedParcel.patta_no}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "#ffffff" }}>
-                    SF {selectedParcel.survey_no} • Patta #{selectedParcel.patta_no}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{
+                      padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 900,
+                      background: selectedParcel.land_category === "Agriculture" ? "#064e3b" : "#78350f",
+                      color: selectedParcel.land_category === "Agriculture" ? "#4ade80" : "#fbbf24",
+                      border: "1px solid rgba(255, 255, 255, 0.15)"
+                    }}>
+                      {selectedParcel.land_category}
+                    </span>
+                    <button
+                      onClick={() => setIsRightDrawerOpen(false)}
+                      title="Minimize Drawer"
+                      style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 2 }}
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
                 </div>
-                <span style={{
-                  padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 900,
-                  background: selectedParcel.land_category === "Agriculture" ? "#064e3b" : "#78350f",
-                  color: selectedParcel.land_category === "Agriculture" ? "#4ade80" : "#fbbf24",
-                  border: "1px solid rgba(255, 255, 255, 0.15)"
-                }}>
-                  {selectedParcel.land_category}
-                </span>
-              </div>
 
               {/* Quick Jump Selector Dropdown */}
               <select
@@ -1026,7 +1511,33 @@ function DigitalTwinContent() {
               </button>
             </div>
           </div>
-        )}
+        ) : (
+          <button
+            onClick={() => setIsRightDrawerOpen(true)}
+            style={{
+              position: "absolute",
+              top: 14,
+              right: 14,
+              zIndex: 10,
+              background: "rgba(15, 23, 42, 0.94)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid #facc15",
+              color: "#facc15",
+              padding: "7px 14px",
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 800,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.4)"
+            }}
+          >
+            <Info size={13} />
+            SF.{selectedParcel.survey_no} Details
+          </button>
+        ))}
       </div>
 
       {/* ── Polygon Blockchain Verification Modal ──────────────────────────── */}

@@ -301,3 +301,36 @@ html, body {
 
 .animate-fade-up { animation: fadeInScale 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .pulse-subtle { animation: pulse-subtle 2s infinite ease-in-out; }
+
+/* ── Live Multi-Language Translation Styling ──────────────────────── */
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+
+#google_translate_element {
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+

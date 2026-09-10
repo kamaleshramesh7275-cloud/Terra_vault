@@ -175,13 +175,13 @@ class ScriptClassifier:
             if script:
                 confidence = 0.75   # heuristic is fairly reliable
 
-        # ── Last resort: Devanagari default ───────────────────────────────────
+        # ── Last resort: Ambiguous / Inked fallback ───────────────────────────
         if script is None:
-            script = "Devanagari"
-            confidence = 0.5
-            log.warning("script_classifier.using_default", img_path=img_path)
+            script = "Unstructured / Inked"
+            confidence = 0.18
+            log.warning("script_classifier.inked_specimen", img_path=img_path)
 
-        ocr_config = SCRIPT_OCR_MAP.get(script, SCRIPT_OCR_MAP["Devanagari"])
+        ocr_config = SCRIPT_OCR_MAP.get(script, SCRIPT_OCR_MAP.get("Tamil", SCRIPT_OCR_MAP["Devanagari"]))
         return ScriptClassification(
             script=script,
             confidence=round(confidence, 4),

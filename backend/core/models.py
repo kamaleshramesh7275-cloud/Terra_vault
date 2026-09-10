@@ -147,7 +147,7 @@ class MaturityScore(Base):
     __tablename__ = "maturity_scores"
 
     id = Column(UUID(as_uuid=False), primary_key=True, default=new_uuid)
-    geo_level = Column(String(20))   # village|tehsil|district
+    geo_level = Column(String(20))   
     geo_name = Column(Text)
     lgd_code = Column(String(10))
     pct_verified = Column(Float, default=0.0)
@@ -163,12 +163,26 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=False), primary_key=True, default=new_uuid)
+    firebase_uid = Column(String(128), unique=True, index=True, nullable=True)
     username = Column(String(100), unique=True, nullable=False)
     email = Column(String(200), unique=True, nullable=False)
-    hashed_password = Column(String(200), nullable=False)
-    role = Column(String(20), default="viewer")   # admin|reviewer|viewer|citizen
+    hashed_password = Column(String(200), nullable=True)
+    display_name = Column(String(150), nullable=True)
+    avatar_url = Column(Text, nullable=True)
+    email_verified = Column(Boolean, default=False)
+    role = Column(String(30), default="CITIZEN")   # CITIZEN | VAO | RI | TAHSILDAR | RDO | DISTRICT_COLLECTOR
+    designation = Column(String(100), nullable=True)
+    
+    # Territorial Jurisdiction Scoping
+    district = Column(String(100), default="Coimbatore")
+    taluk = Column(String(100), default="Kinathukadavu")
+    firka = Column(String(100), default="Kinathukadavu Firka")
+    village_code = Column(String(20), default="630401")
+    
     is_active = Column(Boolean, default=True)
+    last_login_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class FraudAlert(Base):
@@ -187,10 +201,12 @@ class FraudAlert(Base):
     resolved       = Column(Boolean, default=False)
     resolved_by    = Column(String(100))
     resolved_at    = Column(DateTime)
-
-
+                                                        
+                                                             
+    
 class SystemConfig(Base):
-    """Key-value runtime configuration store. Mirrors DATA_DIR/config.json."""
+   
+
     __tablename__ = "system_config"
 
     key        = Column(String(100), primary_key=True)
