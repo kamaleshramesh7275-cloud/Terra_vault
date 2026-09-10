@@ -55,9 +55,42 @@ app = FastAPI(
 # Serve static files locally for offline fallback
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from fastapi.responses import FileResponse, Response
+from fastapi import HTTPException
+import httpx
+
 static_dir = Path(settings.DATA_DIR) / "static"
 static_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+@app.get("/tiles/cadastral/{z}/{x}/{y}.png")
+async def get_cadastral_tile(z: int, x: int, y: int):
+    """Serve official TNGIS cadastral parcel tile (local cache or live fetch)."""
+    # 1. Check local downloaded cache
+    local_path = Path(__file__).resolve().parent.parent / "scripts" / "data" / "tiles" / f"z{z}" / f"{x}_{y}.png"
+    if local_path.exists():
+        return FileResponse(str(local_path), media_type="image/png")
+    
+    # 2. Fallback: proxy directly from TNGIS
+    tngis_url = f"https://tngis.tn.gov.in/data/xyz_tiles/cadastral_xyz/{z}/{x}/{y}.png"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        "Referer": "https://tngis.tn.gov.in/apps/gi_viewer/map-viewer/index.html",
+        "Accept": "image/png,image/*,*/*"
+    }
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            r = await client.get(tngis_url, headers=headers)
+            if r.status_code == 200 and len(r.content) > 0:
+                # Cache to disk for future fast access
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                local_path.write_bytes(r.content)
+                return Response(content=r.content, media_type="image/png")
+    except Exception:
+        pass
+    
+    raise HTTPException(status_code=404, detail="Tile not found")
+
 
 # ── Middleware ────────────────────────────────────────────────────────────────
 app.add_middleware(

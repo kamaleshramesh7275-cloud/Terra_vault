@@ -30,17 +30,17 @@ import { resolveGeographicCoordinates, generateCadastralPolygon, generateRegiona
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 
 const COIMBATORE_TALUKS = [
-  { id: "All", label: "📍 All Coimbatore (மாவட்டம் முழுவதும்)" },
-  { id: "Coimbatore North", label: "🏛️ CBE North (வடக்கு)" },
-  { id: "Coimbatore South", label: "🏢 CBE South (தெற்கு)" },
-  { id: "Pollachi", label: "🥥 Pollachi (பொள்ளாச்சி)" },
-  { id: "Sulur", label: "🧵 Sulur (சூலூர்)" },
-  { id: "Mettupalayam", label: "🌿 Mettupalayam (மேட்டுப்பாளையம்)" },
-  { id: "Annur", label: "🌾 Annur (அன்னூர்)" },
-  { id: "Kinathukadavu", label: "💨 Kinathukadavu (கிணத்துக்கடவு)" },
-  { id: "Madukkarai", label: "⛏️ Madukkarai (மடுக்கரை)" },
-  { id: "Valparai", label: "⛰️ Valparai (வால்பாறை)" },
-  { id: "Perur", label: "🕉️ Perur (பேரூர்)" },
+  { id: "All", label: "📍 All Coimbatore (மாவட்டம் முழுவதும்)", lat: 11.0168, lng: 76.9558, zoom: 12 },
+  { id: "Coimbatore North", label: "🏛️ CBE North (வடக்கு)", lat: 11.0500, lng: 76.9550, zoom: 15 },
+  { id: "Coimbatore South", label: "🏢 CBE South (தெற்கு)", lat: 10.9850, lng: 76.9750, zoom: 15 },
+  { id: "Pollachi", label: "🥥 Pollachi (பொள்ளாச்சி)", lat: 10.6600, lng: 77.0050, zoom: 15 },
+  { id: "Sulur", label: "🧵 Sulur (சூலூர்)", lat: 11.0250, lng: 77.1250, zoom: 15 },
+  { id: "Mettupalayam", label: "🌿 Mettupalayam (மேட்டுப்பாளையம்)", lat: 11.3000, lng: 76.9450, zoom: 15 },
+  { id: "Annur", label: "🌾 Annur (அன்னூர்)", lat: 11.2333, lng: 77.1333, zoom: 15 },
+  { id: "Kinathukadavu", label: "💨 Kinathukadavu (கிணத்துக்கடவு)", lat: 10.8250, lng: 77.0220, zoom: 15 },
+  { id: "Madukkarai", label: "⛏️ Madukkarai (மடுக்கரை)", lat: 10.9000, lng: 76.9600, zoom: 15 },
+  { id: "Valparai", label: "⛰️ Valparai (வால்பாறை)", lat: 10.3250, lng: 76.9550, zoom: 14 },
+  { id: "Perur", label: "🕉️ Perur (பேரூர்)", lat: 10.9700, lng: 76.9150, zoom: 15 },
 ];
 
 const LAND_CATEGORIES = [
@@ -58,6 +58,8 @@ function MapContent() {
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [selectedTaluk, setSelectedTaluk] = useState<string>("All");
+  const [mapCenter, setMapCenter] = useState<[number, number]>([11.0168, 76.9558]);
+  const [mapZoom, setMapZoom] = useState<number>(12);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"overview" | "mutation" | "inheritance" | "blockchain" | "satellite" | "3d_twin">("overview");
@@ -65,9 +67,10 @@ function MapContent() {
   const [geoaiLoading, setGeoaiLoading] = useState<boolean>(false);
 
   // Map Upgrades 1 & 2 State
-  const [baseMapType, setBaseMapType] = useState<"esri" | "dark" | "street">("dark");
+  const [baseMapType, setBaseMapType] = useState<"esri" | "dark" | "street">("esri");
   const [showFraudHeatmap, setShowFraudHeatmap] = useState<boolean>(false);
   const [showFMBGrid, setShowFMBGrid] = useState<boolean>(true);
+  const [fmbOpacity, setFmbOpacity] = useState<number>(0.95);
   const [measureMode, setMeasureMode] = useState<"none" | "distance" | "area">("none");
   const [measurementText, setMeasurementText] = useState<string>("");
 
@@ -487,10 +490,15 @@ function MapContent() {
         {/* Row 3: Taluk Selector & Category Filters */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
           <div style={{ display: "flex", gap: 5, overflowX: "auto" }}>
-            {districtConfig.taluks.slice(0, 8).map((t) => (
+            {COIMBATORE_TALUKS.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setSelectedTaluk(t.id)}
+                onClick={() => {
+                  setSelectedTaluk(t.id);
+                  setMapCenter([t.lat, t.lng]);
+                  setMapZoom(t.zoom);
+                  setSelectedPlot(null);
+                }}
                 style={{
                   padding: "4px 10px",
                   fontSize: 11,
@@ -623,21 +631,36 @@ function MapContent() {
               >
                 🚨 Fraud Heatmap
               </button>
-              <button
-                onClick={() => setShowFMBGrid(!showFMBGrid)}
-                style={{
-                  padding: "3px 8px",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  borderRadius: 5,
-                  border: showFMBGrid ? "1px solid #10b981" : "1px solid #334155",
-                  background: showFMBGrid ? "#059669" : "#1e293b",
-                  color: "#ffffff",
-                  cursor: "pointer",
-                }}
-              >
-                📐 FMB Grid
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, background: showFMBGrid ? "rgba(16, 185, 129, 0.15)" : "#1e293b", padding: "2px 8px", borderRadius: 6, border: showFMBGrid ? "1px solid #10b981" : "1px solid #334155" }}>
+                <button
+                  onClick={() => setShowFMBGrid(!showFMBGrid)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: showFMBGrid ? "#4ade80" : "#94a3b8",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4
+                  }}
+                >
+                  📐 Tamil Nilam Cadastral Mesh
+                </button>
+                {showFMBGrid && (
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="1.0"
+                    step="0.05"
+                    value={fmbOpacity}
+                    onChange={e => setFmbOpacity(parseFloat(e.target.value))}
+                    title={`Mesh Opacity: ${Math.round(fmbOpacity * 100)}%`}
+                    style={{ width: 50, height: 4, cursor: "pointer", accentColor: "#10b981" }}
+                  />
+                )}
+              </div>
               <button
                 onClick={() => setMeasureMode(measureMode === "distance" ? "none" : "distance")}
                 style={{
@@ -717,7 +740,7 @@ function MapContent() {
                           patta_no: selectedPlot.patta_no
                         }).centerLng
                       ]
-                    : [initialGeo.centerLat, initialGeo.centerLng]
+                    : mapCenter
                 }
                 zoom={
                   selectedPlot
@@ -729,7 +752,7 @@ function MapContent() {
                         survey_no: selectedPlot.survey_no,
                         patta_no: selectedPlot.patta_no
                       }).zoom
-                    : initialGeo.zoom
+                    : mapZoom
                 }
                 baseMapType={baseMapType}
                 showFraudHeatmap={showFraudHeatmap}

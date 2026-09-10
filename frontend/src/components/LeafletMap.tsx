@@ -12,6 +12,7 @@ interface Props {
   baseMapType?: "esri" | "dark" | "street";
   showFraudHeatmap?: boolean;
   showFMBGrid?: boolean;
+  fmbOpacity?: number;
   showNDVI?: boolean;
   measureMode?: "none" | "distance" | "area";
   onMeasureUpdate?: (measurementText: string) => void;
@@ -28,7 +29,7 @@ function getCategoryColor(category?: string, landType?: string) {
   if (cat.includes("residential") || cat.includes("மனை") || cat.includes("layout")) return "#38bdf8"; // Sky Blue
   if (cat.includes("industrial") || cat.includes("தொழில்") || cat.includes("mining")) return "#a78bfa"; // Violet
   if (cat.includes("wet") || cat.includes("நன்செய்") || cat.includes("river")) return "#059669"; // Deep Emerald
-  return "#10b981"; // Vibrant Emerald (Agriculture/Coconut/தோட்டம்)
+  return "#a3e635"; // Vibrant Lime-Green (Tamil Nilam Cadastral FMB)
 }
 
 function getFraudRiskColor(riskScore: number = 0): string {
@@ -71,10 +72,11 @@ export default function LeafletMap({
   selectedPlotId,
   onPlotClick,
   center = [11.0168, 76.9558], // Coimbatore center
-  zoom = 10,
-  baseMapType = "dark",
+  zoom = 15,
+  baseMapType = "esri",
   showFraudHeatmap = false,
   showFMBGrid = true,
+  fmbOpacity = 0.95,
   showNDVI = false,
   measureMode = "none",
   onMeasureUpdate,
@@ -86,6 +88,8 @@ export default function LeafletMap({
 }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const cadastralTileLayerRef = useRef<L.TileLayer | null>(null);
+  const clickMarkerRef = useRef<L.Marker | null>(null);
   const geojsonLayerRef = useRef<L.GeoJSON | null>(null);
   const measureLayerRef = useRef<L.FeatureGroup | null>(null);
   const bufferLayerRef = useRef<L.FeatureGroup | null>(null);
@@ -132,16 +136,16 @@ export default function LeafletMap({
       map.removeLayer(tileLayerRef.current);
     }
 
-    let url = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    let subdomains = "abc";
-    let cssClass = "dark-map-tiles";
-    let attr = `© OpenStreetMap contributors | Sentinel-2 (${timelineYear}) | Terra_vault GIS`;
+    let url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+    let subdomains = "";
+    let cssClass = "";
+    let attr = `Esri World Imagery (${timelineYear}) | Tamil Nilam GIS`;
 
-    if (baseMapType === "esri") {
-      url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-      subdomains = "";
-      cssClass = "";
-      attr = `Esri World Imagery (${timelineYear}) | Sentinel-2 | Terra_vault GIS`;
+    if (baseMapType === "dark") {
+      url = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+      subdomains = "abc";
+      cssClass = "dark-map-tiles";
+      attr = `© OpenStreetMap contributors | Terra_vault GIS`;
     } else if (baseMapType === "street") {
       url = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
       subdomains = "abcd";
@@ -158,6 +162,70 @@ export default function LeafletMap({
 
     tileLayerRef.current = tileLayer;
   }, [baseMapType, timelineYear]);
+
+  // 2b. TNGIS Cadastral FMB Survey Mesh Overlay (Tamil Nilam GI Viewer style)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (cadastralTileLayerRef.current) {
+      map.removeLayer(cadastralTileLayerRef.current);
+      cadastralTileLayerRef.current = null;
+    }
+
+    if (showFMBGrid) {
+      const tileUrl = "http://127.0.0.1:8005/tiles/cadastral/{z}/{x}/{y}.png";
+      const cadastralLayer = L.tileLayer(tileUrl, {
+        maxZoom: 19,
+        minZoom: 12,
+        opacity: fmbOpacity,
+        zIndex: 10,
+        attribution: "© Tamil Nadu GIS (TNGIS) / Survey & Settlement Department",
+      }).addTo(map);
+
+      cadastralTileLayerRef.current = cadastralLayer;
+    }
+  }, [showFMBGrid, fmbOpacity]);
+
+  // 2c. Interactive Click-to-Pin Marker (Tamil Nilam style)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      if (isSplitMode || measureMode !== "none") return;
+
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      if (clickMarkerRef.current) {
+        map.removeLayer(clickMarkerRef.current);
+        clickMarkerRef.current = null;
+      }
+
+      const pinIcon = L.divIcon({
+        className: "tamil-nilam-pin",
+        html: `
+          <div style="position:relative;width:32px;height:42px;transform:translate(-50%, -100%);filter:drop-shadow(0 4px 10px rgba(0,0,0,0.7));cursor:pointer;">
+            <svg viewBox="0 0 384 512" width="32" height="42" fill="#ef4444" xmlns="http://www.w3.org/2000/svg">
+              <path d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z" />
+            </svg>
+            <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:#ffffff;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);"></div>
+          </div>
+        `,
+        iconSize: [32, 42],
+        iconAnchor: [16, 42],
+      });
+
+      const marker = L.marker([lat, lng], { icon: pinIcon, zIndexOffset: 1000 }).addTo(map);
+      clickMarkerRef.current = marker;
+    };
+
+    map.on("click", handleMapClick);
+    return () => {
+      map.off("click", handleMapClick);
+    };
+  }, [isSplitMode, measureMode]);
 
   // 3. Buffer Radius Ring Scanner Effect (100m, 500m, 1000m)
   useEffect(() => {
