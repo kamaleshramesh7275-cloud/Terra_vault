@@ -160,8 +160,15 @@ class TrOCREngine:
                 self._model.eval()
                 log.info("trocr.loaded_custom_fine_tuned", dir=str(local_model_dir))
             else:
-                self._processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
-                self._model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwritten")
+                # local_files_only=True — weights are pre-baked into the Docker image
+                # at build time (see Dockerfile). This prevents any live network
+                # download at inference time, which would fail on Render's ephemeral FS.
+                self._processor = TrOCRProcessor.from_pretrained(
+                    "microsoft/trocr-base-handwritten", local_files_only=True
+                )
+                self._model = VisionEncoderDecoderModel.from_pretrained(
+                    "microsoft/trocr-base-handwritten", local_files_only=True
+                )
                 self._model.eval()
                 log.info("trocr.loaded_generic")
         except Exception as e:

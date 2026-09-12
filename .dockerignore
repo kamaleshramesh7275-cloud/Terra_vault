@@ -1,0 +1,49 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .dockerignore — Terra_vault
+# Keeps the Docker build context small (~50 MB instead of ~2 GB).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Version control
+.git
+.gitignore
+
+# Documentation / assets not needed in the runtime image
+*.md
+docs/
+notebooks/
+infrastructure/
+
+# Local ML model weights (pre-downloaded during docker build via RUN python -c "...")
+# These are NOT committed to git and NOT needed in the build context
+ml_models/
+
+# Local data directories
+data/
+test_specimen/
+
+# Local SQLite databases (production uses PostgreSQL)
+*.db
+
+# Misc local artefacts
+*.png
+*.pdf
+*.pyc
+__pycache__/
+.pytest_cache/
+backend/.pytest_cache/
+backend/__pycache__/
+backend/terravault.db
+backend/terravault_local.db
+scripts/terravault_local.db
+scripts/data/
+
+# Frontend build cache and dependencies (rebuilt inside Docker)
+frontend/.next/
+frontend/node_modules/
+
+# Secrets — NEVER baked into image
+.env
+.env.example
+
+# One-off utility scripts not needed at runtime
+check_neon.py
