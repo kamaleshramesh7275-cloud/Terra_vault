@@ -397,8 +397,8 @@ function MapContent() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 22 }}>🌿</span>
             <div>
-              <h1 style={{ fontFamily: "var(--font-head)", fontSize: 18, fontWeight: 900, color: "#0a192f", margin: 0, letterSpacing: "-0.01em" }}>
-                {districtConfig.name} Cadastral GIS & Land Registry
+              <h1 style={{ fontFamily: "var(--font-head)", fontSize: 18, fontWeight: 900, color: "#134e4a", margin: 0, letterSpacing: "-0.01em" }}>
+                Terra_vault — {districtConfig.name} Cadastral GIS
               </h1>
               <div style={{ fontSize: 11, color: "#475569", fontWeight: 700 }}>
                 {districtConfig.tamilName} நில அளவை, பட்டா & உரிமை மாற்றம் பதிவேடு • {districtConfig.taluks.length} Taluks
@@ -419,7 +419,7 @@ function MapContent() {
                   style={{
                     width: "100%",
                     padding: "6px 10px 6px 30px",
-                    borderRadius: 8,
+                    borderRadius: 9999,
                     border: "1.5px solid #cbd5e1",
                     background: "#f8fafc",
                     color: "#0f172a",
@@ -432,9 +432,9 @@ function MapContent() {
               <button
                 type="submit"
                 style={{
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  background: "linear-gradient(135deg, #0a192f, #1d4ed8)",
+                  padding: "6px 14px",
+                  borderRadius: 9999,
+                  background: "linear-gradient(135deg, #134e4a, #0d9488)",
                   color: "#ffffff",
                   fontWeight: 800,
                   fontSize: 11,
@@ -452,14 +452,14 @@ function MapContent() {
                 display: "flex",
                 alignItems: "center",
                 gap: 5,
-                padding: "6px 12px",
-                borderRadius: 8,
-                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                padding: "6px 14px",
+                borderRadius: 9999,
+                background: "linear-gradient(135deg, #0d9488, #14b8a6)",
                 color: "#ffffff",
                 fontSize: 11,
                 fontWeight: 800,
                 textDecoration: "none",
-                boxShadow: "0 2px 6px rgba(14,165,233,0.3)"
+                boxShadow: "0 2px 6px rgba(13,148,136,0.3)"
               }}
             >
               <Mountain size={13} />

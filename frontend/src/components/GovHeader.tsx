@@ -56,39 +56,265 @@ export function GovHeader() {
   };
 
   return (
-    <header style={{ width: "100%", zIndex: 100, borderBottom: "3px solid #0f2942" }}>
-      {/* ── Top Official Govt Ticker Strip (Sober NIC Deep Slate Navy) ───────── */}
-      <div style={{ background: "#0f2942", color: "#f8fafc", padding: "5px 24px", fontSize: 11, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 700, letterSpacing: "0.04em", color: "#e2e8f0", display: "flex", alignItems: "center", gap: 6 }}>
-            GOVERNMENT OF INDIA • NATIONAL LAND RECORDS PORTAL
-          </span>
-          <span style={{ color: "#475569" }}>|</span>
-          <button
-            onClick={() => setShowHelplineModal(true)}
-            style={{
-              background: "none", border: "none", color: "#cbd5e1", display: "flex", alignItems: "center", gap: 6,
-              cursor: "pointer", padding: 0, fontSize: 11
-            }}
+    <header style={{ width: "100%", zIndex: 100, borderBottom: "1px solid #e2e8f0", background: "#ffffff" }}>
+      {/* ── Top Official Govt Utility Strip (Tamil Nilam Deep Teal Ribbon) ─────── */}
+      <div style={{ background: "#0f3d3e", color: "#f8fafc", padding: "6px 32px", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
+          <a
+            href="mailto:tngis.support@tn.gov.in"
+            style={{ color: "#e2e8f0", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}
           >
-            <Phone size={12} color="#38bdf8" />
-            <span>{t("helpline_label")}: <strong style={{ color: "#ffffff", textDecoration: "underline" }}>{activeStateMeta ? activeStateMeta.helpline : "1800-425-1333"}</strong></span>
-            <span style={{ color: "#94a3b8" }}>|</span>
-            <span>Emergency: <strong style={{ color: "#f87171" }}>{activeStateMeta ? activeStateMeta.emergencyNo : "1077"}</strong></span>
-          </button>
+            <span style={{ opacity: 0.8 }}>✉</span> tngis.support@tn.gov.in
+          </a>
+          <span style={{ color: "#2dd4bf", opacity: 0.4 }}>|</span>
+          <a
+            href="tel:+914440164907"
+            style={{ color: "#e2e8f0", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}
+          >
+            <span style={{ opacity: 0.8 }}>📞</span> +91-44-40164907 / +91-44-40164999
+          </a>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          {/* Quick State Switcher in Header */}
+          {/* Dark Mode Icon Toggle */}
+          <button
+            title="Toggle Night Mode"
+            style={{
+              background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: "50%", width: 26, height: 26, color: "#ffffff",
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 12
+            }}
+          >
+            🌙
+          </button>
+
+          {/* Font Zoom Controls (A+ A A-) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.12)", padding: "2px 6px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.2)" }}>
+            <button
+              onClick={() => setFontSize("xlarge")}
+              title="Large Font Size"
+              style={{ background: fontSize === "xlarge" ? "#14b8a6" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}
+            >
+              A+
+            </button>
+            <button
+              onClick={() => setFontSize("large")}
+              title="Medium Font Size"
+              style={{ background: fontSize === "large" ? "#14b8a6" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}
+            >
+              A
+            </button>
+            <button
+              onClick={() => setFontSize("normal")}
+              title="Standard Font Size"
+              style={{ background: fontSize === "normal" ? "#14b8a6" : "none", border: "none", color: "#ffffff", fontSize: 10, cursor: "pointer", fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}
+            >
+              A-
+            </button>
+          </div>
+
+          {/* All Indian Languages Selector Dropdown (22+ Scheduled Languages) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, position: "relative" }}>
+            <span style={{ fontSize: 13 }}>🌐</span>
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as LangCode)}
+              aria-label="Select Indian Language"
+              style={{
+                background: "rgba(255, 255, 255, 0.18)",
+                color: "#ffffff",
+                border: "1px solid rgba(45, 212, 191, 0.5)",
+                borderRadius: 20,
+                padding: "3px 10px",
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                outline: "none",
+                maxWidth: 165
+              }}
+            >
+              {INDIAN_LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code} style={{ background: "#0f3d3e", color: "#ffffff" }}>
+                  {l.nativeName} ({l.name})
+                </option>
+              ))}
+            </select>
+            {isTranslating && (
+              <span style={{ fontSize: 10, color: "#2dd4bf", fontWeight: 800, display: "flex", alignItems: "center", gap: 3 }}>
+                <Sparkles size={11} /> Translating...
+              </span>
+            )}
+          </div>
+
+          {/* Screen Reader */}
+          <button
+            style={{
+              background: "rgba(255,255,255,0.12)",
+              color: "#e2e8f0",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 20,
+              padding: "2px 10px",
+              fontSize: 11,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 5
+            }}
+          >
+            👁 Screen Reader
+          </button>
+        </div>
+      </div>
+
+      {/* ── Main Navbar: Terra_vault Brand, Nav Items & Login Pill ─────── */}
+      <div style={{ background: "#ffffff", padding: "12px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        {/* Brand: Terra_vault (No Emblem / Logo Images) */}
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#134e4a", letterSpacing: "-0.03em", lineHeight: 1.15, fontFamily: "var(--font-head)", display: "flex", alignItems: "center", gap: 6 }}>
+              <span>Terra_vault</span>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#14b8a6", display: "inline-block" }} />
+            </div>
+            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, marginTop: 2, letterSpacing: "0.02em" }}>
+              AI Land Intelligence & Cadastral Modernization Platform
+            </div>
+          </div>
+        </Link>
+
+        {/* Center Navigation Links */}
+        <nav style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <Link
+            href="/"
+            style={{
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: pathname === "/" ? 700 : 500,
+              color: pathname === "/" ? "#134e4a" : "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: pathname === "/" ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Home
+          </Link>
+          <Link
+            href="/#about"
+            style={{
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: 500,
+              color: "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: "2.5px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            About
+          </Link>
+          <Link
+            href="/map"
+            style={{
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: pathname.startsWith("/map") ? 700 : 500,
+              color: pathname.startsWith("/map") ? "#134e4a" : "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: pathname.startsWith("/map") ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Cadastral GIS
+          </Link>
+          <Link
+            href="/records"
+            style={{
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: pathname === "/records" ? 700 : 500,
+              color: pathname === "/records" ? "#134e4a" : "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: pathname === "/records" ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Land Records
+          </Link>
+          <Link
+            href="/citizen"
+            style={{
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: pathname === "/citizen" ? 700 : 500,
+              color: pathname === "/citizen" ? "#134e4a" : "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: pathname === "/citizen" ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Citizen Desk
+          </Link>
+          <Link
+            href="/#faq"
+            style={{
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: 500,
+              color: "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: "2.5px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            FAQ
+          </Link>
+          <Link
+            href="/#contact"
+            style={{
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: 500,
+              color: "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              paddingBottom: 4,
+              borderBottom: "2.5px solid transparent",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Contact
+          </Link>
+        </nav>
+
+        {/* Right CTA Login Pill Button */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
             onClick={() => setShowStatePickerModal(true)}
             style={{
-              background: "#1e3a8a",
-              color: "#ffffff",
-              border: "1px solid #3b82f6",
-              borderRadius: 4,
-              padding: "2px 9px",
-              fontSize: 11,
+              background: "#f0fdfa",
+              color: "#134e4a",
+              border: "1px solid #2dd4bf",
+              borderRadius: 9999,
+              padding: "7px 14px",
+              fontSize: 12,
               fontWeight: 700,
               display: "flex",
               alignItems: "center",
@@ -96,137 +322,30 @@ export function GovHeader() {
               cursor: "pointer"
             }}
           >
-            <Landmark size={12} color="#60a5fa" />
-            <span>{activeStateMeta ? activeStateMeta.name : "National Portal (36 States)"}</span>
-            <ChevronDown size={11} />
+            <span>🌐</span>
+            <span>{activeStateMeta ? activeStateMeta.name : "36 States & UTs"}</span>
+            <ChevronDown size={12} />
           </button>
 
-          {/* Accessibility Controls */}
-          <div style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.15)", padding: "2px 6px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.2)" }}>
-            <span style={{ color: "#cbd5e1", fontSize: 10, marginRight: 3, fontWeight: 600 }}>Font:</span>
-            <button
-              onClick={() => setFontSize("normal")}
-              title="Standard Font Size"
-              style={{ background: fontSize === "normal" ? "#3b82f6" : "none", border: "none", color: "#ffffff", fontSize: 10, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 2 }}
-            >
-              A-
-            </button>
-            <button
-              onClick={() => setFontSize("large")}
-              title="Medium Font Size"
-              style={{ background: fontSize === "large" ? "#3b82f6" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 2 }}
-            >
-              A
-            </button>
-            <button
-              onClick={() => setFontSize("xlarge")}
-              title="Large Font Size"
-              style={{ background: fontSize === "xlarge" ? "#3b82f6" : "none", border: "none", color: "#ffffff", fontSize: 12, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 2 }}
-            >
-              A+
-            </button>
-          </div>
-
-          {/* All Indian Languages Switcher Dropdown */}
-          <div style={{ display: "flex", alignItems: "center", gap: 5, position: "relative" }}>
-            <Globe size={13} color="#e2e8f0" />
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as LangCode)}
-              style={{
-                background: "#0a192f",
-                color: "#ffffff",
-                border: "1px solid #3b82f6",
-                borderRadius: 4,
-                padding: "2px 8px",
-                fontSize: 11,
-                fontWeight: 700,
-                cursor: "pointer",
-                maxWidth: 160
-              }}
-            >
-              {INDIAN_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>
-                  {l.nativeName} ({l.name})
-                </option>
-              ))}
-            </select>
-            {isTranslating && (
-              <span style={{ fontSize: 9, color: "#38bdf8", fontWeight: 700, display: "flex", alignItems: "center", gap: 2 }}>
-                <Sparkles size={10} /> Translating...
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Main Emblem, Title & Real CM / Minister Cards Strip ──────────────── */}
-      <div style={{ background: "#ffffff", padding: "10px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
-        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 14 }}>
-          {/* State/National Emblem Badge */}
-          <div style={{
-            width: 48, height: 48, borderRadius: 10,
-            background: "linear-gradient(135deg, #0a192f, #1e3a8a)",
-            border: "1px solid #1e293b",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#ffffff", boxShadow: "0 2px 8px rgba(10, 25, 47, 0.25)",
-            flexShrink: 0
-          }}>
-            <Landmark size={24} color="#ffffff" />
-          </div>
-
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#0a192f", letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-              {activeStateMeta ? `${activeStateMeta.name} • ${activeStateMeta.portalName}` : t("header_title")}
-            </div>
-            <div style={{ fontSize: 11, color: "#334155", fontWeight: 700, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ color: "#059669" }}>●</span> {activeStateMeta ? activeStateMeta.department : t("motto")}
-            </div>
-          </div>
-        </Link>
-
-        {/* Real Dignitary Minister Cards */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 14px", background: "#f8fafc", border: "1.5px solid #cbd5e1", borderRadius: 8, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #0a192f, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: 11, fontWeight: 800 }}>
-              {dignitaries.cmName.substring(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: "#475569", fontWeight: 700 }}>{dignitaries.cmTitle}</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#0a192f" }}>{dignitaries.cmName}</div>
-              <div style={{ fontSize: 10, color: "#1d4ed8", fontWeight: 700 }}>{dignitaries.cmState}</div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 14px", background: "#f8fafc", border: "1.5px solid #cbd5e1", borderRadius: 8, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #059669, #10b981)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: 11, fontWeight: 800 }}>
-              {dignitaries.rmName.substring(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: "#475569", fontWeight: 700 }}>{dignitaries.rmTitle}</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#0a192f" }}>{dignitaries.rmName}</div>
-              <div style={{ fontSize: 10, color: "#059669", fontWeight: 700 }}>{dignitaries.rmDept}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Service Categorization Bar: G2C / G2G / G2B ────────────────────── */}
-      <div style={{ background: "#f1f5f9", padding: "6px 24px", borderBottom: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Link href="/citizen" style={{ fontSize: 12, fontWeight: 800, color: pathname === "/citizen" ? "#ffffff" : "#0f172a", textDecoration: "none", padding: "5px 14px", background: pathname === "/citizen" ? "linear-gradient(135deg, #1d4ed8, #2563eb)" : "#ffffff", borderRadius: 6, border: pathname === "/citizen" ? "1px solid #1e40af" : "1.5px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6, boxShadow: pathname === "/citizen" ? "0 2px 6px rgba(37,99,235,0.3)" : "0 1px 2px rgba(0,0,0,0.04)" }}>
-            <User size={13} color={pathname === "/citizen" ? "#ffffff" : "#1d4ed8"} /> {t("citizen_services")}
+          <Link
+            href="/login"
+            style={{
+              textDecoration: "none",
+              background: "linear-gradient(135deg, #134e4a 0%, #0d9488 100%)",
+              color: "#ffffff",
+              padding: "8px 22px",
+              borderRadius: 9999,
+              fontSize: 13.5,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              boxShadow: "0 4px 12px rgba(19, 78, 74, 0.25)",
+              transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+          >
+            Login
           </Link>
-          <Link href={activeStateMeta ? `/login?state=${activeStateMeta.code}` : "/login"} style={{ fontSize: 12, fontWeight: 800, color: pathname.startsWith("/portal") || pathname === "/login" ? "#ffffff" : "#0f172a", textDecoration: "none", padding: "5px 14px", background: pathname.startsWith("/portal") || pathname === "/login" ? "linear-gradient(135deg, #059669, #10b981)" : "#ffffff", borderRadius: 6, border: pathname.startsWith("/portal") || pathname === "/login" ? "1px solid #047857" : "1.5px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6, boxShadow: pathname.startsWith("/portal") || pathname === "/login" ? "0 2px 6px rgba(16,185,129,0.3)" : "0 1px 2px rgba(0,0,0,0.04)" }}>
-            <FileCheck size={13} color={pathname.startsWith("/portal") || pathname === "/login" ? "#ffffff" : "#059669"} /> {t("officer_desks")}
-          </Link>
-          <Link href="/business" style={{ fontSize: 12, fontWeight: 800, color: pathname === "/business" ? "#ffffff" : "#0f172a", textDecoration: "none", padding: "5px 14px", background: pathname === "/business" ? "linear-gradient(135deg, #d97706, #f59e0b)" : "#ffffff", borderRadius: 6, border: pathname === "/business" ? "1px solid #b45309" : "1.5px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6, boxShadow: pathname === "/business" ? "0 2px 6px rgba(217,119,6,0.3)" : "0 1px 2px rgba(0,0,0,0.04)" }}>
-            <Building2 size={13} color={pathname === "/business" ? "#ffffff" : "#d97706"} /> {t("business_sro")}
-          </Link>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 11, color: "#334155", fontWeight: 700 }}>
-          <span>Digital India Land Records Modernization Programme (DILRMP 2.0)</span>
         </div>
       </div>
 

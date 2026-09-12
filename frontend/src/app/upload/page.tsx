@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Upload, Camera, FolderOpen, CheckCircle2,
-  AlertTriangle, Zap, FileImage, X, ChevronRight,
+  AlertTriangle, FileImage, X, ChevronRight,
   Loader2, Globe, ClipboardCheck, Sparkles, Shield, QrCode, ExternalLink
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -33,8 +33,6 @@ export default function UploadPage() {
   const [district, setDistrict] = useState("");
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [completedRecord, setCompletedRecord] = useState<any>(null); // real record from API after pipeline
-  const [isAiInpainted, setIsAiInpainted] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("Starting pipeline…");
   const [recordStatus, setRecordStatus] = useState<string>("");
@@ -57,46 +55,6 @@ export default function UploadPage() {
       }
     }
   }, []);
-
-  const handleRunAiInpainting = () => {
-    setAiLoading(true);
-    setTimeout(() => {
-      const inpaintRecovered = {
-        id: uploadResult?.record_id || `rec-${Date.now()}`,
-        owner_name: "வள்ளி க. / Valli K.",
-        father_name: "மறைந்த கருப்பையா செட்டியார் / Late Karuppiah Chettiar",
-        survey_no: "932/2",
-        khasra_no: "932/2",
-        patta_no: "7615",
-        khata_no: "7615",
-        village: "வேடசந்தூர் (Vedasandur)",
-        tehsil: "ஆத்தூர் (Attur)",
-        district: "திருச்சிராப்பள்ளி (Tiruchirappalli)",
-        state: "Tamil Nadu",
-        village_lgd_code: "635201",
-        area_value: 1.47,
-        area_unit: "Acres (0.596 Hectares)",
-        land_type: "புஞ்சை (Dry Agricultural Land)",
-        mutation_no: "M/2026/50542",
-        mutation_date: "28/09/2026",
-        transaction_type: "கிரையப் பத்திரம் (Sale Deed #1651/2026 - SRO Attur)",
-        detected_script: "Tamil (AI Inpainted & De-Inked)",
-        overall_confidence: 0.92,
-        status: "verified",
-        // Extended attributes from land_records_low_quality_ink_spill.pdf
-        previous_owner: "தங்கவேலு கவுண்டர் (Thangavelu Gounder)",
-        legal_heirship_no: "LHC/2026/86503 (ஆறுமுகம் பிள்ளை)",
-        stamp_duty_inr: "ரூ. 77,100 (7%) + பதிவு ரூ. 44,000",
-        consideration_inr: "ரூ. 11,01,000 (₹11.01 Lakhs)",
-        boundaries: "North: சின்னசாமி கவுண்டர் (932/3A), South: வண்டித்தடம் (4m), East: ராணி செ., West: ஆறுமுகம் முதலியார் (932/1B)",
-        inspecting_vao: "வெங்கடேசன் செட்டியார் (VAO Vedasandur)"
-      };
-      setCompletedRecord(inpaintRecovered);
-      setIsAiInpainted(true);
-      setRecordStatus("verified");
-      setAiLoading(false);
-    }, 600);
-  };
 
   const handleOpenDigiLockerModal = async () => {
     setShowDigiLockerModal(true);
@@ -214,64 +172,6 @@ export default function UploadPage() {
     setPreview(objectUrl);
     setStep("options");
     setError("");
-  }, []);
-
-  const loadDegradedSample = useCallback(async () => {
-    // Generate a synthetic canvas representing land_records_low_quality_ink_spill.pdf
-    const canvas = document.createElement("canvas");
-    canvas.width = 800;
-    canvas.height = 1100;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Aged legal deed background
-    ctx.fillStyle = "#f6f1e3";
-    ctx.fillRect(0, 0, 800, 1100);
-
-    // Draw document border
-    ctx.strokeStyle = "#5c4033";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(30, 30, 740, 1040);
-
-    // Draw dark ink spill blotches simulating ink spill PDF
-    ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
-    ctx.beginPath();
-    ctx.ellipse(360, 480, 45, 60, Math.PI / 6, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.ellipse(600, 720, 35, 45, -Math.PI / 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.ellipse(200, 850, 40, 50, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Draw Tamil legal text
-    ctx.fillStyle = "#8b0000";
-    ctx.font = "bold 20px serif";
-    ctx.fillText("தமிழ்நாடு மாதிரி நீதித்துறை அல்லாத முத்திரைத்தாள் — ரூ. 100", 120, 80);
-
-    ctx.fillStyle = "#1e1b18";
-    ctx.font = "bold 22px sans-serif";
-    ctx.fillText("கிரையப் பத்திரம் (SALE DEED #1651/2026)", 180, 130);
-
-    ctx.font = "14px monospace";
-    ctx.fillText("மாவட்டம்: திருச்சிராப்பள்ளி (Tiruchirappalli)   வட்டம்: ஆத்தூர் (Attur)", 80, 180);
-    ctx.fillText("வருவாய் கிராமம்: வேடசந்தூர் (Vedasandur) — LGD: 635201", 80, 215);
-    ctx.fillText("சர்வே எண் / உட்பிரிவு: SF.932/2     பட்டா எண்: 7615", 80, 250);
-    ctx.fillText("வாங்குபவர்: வள்ளி க. (தந்தை: மறைந்த கருப்பையா செட்டியார்)", 80, 285);
-    ctx.fillText("விற்பவர்: தங்கவேலு கவுண்டர் (தந்தை: கண்ணன் நாடார்)", 80, 320);
-    ctx.fillText("பரப்பளவு: 1.47 ஏக்கர் (0.596 ஹெக்டேர்) — புஞ்சை விவசாய நிலம்", 80, 355);
-    ctx.fillText("கிரய மதிப்பு: ரூ. 11,01,000 | மாற்றுப் பதிவு: M/2026/50542", 80, 390);
-
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-      const sampleFile = new File([blob], "land_records_low_quality_ink_spill.pdf", { type: "application/pdf" });
-      setFile(sampleFile);
-      setPreview(URL.createObjectURL(blob));
-      setStep("options");
-    }, "image/png");
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -464,17 +364,6 @@ export default function UploadPage() {
               >
                 🇮🇳 Fetch directly from DigiLocker
               </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  loadDegradedSample();
-                }}
-                className="btn btn-secondary"
-                style={{ fontSize: 12, padding: "8px 18px", border: "1px dashed #10b981", color: "#10b981", background: "rgba(16,185,129,0.08)", borderRadius: 8, cursor: "pointer" }}
-              >
-                ⚡ Try Sample Torn, Folded & Stained Deed Scan
-              </button>
             </div>
           </div>
         </div>
@@ -579,29 +468,15 @@ export default function UploadPage() {
           : (hasKeyFields ? 88 : (rawConf != null && rawConf > 0 ? Math.min(Math.round(rawConf * 100), 18) : 18));
         const isHighConf = confScore >= 75 && hasKeyFields && recordStatus !== "review" && recordStatus !== "rejected";
 
-        const isInkStainedPdf = Boolean(
-          file?.name?.toLowerCase().includes("ink") ||
-          file?.name?.toLowerCase().includes("spill") ||
-          file?.name?.toLowerCase().includes("degraded") ||
-          isAiInpainted ||
-          rec?.detected_script?.toLowerCase().includes("de-inked") ||
-          rec?.survey_no?.includes("932/2") ||
-          rec?.village?.includes("வேடசந்தூர்")
-        );
-
         const effectiveVillage = rec?.village || (villageVal !== "N/A" ? villageVal : "");
         const rawDistrict = rec?.district || (districtVal !== "N/A" ? districtVal : "");
-        const effectiveDistrict = (rawDistrict && rawDistrict !== "N/A") 
-          ? rawDistrict 
-          : (effectiveVillage ? inferDistrict(effectiveVillage) : (isInkStainedPdf ? "Dindigul" : (district || "Erode")));
+        const effectiveDistrict = (rawDistrict && rawDistrict !== "N/A")
+          ? rawDistrict
+          : (effectiveVillage ? inferDistrict(effectiveVillage) : (district || "Erode"));
 
-        const fallbackSurvey = isInkStainedPdf ? "932/2" : (surveyNo !== "N/A" ? surveyNo : "245/3B-2");
-        const fallbackPatta = isInkStainedPdf ? "7615" : (pattaNo !== "N/A" ? pattaNo : "4115");
-        const fallbackVillage = isInkStainedPdf ? "வேடசந்தூர் (Vedasandur)" : (effectiveVillage || (districtVal !== "N/A" ? districtVal : effectiveDistrict));
-
-        const finalSurvey = surveyNo !== "N/A" ? surveyNo : fallbackSurvey;
-        const finalPatta = pattaNo !== "N/A" ? pattaNo : fallbackPatta;
-        const finalVillage = effectiveVillage || fallbackVillage;
+        const finalSurvey = surveyNo !== "N/A" ? surveyNo : "245/3B-2";
+        const finalPatta = pattaNo !== "N/A" ? pattaNo : "4115";
+        const finalVillage = effectiveVillage || effectiveDistrict;
 
         const resolvedGeo = resolveGeographicCoordinates({
           village: finalVillage,
@@ -625,7 +500,6 @@ export default function UploadPage() {
               <div style={{ fontWeight: 800, fontSize: 22, color: "#0f2942", marginBottom: 4 }}>
                 {recordStatus === "rejected" ? "Processing Failed" :
                  isHighConf ? "Document Ingested & Synchronized Everywhere!" :
-                 !hasKeyFields ? "Inked / Unstructured Document (Routed to Review)" :
                  "Queued for Human Review (VAO / RI Scrutiny)"}
               </div>
               <div style={{ color: "#475569", fontSize: 13 }}>
@@ -636,9 +510,9 @@ export default function UploadPage() {
             {/* System-Wide Synchronization Status Banner */}
             <div style={{
               padding: "12px 16px", borderRadius: 8, marginBottom: 20, fontSize: 12, fontWeight: 700,
-              background: isHighConf ? "#f0fdf4" : !hasKeyFields ? "#fef2f2" : "#fffbeb",
-              border: `1px solid ${isHighConf ? "#bbf7d0" : !hasKeyFields ? "#fecaca" : "#fef3c7"}`,
-              color: isHighConf ? "#166534" : !hasKeyFields ? "#991b1b" : "#92400e",
+              background: isHighConf ? "#f0fdf4" : "#fffbeb",
+              border: `1px solid ${isHighConf ? "#bbf7d0" : "#fef3c7"}`,
+              color: isHighConf ? "#166534" : "#92400e",
               display: "flex", alignItems: "center", gap: 10
             }}>
               {isHighConf ? (
@@ -648,37 +522,6 @@ export default function UploadPage() {
                     <div>✨ High OCR Confidence ({confScore}%) — Automatically Verified!</div>
                     <div style={{ fontSize: 11, fontWeight: 500, color: "#15803d", marginTop: 2 }}>
                       Updated Everywhere: Cadastral GIS Map, RoR Database, Revenue Analytics & Polygon Blockchain Audit Trail.
-                    </div>
-                  </div>
-                </>
-              ) : !hasKeyFields ? (
-                <>
-                  <AlertTriangle size={18} color="#dc2626" />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                      <div>⚠ Inked / Low-Extraction Document (Confidence: {confScore}%)</div>
-                      <button
-                        type="button"
-                        onClick={handleRunAiInpainting}
-                        disabled={aiLoading}
-                        className="btn btn-primary"
-                        style={{
-                          fontSize: 11,
-                          padding: "6px 12px",
-                          background: "#0f2942",
-                          borderColor: "#1e293b",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          cursor: "pointer"
-                        }}
-                      >
-                        {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} color="#f59e0b" />}
-                        {aiLoading ? "Restoring Ink Strokes..." : "✨ Run AI Inpainting & Recovery"}
-                      </button>
-                    </div>
-                    <div style={{ fontSize: 11, fontWeight: 500, color: "#b91c1c", marginTop: 4 }}>
-                      Heavy ink coverage detected. Click &apos;Run AI Inpainting &amp; Recovery&apos; to strip ink bleed and reconstruct statutory Patta / Survey No fields.
                     </div>
                   </div>
                 </>
@@ -838,43 +681,19 @@ export default function UploadPage() {
                 {pushedToDigiLocker ? "✅ Issued in DigiLocker Wallet" : "📲 Push e-Patta to Citizen DigiLocker"}
               </button>
 
-              {!hasKeyFields ? (
-                <>
-                  <a
-                    href="/review"
-                    className="btn-primary"
-                    style={{ background: "#0f2942", borderColor: "#1e293b", padding: "10px 20px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
-                  >
-                    🔍 Open in Human Review Queue (/review) →
-                  </a>
-                  <button
-                    onClick={() => { reset(); loadDegradedSample(); }}
-                    className="btn-secondary"
-                    style={{ padding: "10px 16px", fontSize: 13, background: "#f8fafc", color: "#0f2942" }}
-                  >
-                    ✨ Test with Sample Degraded Deed
-                  </button>
-                  <button onClick={reset} className="btn-secondary" style={{ padding: "10px 16px", fontSize: 13 }}>
-                    Upload Another Document
-                  </button>
-                </>
-              ) : (
-                <>
-                  <a
-                    href={mapUrl}
-                    className="btn-primary"
-                    style={{ background: "#0f2942", borderColor: "#1e293b", padding: "10px 20px", fontSize: 13 }}
-                  >
-                    🗺️ View on Cadastral GIS Map →
-                  </a>
-                  <a href={`/records/${uploadResult.record_id}`} className="btn-secondary" style={{ padding: "10px 16px", fontSize: 13 }}>
-                    View Full RoR Record
-                  </a>
-                  <button onClick={reset} className="btn-secondary" style={{ padding: "10px 16px", fontSize: 13 }}>
-                    Upload Another Document
-                  </button>
-                </>
-              )}
+              <a
+                href={mapUrl}
+                className="btn-primary"
+                style={{ background: "#0f2942", borderColor: "#1e293b", padding: "10px 20px", fontSize: 13 }}
+              >
+                🗺️ View on Cadastral GIS Map →
+              </a>
+              <a href={`/records/${uploadResult.record_id}`} className="btn-secondary" style={{ padding: "10px 16px", fontSize: 13 }}>
+                View Full RoR Record
+              </a>
+              <button onClick={reset} className="btn-secondary" style={{ padding: "10px 16px", fontSize: 13 }}>
+                Upload Another Document
+              </button>
             </div>
 
             {/* DigiLocker Confirmation Banner */}

@@ -135,23 +135,16 @@ export function Sidebar() {
 
   return (
     <nav className="sidebar" style={{ width: 240, background: "#ffffff", borderRight: "1px solid #cbd5e1", color: "#0f172a", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-      {/* Sidebar Header Logo */}
-      <div className="sidebar-logo" style={{ padding: "14px 18px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 6,
-            background: "#0f2942", border: "1px solid #1e293b",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#ffffff"
-          }}>
-            <Landmark size={17} color="#ffffff" />
-          </div>
+      {/* Sidebar Header Logo: Terra_vault Clean Branding (No Emblem) */}
+      <div className="sidebar-logo" style={{ padding: "16px 18px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#14b8a6", flexShrink: 0 }} />
           <div>
-            <div style={{ fontWeight: 800, fontSize: 13, color: "#0f2942", letterSpacing: "-0.01em" }}>
-              Revenue Portal
+            <div style={{ fontWeight: 900, fontSize: 14, color: "#134e4a", letterSpacing: "-0.02em", fontFamily: "var(--font-head)" }}>
+              Terra_vault
             </div>
-            <div style={{ fontSize: 10, color: "#475569", letterSpacing: "0.04em", fontWeight: 700 }}>
-              STATE NAVIGATION DESK
+            <div style={{ fontSize: 9.5, color: "#64748b", letterSpacing: "0.04em", fontWeight: 700 }}>
+              REVENUE & GIS WORKSPACE
             </div>
           </div>
         </div>
@@ -174,14 +167,14 @@ export function Sidebar() {
                 fontSize: 12,
                 fontWeight: isActive ? 700 : 600,
                 color: isActive ? "#ffffff" : "#334155",
-                background: isActive ? "#0f2942" : "transparent",
-                borderLeft: isActive ? "3px solid #d97706" : "3px solid transparent",
+                background: isActive ? "#134e4a" : "transparent",
+                borderLeft: isActive ? "3px solid #14b8a6" : "3px solid transparent",
                 marginBottom: 3,
                 textDecoration: "none",
                 transition: "all 0.15s"
               }}
             >
-              <Icon size={15} color={isActive ? "#ffffff" : "#475569"} />
+              <Icon size={15} color={isActive ? "#2dd4bf" : "#64748b"} />
               {t(label)}
             </Link>
           );

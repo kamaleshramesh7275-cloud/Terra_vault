@@ -16,7 +16,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <AuthGuard>
           <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--color-bg)" }}>
             <GovHeader />
-            {isLandingPage ? (
+            {pathname === "/" ? (
+              <main style={{ flex: 1, padding: 0, width: "100%" }}>{children}</main>
+            ) : isLandingPage ? (
               <main style={{ flex: 1, padding: "24px 32px", maxWidth: 1280, margin: "0 auto", width: "100%" }}>{children}</main>
             ) : (
               <div style={{ display: "flex", flex: 1 }}>

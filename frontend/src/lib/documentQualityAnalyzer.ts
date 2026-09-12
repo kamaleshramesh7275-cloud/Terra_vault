@@ -1,10 +1,10 @@
 /**
- * Terra_vault — Real-time Client-Side Document Quality & Forensic Analyzer
- * Evaluates image sharpness, skew angle, stain & ink blotch ratios, contrast,
+ * Terra_vault — Real-time Client-Side Document Quality Analyzer
+ * Evaluates image sharpness, skew angle, stain ratios, contrast,
  * and edge integrity directly on the client canvas in <30ms.
  */
 
-export interface ForensicMetrics {
+export interface QualityMetrics {
   blur_variance: number;
   skew_angle_deg: number;
   contrast_ratio: number;
@@ -20,7 +20,7 @@ export interface DocumentQualityResult {
   needs_restoration: boolean;
   skew_angle: number;
   estimated_dpi: number;
-  metrics: ForensicMetrics;
+  metrics: QualityMetrics;
   restoration_steps: string[];
 }
 
@@ -39,7 +39,7 @@ export function analyzeCanvasPixels(
     return createDefaultQualityResult(800, 1050);
   }
 
-  // Work on max 400x550 thumbnail for sub-millisecond forensic speed
+  // Work on max 400x550 thumbnail for sub-millisecond analysis speed
   const scale = Math.min(1, 400 / Math.max(w, h));
   const sw = Math.max(10, Math.round(w * scale));
   const sh = Math.max(10, Math.round(h * scale));
@@ -104,12 +104,12 @@ export function analyzeCanvasPixels(
 
   const blurVariance = gradSamples > 0 ? sumGradientSq / gradSamples : 100;
 
-  // 3. Stain & Ink Blotch Density
+  // 3. Stain & Blotch Density
   // Identify isolated dark clusters on paper background
   let blotchPixelCount = 0;
   for (let i = 0; i < totalPixels; i++) {
     const y = gray[i];
-    // Dark ink stains / blotches: significantly darker than average background
+    // Dark stains / blotches: significantly darker than average background
     if (y < 95 && meanLum > 130) {
       blotchPixelCount++;
     }
@@ -166,11 +166,11 @@ export function analyzeCanvasPixels(
   const scoreFactors: number[] = [];
   const restorationSteps: string[] = [];
 
-  // Ink stains / blotches
+  // Stains / blotches
   if (stainAreaPct > 2.2 || meanLum < 170 && stainAreaPct > 1.2) {
     issues.push("stains");
     scoreFactors.push(Math.max(0.35, 1.0 - (stainAreaPct / 100) * 8));
-    restorationSteps.push("Sauvola Adaptive Binarization & Ink Spill Filter");
+    restorationSteps.push("Sauvola Adaptive Binarization & Stain Filter");
   } else {
     scoreFactors.push(1.0);
   }
@@ -266,7 +266,7 @@ export function analyzeCanvasPixels(
       stain_area_pct: Math.round(stainAreaPct * 10) / 10,
       estimated_dpi: estDpi,
       dimensions: `${w} × ${h} px`,
-    },
+    } as QualityMetrics,
     restoration_steps: Array.from(new Set(restorationSteps)),
   };
 }

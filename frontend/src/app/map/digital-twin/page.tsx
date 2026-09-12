@@ -148,14 +148,57 @@ function DigitalTwinContent() {
   useEffect(() => {
     async function loadLivePlots() {
       try {
-        const res = await fetch("http://127.0.0.1:8005/api/gis/plots?district=Coimbatore");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.features && data.features.length > 0) {
-            const dbParcels: CoimbatoreParcel[] = data.features.map((f: any, idx: number) => {
+        const [resDb, res3d] = await Promise.all([
+          fetch("http://127.0.0.1:8005/api/gis/plots?district=Coimbatore").catch(() => null),
+          fetch("http://127.0.0.1:8005/api/gis/plots/3d").catch(() => null),
+        ]);
+
+        const dbParcels: CoimbatoreParcel[] = [];
+
+        if (res3d && res3d.ok) {
+          const data3d = await res3d.json();
+          if (data3d.features && data3d.features.length > 0) {
+            data3d.features.forEach((f: any, idx: number) => {
               const p = f.properties || {};
               const coords = f.geometry?.coordinates?.[0] || [];
-              return {
+              dbParcels.push({
+                id: f.id || `3d-${idx}`,
+                survey_no: p.survey_no || `${300 + idx}/1`,
+                subdivision: p.subdivision || "1A",
+                patta_no: p.patta_no || `${5000 + idx}`,
+                owner_name: p.owner_name || "Statutory Land Owner",
+                father_name: p.father_name || "Revenue Authority",
+                co_owners: [],
+                village: p.village || "Coimbatore",
+                taluk: p.taluk || "Coimbatore North",
+                district: p.district || "Coimbatore",
+                state: p.state || "Tamil Nadu",
+                village_lgd_code: p.village_lgd_code || "641001",
+                land_type: "Ryotwari Patta Land (நன்செய்)",
+                land_category: (p.land_category as any) || "Agriculture",
+                soil_type: "Red Loam / செம்மண்",
+                area_acres: p.area_acres || 2.5,
+                area_cents: Math.round((p.area_acres || 2.5) * 100),
+                area_sqm: Math.round((p.area_acres || 2.5) * 4046.86),
+                guideline_value_sqft: 1950,
+                market_value_inr: p.market_value_inr || 12000000,
+                encumbrance_status: p.encumbrance_status || "Clean / Nil Encumbrance (வில்லங்கம் இல்லை)",
+                blockchain_hash: p.blockchain_hash || `0x3d${idx}a9f7e8b2c4d6`,
+                polygon: coords.length > 0 ? coords : [[76.95, 11.01], [76.96, 11.01], [76.96, 11.02], [76.95, 11.02]],
+                mutation_history: [],
+                inheritance_tree: { root: { name: p.owner_name, relation: "Owner", generation: "Gen 1", children: [] } }
+              });
+            });
+          }
+        }
+
+        if (resDb && resDb.ok) {
+          const data = await resDb.json();
+          if (data.features && data.features.length > 0) {
+            data.features.forEach((f: any, idx: number) => {
+              const p = f.properties || {};
+              const coords = f.geometry?.coordinates?.[0] || [];
+              dbParcels.push({
                 id: f.id || `db-${idx}`,
                 survey_no: p.survey_no || p.khasra_no || `${idx + 100}/1`,
                 subdivision: p.sub_division_number || "1",
@@ -181,14 +224,15 @@ function DigitalTwinContent() {
                 polygon: coords.length > 0 ? coords : [[76.95, 11.01], [76.96, 11.01], [76.96, 11.02], [76.95, 11.02]],
                 mutation_history: p.mutation_history || [],
                 inheritance_tree: p.inheritance_tree || { root: { name: p.owner_name, relation: "Owner", generation: "Gen 1", children: [] } }
-              };
+              });
             });
-
-            // Merge unique by survey_no
-            const existingSurveys = new Set(MOCK_COIMBATORE_PARCELS.map(p => p.survey_no));
-            const newFromDb = dbParcels.filter(p => !existingSurveys.has(p.survey_no));
-            setAllParcels([...MOCK_COIMBATORE_PARCELS, ...newFromDb]);
           }
+        }
+
+        if (dbParcels.length > 0) {
+          const existingSurveys = new Set(MOCK_COIMBATORE_PARCELS.map(p => p.survey_no));
+          const newFromDb = dbParcels.filter(p => !existingSurveys.has(p.survey_no));
+          setAllParcels([...MOCK_COIMBATORE_PARCELS, ...newFromDb]);
         }
       } catch (err) {
         console.warn("Backend GIS plots unavailable, using comprehensive mock set", err);
@@ -359,7 +403,40 @@ function DigitalTwinContent() {
           }
         });
 
-        // 3. Cadastral Standard 3D Extrusion Layer (Volumetric Digital Twin)
+        // 3A. FLAT FILL POLYGON LAYER — primary always-visible plot marker (Bug 3 fix)
+        // This renders flat coloured fills at ground level, visible at every pitch & zoom.
+        map.addLayer({
+          id: "parcels-flat-fill",
+          type: "fill",
+          source: "cadastral-parcels",
+          layout: { visibility: "visible" },
+          paint: {
+            "fill-color": [
+              "match",
+              ["get", "land_category"],
+              "Agriculture",  "rgba(16, 185, 129, 0.40)",
+              "Commercial",   "rgba(245, 158, 11, 0.40)",
+              "Industrial",   "rgba(139, 92, 246, 0.40)",
+              "Residential",  "rgba(56, 189, 248, 0.40)",
+              "rgba(6, 182, 212, 0.40)"
+            ],
+            "fill-outline-color": "#bef264"
+          }
+        });
+
+        // 3B. Cadastral Boundary Line (Crisp Lime-Green #bef264 Mesh) — always visible
+        map.addLayer({
+          id: "parcels-outline",
+          type: "line",
+          source: "cadastral-parcels",
+          paint: {
+            "line-color": "#bef264",
+            "line-width": 3.0,
+            "line-opacity": 1.0
+          }
+        });
+
+        // 4. Cadastral 3D Extrusion Layer — heights boosted for 3D visibility (Bug 2 fix)
         map.addLayer({
           id: "parcels-3d-extrusion",
           type: "fill-extrusion",
@@ -370,25 +447,25 @@ function DigitalTwinContent() {
               "match",
               ["get", "land_category"],
               "Agriculture", "#10b981",
-              "Commercial", "#f59e0b",
-              "Industrial", "#8b5cf6",
+              "Commercial",  "#f59e0b",
+              "Industrial",  "#8b5cf6",
               "Residential", "#38bdf8",
               "#06b6d4"
             ],
             "fill-extrusion-height": [
               "match",
               ["get", "land_category"],
-              "Commercial", 36,
-              "Industrial", 26,
-              "Residential", 18,
-              12
+              "Commercial",  200,
+              "Industrial",  150,
+              "Residential", 120,
+              80
             ],
             "fill-extrusion-base": 0,
-            "fill-extrusion-opacity": 0.88
+            "fill-extrusion-opacity": 0.75
           }
         });
 
-        // 4. NDVI Multi-Spectral 3D Crop Vigour Extrusion Layer
+        // 5. NDVI Multi-Spectral 3D Crop Vigour Extrusion Layer
         map.addLayer({
           id: "parcels-3d-ndvi-extrusion",
           type: "fill-extrusion",
@@ -404,13 +481,13 @@ function DigitalTwinContent() {
               0.82, "#22c55e",
               0.92, "#15803d"
             ],
-            "fill-extrusion-height": 24,
+            "fill-extrusion-height": 100,
             "fill-extrusion-base": 0,
-            "fill-extrusion-opacity": 0.92
+            "fill-extrusion-opacity": 0.85
           }
         });
 
-        // 5. 1994 Historical Ancestral 3D Ghost Extrusion Layer
+        // 6. 1994 Historical Ancestral 3D Ghost Extrusion Layer
         map.addLayer({
           id: "parcels-3d-1994-extrusion",
           type: "fill-extrusion",
@@ -418,21 +495,9 @@ function DigitalTwinContent() {
           layout: { visibility: "none" },
           paint: {
             "fill-extrusion-color": "#f59e0b",
-            "fill-extrusion-height": 20,
+            "fill-extrusion-height": 90,
             "fill-extrusion-base": 0,
-            "fill-extrusion-opacity": 0.75
-          }
-        });
-
-        // 6. Cadastral Boundary Line (Crisp Cyan Outline)
-        map.addLayer({
-          id: "parcels-outline",
-          type: "line",
-          source: "cadastral-parcels",
-          paint: {
-            "line-color": "#ffffff",
-            "line-width": 2.5,
-            "line-dasharray": [3, 1]
+            "fill-extrusion-opacity": 0.65
           }
         });
 
@@ -460,32 +525,44 @@ function DigitalTwinContent() {
           layout: { visibility: "visible" },
           paint: {
             "line-color": "#ff0033",
-            "line-width": 5
+            "line-width": 4
           }
         });
 
-        // 9. Selected Parcel Glowing Highlight Outline & Extrusion
+        // 9A. Selected Parcel Highlight Flat Fill (Neon Cyan — always visible)
+        map.addLayer({
+          id: "parcels-highlight-fill",
+          type: "fill",
+          source: "cadastral-parcels",
+          paint: {
+            "fill-color": "rgba(0, 255, 204, 0.55)",
+            "fill-outline-color": "#00ffcc"
+          },
+          filter: ["==", "id", initialTarget?.id || ""]
+        });
+
+        // 9B. Selected Parcel Glowing Highlight 3D Extrusion (Neon Cyan)
         map.addLayer({
           id: "parcels-highlight-3d",
           type: "fill-extrusion",
           source: "cadastral-parcels",
           paint: {
-            "fill-extrusion-color": "#facc15",
-            "fill-extrusion-height": 55,
+            "fill-extrusion-color": "#00ffcc",
+            "fill-extrusion-height": 280,
             "fill-extrusion-base": 0,
-            "fill-extrusion-opacity": 0.95
+            "fill-extrusion-opacity": 0.90
           },
           filter: ["==", "id", initialTarget?.id || ""]
         });
 
-        // 10. Selected Parcel Neon Yellow Perimeter Line
+        // 10. Selected Parcel Neon Cyan Perimeter Line
         map.addLayer({
           id: "parcels-highlight-line",
           type: "line",
           source: "cadastral-parcels",
           paint: {
-            "line-color": "#ffe600",
-            "line-width": 5.5,
+            "line-color": "#00ffcc",
+            "line-width": 5.0,
             "line-blur": 1.0
           },
           filter: ["==", "id", initialTarget?.id || ""]
@@ -523,8 +600,9 @@ function DigitalTwinContent() {
           }
         });
 
-        // Unified Click Listener across all parcel layers
+        // Unified Click Listener across all parcel layers (flat fill + 3D extrusion)
         const interactiveLayers = [
+          "parcels-flat-fill",
           "parcels-3d-extrusion",
           "parcels-3d-ndvi-extrusion",
           "parcels-3d-encroachment-extrusion",
@@ -535,14 +613,27 @@ function DigitalTwinContent() {
             if ((window as any).__measuring || (window as any).__markingLand) return;
             if (e.features && e.features[0]) {
               const featId = e.features[0].properties.id;
-              const found = allParcels.find(p => p.id === featId);
+              // use the global ref so stale closure doesn't miss new parcels
+              const allP = (window as any).__allParcels as CoimbatoreParcel[] || [];
+              const found = allP.find((p: CoimbatoreParcel) => p.id === featId);
               if (found) {
                 setSelectedParcel(found);
                 map.setFilter("parcels-highlight-3d", ["==", "id", found.id]);
                 map.setFilter("parcels-highlight-line", ["==", "id", found.id]);
+                map.setFilter("parcels-highlight-fill", ["==", "id", found.id]);
               }
             }
           });
+        });
+
+        // Hover cursor on flat fill too
+        map.on("mouseenter", "parcels-flat-fill", () => {
+          if (!(window as any).__measuring && !(window as any).__markingLand)
+            map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", "parcels-flat-fill", () => {
+          if (!(window as any).__measuring && !(window as any).__markingLand)
+            map.getCanvas().style.cursor = "";
         });
 
         // Click Listener for Land Marking & Measurement on Terrain
@@ -622,7 +713,56 @@ function DigitalTwinContent() {
         mapInstanceRef.current = null;
       }
     };
-  }, [allParcels.length]);
+  // Bug 1 fix: initialize map ONCE, never destroy/re-create on data updates
+  }, []);
+
+  // Bug 4 fix: keep __allParcels window ref fresh for stale-closure-safe click handlers
+  useEffect(() => {
+    (window as any).__allParcels = allParcels;
+  }, [allParcels]);
+
+  // Bug 4 fix: push updated parcel data into the existing GeoJSON source WITHOUT re-creating the map
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const src = map.getSource("cadastral-parcels") as any;
+    if (!src) return;
+    const features = allParcels.map((p, idx) => ({
+      type: "Feature",
+      id: p.id,
+      properties: {
+        id: p.id,
+        survey_no: p.survey_no,
+        patta_no: p.patta_no,
+        owner_name: p.owner_name.split("/")[0].trim(),
+        village: p.village,
+        taluk: p.taluk,
+        area_acres: p.area_acres,
+        land_category: p.land_category,
+        encumbrance_status: p.encumbrance_status,
+        market_value_inr: p.market_value_inr,
+        blockchain_hash: p.blockchain_hash,
+        has_encroachment: (idx % 3 === 0),
+        ndvi_score: 0.72 + ((idx % 7) * 0.035)
+      },
+      geometry: { type: "Polygon", coordinates: [p.polygon] }
+    }));
+    src.setData({ type: "FeatureCollection", features });
+
+    // Also update 1994 historical source
+    const src1994 = map.getSource("historical-1994") as any;
+    if (src1994) {
+      src1994.setData({
+        type: "FeatureCollection",
+        features: allParcels.map(p => ({
+          type: "Feature",
+          id: `1994-${p.id}`,
+          properties: { id: p.id, survey_no: p.survey_no, year: "1994" },
+          geometry: { type: "Polygon", coordinates: [p.polygon.map(([lng, lat]) => [lng - 0.0006, lat - 0.0004])] }
+        }))
+      });
+    }
+  }, [allParcels]);
 
   // ── Render 3D Floating Markers on ALL Plots Across Coimbatore ─────────────────
   useEffect(() => {
@@ -828,6 +968,9 @@ function DigitalTwinContent() {
       if (map.getLayer("parcels-highlight-3d")) {
         map.setFilter("parcels-highlight-3d", ["==", "id", selectedParcel.id]);
       }
+      if (map.getLayer("parcels-highlight-fill")) {
+        map.setFilter("parcels-highlight-fill", ["==", "id", selectedParcel.id]);
+      }
       if (map.getLayer("parcels-highlight-line")) {
         map.setFilter("parcels-highlight-line", ["==", "id", selectedParcel.id]);
       }
@@ -1032,15 +1175,15 @@ function DigitalTwinContent() {
           </Link>
           <div style={{
             width: 38, height: 38, borderRadius: 8,
-            background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
+            background: "linear-gradient(135deg, #134e4a, #0d9488)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 14px rgba(14, 165, 233, 0.4)"
+            boxShadow: "0 0 14px rgba(20, 184, 166, 0.4)"
           }}>
             <Eye size={22} color="#ffffff" />
           </div>
           <div>
             <div style={{ fontWeight: 900, fontSize: 15, color: "#ffffff", letterSpacing: "-0.01em" }}>
-              Coimbatore 3D Cadastral Digital Twin
+              Terra_vault — 3D Cadastral Digital Twin
             </div>
             <div style={{ fontSize: 11, color: "#94a3b8" }}>
               <strong>{filteredParcels.length}</strong> Plots Marked in 3D • Pitch <strong>{pitch}°</strong> • Bearing <strong>{bearing}°</strong>

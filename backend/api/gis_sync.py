@@ -120,8 +120,16 @@ async def list_plots(
     return {"type": "FeatureCollection", "features": features}
 
 
+@router.get("/plots/3d")
+async def get_3d_precision_plots():
+    """Returns high-precision non-overlapping 3D cadastral plots with stone pillar vertices."""
+    from gis_engine.precision_3d_plots import get_3d_geojson_feature_collection
+    return get_3d_geojson_feature_collection()
+
+
 @router.get("/plot-details")
 @router.get("/plots/{plot_id_or_survey:path}")
+
 async def get_plot_details(
     plot_id_or_survey: Optional[str] = None,
     survey_no: Optional[str] = None,
@@ -284,3 +292,4 @@ async def import_geojson(file: UploadFile = File(...), source: str = "tamilnadu-
         count += 1
     await db.commit()
     return {"imported": count}
+

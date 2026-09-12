@@ -61,9 +61,11 @@ function RecordsPageContent() {
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: "var(--font-head)", fontSize: 26, fontWeight: 700, marginBottom: 6 }}>Land Records</h1>
-        <p style={{ color: "var(--color-text-muted)", fontSize: 14 }}>
-          {total.toLocaleString()} records — search, filter by state, and inspect extracted fields
+        <h1 style={{ fontFamily: "var(--font-head)", fontSize: 26, fontWeight: 800, color: "#134e4a", marginBottom: 6 }}>
+          Terra_vault — Land Records Registry
+        </h1>
+        <p style={{ color: "#64748b", fontSize: 14 }}>
+          {total.toLocaleString()} digitized records — search, filter by state, and inspect extracted fields with blockchain proof
         </p>
       </div>
 

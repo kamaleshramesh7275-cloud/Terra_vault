@@ -356,21 +356,6 @@ async def authenticate_signatures(payload: dict = None):
     }
 
 
-# ── Advanced OCR v2 — Feature 4: Ink Age & Tampering Detector ────────────────
-
-@router.post("/detect-tampering")
-async def detect_ink_tampering(image_metadata: dict = None):
-    """
-    Feature 4: Detect multi-ink-age tampering, whitener patches, and pixel-clone forgery.
-    Returns tampering report with risk score and suspect region bounding boxes.
-    """
-    from ocr_engine.ink_tampering_detector import InkTamperingDetector
-    detector = InkTamperingDetector()
-    meta = image_metadata or {"width": 800, "height": 1100, "mean_luminance": 195, "std_luminance": 62, "seed": 7}
-    report = detector.detect(meta)
-    return report.to_dict()
-
-
 # ── Advanced OCR v2 — Feature 5: Handwriting Style Clustering ────────────────
 
 @router.post("/cluster-handwriting")

@@ -11,27 +11,27 @@
   --color-border:      #cbd5e1;   /* High-Contrast 1px Slate Border */
   --color-border-bold: #94a3b8;   /* Interactive Border Focus */
 
-  /* ── Deep Saturated Primary Tones (Zero Washed-Out Grays) ─────────── */
-  --color-navy:        #0a192f;   /* Deep Apex Navy Header */
-  --color-navy-light:  #0f2942;
-  --color-primary:     #1d4ed8;   /* Royal Revenue Blue */
-  --color-primary-light: #2563eb;
-  --color-primary-glow: rgba(37, 99, 235, 0.25);
+  /* ── Deep Saturated Teal & Mint Tones (Terra_vault Theme) ───────── */
+  --color-navy:        #0f3d3e;   /* Deep Forest Teal Navy */
+  --color-navy-light:  #134e4a;
+  --color-primary:     #134e4a;   /* Primary Teal */
+  --color-primary-light: #0d9488;
+  --color-primary-glow: rgba(20, 184, 166, 0.25);
 
-  --color-emerald:     #059669;   /* Saturated Verification Green */
-  --color-emerald-light: #10b981;
-  --color-emerald-glow: rgba(16, 185, 129, 0.25);
+  --color-emerald:     #0d9488;   /* Saturated Teal Green */
+  --color-emerald-light: #14b8a6;
+  --color-emerald-glow: rgba(45, 212, 191, 0.25);
 
-  --color-gold:        #d97706;   /* Tamil Nadu State Gold / Amber */
+  --color-gold:        #d97706;   /* Amber Warning */
   --color-gold-light:  #f59e0b;
   --color-gold-glow:   rgba(245, 158, 11, 0.25);
 
-  --color-red:         #dc2626;   /* Vivid Dispute & Encroachment Red */
+  --color-red:         #dc2626;   /* Vivid Dispute Red */
   --color-red-light:   #ef4444;
   --color-red-glow:    rgba(239, 68, 68, 0.25);
 
-  --color-purple:      #7c3aed;   /* Digital Twin & AI Accent */
-  --color-purple-light: #8b5cf6;
+  --color-purple:      #0f766e;   /* Digital Twin & AI Accent */
+  --color-purple-light: #14b8a6;
 
   /* ── High-Contrast Sharp Typography Colors ────────────────────────── */
   --color-text:        #0f172a;   /* 100% Solid Black-Slate */
@@ -44,11 +44,11 @@
   --font-head:  'Outfit', 'Inter', sans-serif;
 
   /* ── Multi-Layer Shadows with Color Depth ─────────────────────────── */
-  --shadow-sm:   0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-card: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  --shadow-hover: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 6px 12px -2px rgba(15, 23, 42, 0.06);
-  --shadow-glow-blue: 0 0 16px rgba(37, 99, 235, 0.3);
-  --shadow-glow-green: 0 0 16px rgba(16, 185, 129, 0.3);
+  --shadow-sm:   0 1px 2px rgba(15, 61, 62, 0.05);
+  --shadow-card: 0 4px 12px -2px rgba(15, 61, 62, 0.06), 0 2px 6px -1px rgba(15, 61, 62, 0.04);
+  --shadow-hover: 0 12px 28px -4px rgba(15, 61, 62, 0.12), 0 6px 12px -2px rgba(15, 61, 62, 0.06);
+  --shadow-glow-blue: 0 0 16px rgba(20, 184, 166, 0.3);
+  --shadow-glow-green: 0 0 16px rgba(45, 212, 191, 0.3);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
