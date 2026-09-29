@@ -49,48 +49,38 @@ COPY backend/requirements.txt ./backend/
 
 # Install PyTorch CPU first (large, separate index-url) then the rest
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir sentencepiece tiktoken protobuf && \
     pip install --no-cache-dir -r ./backend/requirements.txt && \
     python -m spacy download xx_ent_wiki_sm || true
 
 # ── Pre-bake OCR model weights into the image ─────────────────────────────────
-# These layers are also cached until requirements.txt changes.
-# By downloading weights here (build time) rather than at runtime, we guarantee:
-#   1. All engines are available instantly on Render (no cold-start downloads)
-#   2. Render's ephemeral filesystem limitation is bypassed completely
-#   3. No network calls are needed at inference time
+# These layers are cached until requirements.txt changes.
+# Pre-downloading weights guarantees fast inference, with || echo guards to prevent build aborts.
 
 # 1. EasyOCR — Indic + English language model weights
-#    Downloads to /root/.EasyOCR/ inside the image layer
 RUN python -c "\
 import easyocr; \
 print('Pre-downloading EasyOCR weights...'); \
-easyocr.Reader(['en'], gpu=False, verbose=False); \
-easyocr.Reader(['en', 'hi'], gpu=False, verbose=False); \
-easyocr.Reader(['en', 'ta'], gpu=False, verbose=False); \
-easyocr.Reader(['en', 'te'], gpu=False, verbose=False); \
-easyocr.Reader(['en', 'kn'], gpu=False, verbose=False); \
-easyocr.Reader(['en', 'ml'], gpu=False, verbose=False); \
-print('EasyOCR weights ready.')" || echo "[WARN] EasyOCR pre-download failed — will retry at runtime"
+easyocr.Reader(['en'], gpu=False); \
+easyocr.Reader(['hi'], gpu=False); \
+easyocr.Reader(['ta'], gpu=False); \
+print('EasyOCR weights ready.')" || echo "[WARN] EasyOCR pre-download skipped — will initialize at runtime"
 
-# 2. PaddleOCR — detection + recognition models (en + hi)
-#    Downloads to /root/.paddleocr/ inside the image layer
+# 2. PaddleOCR — detection + recognition models
 RUN python -c "\
 from paddleocr import PaddleOCR; \
 print('Pre-downloading PaddleOCR weights...'); \
-PaddleOCR(use_angle_cls=True, lang='en', show_log=False); \
-PaddleOCR(use_angle_cls=True, lang='hi', show_log=False); \
-print('PaddleOCR weights ready.')" || echo "[WARN] PaddleOCR pre-download failed — EasyOCR+Tesseract will be used as fallback"
+PaddleOCR(lang='en'); \
+PaddleOCR(lang='hi'); \
+print('PaddleOCR weights ready.')" || echo "[WARN] PaddleOCR pre-download skipped — EasyOCR+Tesseract will be used"
 
 # 3. TrOCR (HuggingFace) — microsoft/trocr-base-handwritten (~450 MB)
-#    No fine-tuned model available; generic handwritten model is used.
-#    Downloads to /root/.cache/huggingface/ inside the image layer.
-#    recognizer.py uses local_files_only=True so NO network calls happen at runtime.
 RUN python -c "\
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel; \
-print('Pre-downloading TrOCR weights (microsoft/trocr-base-handwritten, ~450 MB)...'); \
+print('Pre-downloading TrOCR weights (microsoft/trocr-base-handwritten)...'); \
 TrOCRProcessor.from_pretrained('microsoft/trocr-base-handwritten'); \
 VisionEncoderDecoderModel.from_pretrained('microsoft/trocr-base-handwritten'); \
-print('TrOCR weights ready.')"
+print('TrOCR weights ready.')" || echo "[WARN] TrOCR pre-download skipped — will load on demand"
 
 # ── Copy application source ───────────────────────────────────────────────────
 # This COPY is intentionally AFTER all pip install + weight download layers.
