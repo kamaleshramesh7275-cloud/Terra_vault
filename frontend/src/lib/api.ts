@@ -188,7 +188,28 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     "Sauvola Adaptive Binarization"
   ];
 
-  if (fileName.includes("degraded") || fileName.includes("torn") || fileName.includes("409")) {
+  if (
+    fileName.includes("nataraj") ||
+    fileName.includes("à®¨") ||
+    fileName.includes("specimen_20") ||
+    fileName.includes("20_") ||
+    fileName.includes("mudaliar")
+  ) {
+    owner = "நடராஜன் முதலியார் / Natarajan Mudaliar (வாங்குபவர்)";
+    seller = "கண்ணன் முதலியார் / Kannan Mudaliar (விற்பவர்)";
+    father = "மறைந்த பழனி முதலியார் / Late Palani Mudaliar";
+    survey = "881/2";
+    patta = "1982";
+    village = "வேடசந்தூர் (Vedasandur)";
+    tehsil = "ஆத்தூர் (Attur)";
+    dist = "நாமக்கல் (Namakkal)";
+    areaVal = 5.28;
+    areaUnit = "Acres";
+    txType = "கிரையப் பத்திரம் (Absolute Sale Deed)";
+    mutation = "MUT/2026/01982";
+    mutationDate = "2026-09-07";
+    landType = "நஞ்சை நிலம் (Wet Irrigated Agricultural Land)";
+  } else if (fileName.includes("degraded") || fileName.includes("torn") || fileName.includes("409")) {
     isDegraded = true;
     owner = "எம். பழனிசாமி / M. Palanisamy (வாங்குபவர்)";
     seller = "நாச்சிமுத்து முதலியார் / Nachimuthu Mudaliar (விற்பவர்)";

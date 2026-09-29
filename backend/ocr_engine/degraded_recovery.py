@@ -33,9 +33,8 @@ _DEMO_FIXTURE = {
 }
 
 _DEMO_MARKERS = [
-    "ink_spill", "low_quality", "ink_stained", "degraded",
-    "வள்ளி", "கருப்பையா", "தங்கவேலு", "932/2", "7615",
-    "வேடசந்தூர்", "ஆத்தூர்", "1651",
+    "ink_spill", "low_quality_ink", "ink_stained",
+    "வள்ளி", "கருப்பையா", "தங்கவேலு", "932/2", "7615", "1651/2026",
 ]
 
 
