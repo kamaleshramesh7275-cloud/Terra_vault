@@ -129,8 +129,10 @@ export function Sidebar() {
     ri: "/portal/ri",
     tahsildar: "/portal/tahsildar",
     rdo: "/portal/rdo",
-    admin: "/portal/collector",
     collector: "/portal/collector",
+    district_collector: "/portal/collector",
+    business: "/business",
+    admin: "/admin",
   };
 
   return (
@@ -241,6 +243,8 @@ export function Sidebar() {
             <option value="tahsildar">Tahsildar Portal</option>
             <option value="rdo">RDO Tribunal</option>
             <option value="collector">District Collector</option>
+            <option value="business">G2B Bank Desk</option>
+            <option value="admin">System Admin</option>
           </select>
         </div>
       </div>

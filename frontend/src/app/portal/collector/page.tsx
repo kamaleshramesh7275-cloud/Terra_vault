@@ -14,6 +14,7 @@ import {
   MOCK_LAND_ACQUISITION_PROJECTS,
   CollectorCourtCase
 } from "@/lib/mockData";
+import { StatutoryPowerBadge } from "@/components/StatutoryPowerBadge";
 
 export default function CollectorPortalPage() {
   const [activeTab, setActiveTab] = useState<"court" | "fraud" | "poramboke" | "taluk" | "acquisition">("court");
@@ -112,7 +113,10 @@ export default function CollectorPortalPage() {
   });
 
   return (
-    <div className="main-content" style={{ color: "#0f172a", minHeight: "100vh", paddingBottom: 60 }}>
+    <div className="main-content" style={{ color: "#0f172a", minHeight: "100vh", paddingBottom: 60, maxWidth: 1280, margin: "0 auto" }}>
+      {/* Statutory Authority & Power Limits Envelope */}
+      <StatutoryPowerBadge activeRole="DISTRICT_COLLECTOR" />
+
       {/* ── Executive Apex Header Banner ─────────────────────────────────── */}
       <div style={{
         background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",

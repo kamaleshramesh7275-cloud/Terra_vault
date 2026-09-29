@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import {
   FileText, ShieldCheck, MapPin, CheckCircle2, AlertTriangle,
   Scale, Lock, Check, User, Layers, ArrowRight, Gavel, AlertOctagon
 } from "lucide-react";
 import Link from "next/link";
+import { StatutoryPowerBadge } from "@/components/StatutoryPowerBadge";
 
 export default function RDOPortalPage() {
   const [activeTab, setActiveTab] = useState<"appeals" | "stay" | "resurvey">("appeals");
@@ -16,7 +17,10 @@ export default function RDOPortalPage() {
   ];
 
   return (
-    <div className="main-content">
+    <div className="main-content" style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
+      {/* Statutory Authority & Power Limits Envelope */}
+      <StatutoryPowerBadge activeRole="RDO" />
+
       {/* Header Banner */}
       <div className="glass-card" style={{ padding: "24px 28px", marginBottom: 24, borderLeft: "4px solid #d97706", background: "#ffffff" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

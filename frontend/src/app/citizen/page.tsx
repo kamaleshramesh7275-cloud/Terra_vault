@@ -12,6 +12,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/components/AuthGuard";
 import { ALL_INDIAN_STATES, getStateMetadata, getAllStatesList } from "@/lib/stateRegistry";
 import { calculateSROFees, getStampDutyStructure } from "@/lib/stampDutyRegistry";
+import { StatutoryPowerBadge } from "@/components/StatutoryPowerBadge";
 
 interface StateSampleParcel {
   stateCode: string;
@@ -387,6 +388,9 @@ Verification Portal: https://terravault.gov.in/verify?hash=${hash}
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
+      {/* Statutory Authority & Power Limits Envelope */}
+      <StatutoryPowerBadge activeRole="CITIZEN" />
+
       {/* Top Banner Header */}
       <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: 8, padding: 24, marginBottom: 20, borderTop: "4px solid #0f2942" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>

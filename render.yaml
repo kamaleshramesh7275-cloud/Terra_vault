@@ -8,7 +8,7 @@ services:
   # Unified Web Service (Frontend Next.js + Backend FastAPI + Nginx)
   # ─────────────────────────────────────────────────────────────────────────────
   - type: web
-    name: terravault-app
+    name: terra-vault
     runtime: docker
     dockerfilePath: Dockerfile
     dockerContext: .

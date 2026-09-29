@@ -57,21 +57,21 @@ export function GovHeader() {
 
   return (
     <header style={{ width: "100%", zIndex: 100, borderBottom: "1px solid #e2e8f0", background: "#ffffff" }}>
-      {/* ── Top Official Govt Utility Strip (Tamil Nilam Deep Teal Ribbon) ─────── */}
-      <div style={{ background: "#0f3d3e", color: "#f8fafc", padding: "6px 32px", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+      {/* ── Top Official Govt Utility Strip (National Navy Ribbon) ─────── */}
+      <div style={{ background: "#0f2942", color: "#f8fafc", padding: "6px 32px", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
           <a
-            href="mailto:tngis.support@tn.gov.in"
+            href="mailto:support.landrecords@gov.in"
             style={{ color: "#e2e8f0", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}
           >
-            <span style={{ opacity: 0.8 }}>✉</span> tngis.support@tn.gov.in
+            <span style={{ opacity: 0.8 }}>✉</span> support.landrecords@gov.in
           </a>
-          <span style={{ color: "#2dd4bf", opacity: 0.4 }}>|</span>
+          <span style={{ color: "#94a3b8", opacity: 0.4 }}>|</span>
           <a
-            href="tel:+914440164907"
+            href="tel:+9118004251333"
             style={{ color: "#e2e8f0", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}
           >
-            <span style={{ opacity: 0.8 }}>📞</span> +91-44-40164907 / +91-44-40164999
+            <span style={{ opacity: 0.8 }}>📞</span> Toll-Free: 1800-425-1333 (DILRMP Helpdesk)
           </a>
         </div>
 
@@ -81,33 +81,33 @@ export function GovHeader() {
             title="Toggle Night Mode"
             style={{
               background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: "50%", width: 26, height: 26, color: "#ffffff",
-              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 12
+              borderRadius: 4, width: 24, height: 24, color: "#ffffff",
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 11
             }}
           >
             🌙
           </button>
 
           {/* Font Zoom Controls (A+ A A-) */}
-          <div style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.12)", padding: "2px 6px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.2)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 2, background: "rgba(255,255,255,0.12)", padding: "1px 4px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.2)" }}>
             <button
               onClick={() => setFontSize("xlarge")}
               title="Large Font Size"
-              style={{ background: fontSize === "xlarge" ? "#14b8a6" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}
+              style={{ background: fontSize === "xlarge" ? "#1e40af" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 3 }}
             >
               A+
             </button>
             <button
               onClick={() => setFontSize("large")}
               title="Medium Font Size"
-              style={{ background: fontSize === "large" ? "#14b8a6" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}
+              style={{ background: fontSize === "large" ? "#1e40af" : "none", border: "none", color: "#ffffff", fontSize: 11, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 3 }}
             >
               A
             </button>
             <button
               onClick={() => setFontSize("normal")}
               title="Standard Font Size"
-              style={{ background: fontSize === "normal" ? "#14b8a6" : "none", border: "none", color: "#ffffff", fontSize: 10, cursor: "pointer", fontWeight: 700, padding: "1px 6px", borderRadius: 10 }}
+              style={{ background: fontSize === "normal" ? "#1e40af" : "none", border: "none", color: "#ffffff", fontSize: 10, cursor: "pointer", fontWeight: 700, padding: "1px 5px", borderRadius: 3 }}
             >
               A-
             </button>
@@ -121,62 +121,64 @@ export function GovHeader() {
               onChange={(e) => setLang(e.target.value as LangCode)}
               aria-label="Select Indian Language"
               style={{
-                background: "rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.15)",
                 color: "#ffffff",
-                border: "1px solid rgba(45, 212, 191, 0.5)",
-                borderRadius: 20,
-                padding: "3px 10px",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                borderRadius: 4,
+                padding: "3px 8px",
                 fontSize: 11.5,
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: "pointer",
                 outline: "none",
                 maxWidth: 165
               }}
             >
               {INDIAN_LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code} style={{ background: "#0f3d3e", color: "#ffffff" }}>
+                <option key={l.code} value={l.code} style={{ background: "#0f2942", color: "#ffffff" }}>
                   {l.nativeName} ({l.name})
                 </option>
               ))}
             </select>
             {isTranslating && (
-              <span style={{ fontSize: 10, color: "#2dd4bf", fontWeight: 800, display: "flex", alignItems: "center", gap: 3 }}>
-                <Sparkles size={11} /> Translating...
+              <span style={{ fontSize: 10, color: "#93c5fd", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                Translating...
               </span>
             )}
           </div>
 
-          {/* Screen Reader */}
+          {/* Helpline Modal Trigger */}
           <button
+            onClick={() => setShowHelplineModal(true)}
             style={{
               background: "rgba(255,255,255,0.12)",
               color: "#e2e8f0",
               border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: 20,
-              padding: "2px 10px",
+              borderRadius: 4,
+              padding: "2px 8px",
               fontSize: 11,
+              fontWeight: 600,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: 5
+              gap: 4
             }}
           >
-            👁 Screen Reader
+            <Phone size={11} /> Directory
           </button>
         </div>
       </div>
 
       {/* ── Main Navbar: Terra_vault Brand, Nav Items & Login Pill ─────── */}
       <div style={{ background: "#ffffff", padding: "12px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-        {/* Brand: Terra_vault (No Emblem / Logo Images) */}
+        {/* Brand: Terra_vault */}
         <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#134e4a", letterSpacing: "-0.03em", lineHeight: 1.15, fontFamily: "var(--font-head)", display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#0f2942", letterSpacing: "-0.02em", lineHeight: 1.15, fontFamily: "var(--font-head)", display: "flex", alignItems: "center", gap: 6 }}>
               <span>Terra_vault</span>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#14b8a6", display: "inline-block" }} />
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1e40af", display: "inline-block" }} />
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, marginTop: 2, letterSpacing: "0.02em" }}>
-              AI Land Intelligence & Cadastral Modernization Platform
+            <div style={{ fontSize: 11, color: "#64748b", fontWeight: 500, marginTop: 2, letterSpacing: "0.01em" }}>
+              National Spatial Cadastre & Land Records Repository (DILRMP 2.0)
             </div>
           </div>
         </Link>
@@ -187,48 +189,31 @@ export function GovHeader() {
             href="/"
             style={{
               textDecoration: "none",
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: pathname === "/" ? 700 : 500,
-              color: pathname === "/" ? "#134e4a" : "#475569",
+              color: pathname === "/" ? "#1e40af" : "#475569",
               display: "flex",
               alignItems: "center",
               gap: 6,
               paddingBottom: 4,
-              borderBottom: pathname === "/" ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              borderBottom: pathname === "/" ? "2px solid #1e40af" : "2px solid transparent",
               transition: "all 0.15s ease"
             }}
           >
             Home
           </Link>
           <Link
-            href="/#about"
-            style={{
-              textDecoration: "none",
-              fontSize: 14,
-              fontWeight: 500,
-              color: "#475569",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              paddingBottom: 4,
-              borderBottom: "2.5px solid transparent",
-              transition: "all 0.15s ease"
-            }}
-          >
-            About
-          </Link>
-          <Link
             href="/map"
             style={{
               textDecoration: "none",
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: pathname.startsWith("/map") ? 700 : 500,
-              color: pathname.startsWith("/map") ? "#134e4a" : "#475569",
+              color: pathname.startsWith("/map") ? "#1e40af" : "#475569",
               display: "flex",
               alignItems: "center",
               gap: 6,
               paddingBottom: 4,
-              borderBottom: pathname.startsWith("/map") ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              borderBottom: pathname.startsWith("/map") ? "2px solid #1e40af" : "2px solid transparent",
               transition: "all 0.15s ease"
             }}
           >
@@ -238,14 +223,14 @@ export function GovHeader() {
             href="/records"
             style={{
               textDecoration: "none",
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: pathname === "/records" ? 700 : 500,
-              color: pathname === "/records" ? "#134e4a" : "#475569",
+              color: pathname === "/records" ? "#1e40af" : "#475569",
               display: "flex",
               alignItems: "center",
               gap: 6,
               paddingBottom: 4,
-              borderBottom: pathname === "/records" ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              borderBottom: pathname === "/records" ? "2px solid #1e40af" : "2px solid transparent",
               transition: "all 0.15s ease"
             }}
           >
@@ -255,14 +240,14 @@ export function GovHeader() {
             href="/citizen"
             style={{
               textDecoration: "none",
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: pathname === "/citizen" ? 700 : 500,
-              color: pathname === "/citizen" ? "#134e4a" : "#475569",
+              color: pathname === "/citizen" ? "#1e40af" : "#475569",
               display: "flex",
               alignItems: "center",
               gap: 6,
               paddingBottom: 4,
-              borderBottom: pathname === "/citizen" ? "2.5px solid #14b8a6" : "2.5px solid transparent",
+              borderBottom: pathname === "/citizen" ? "2px solid #1e40af" : "2px solid transparent",
               transition: "all 0.15s ease"
             }}
           >
@@ -272,14 +257,14 @@ export function GovHeader() {
             href="/#faq"
             style={{
               textDecoration: "none",
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: 500,
               color: "#475569",
               display: "flex",
               alignItems: "center",
               gap: 6,
               paddingBottom: 4,
-              borderBottom: "2.5px solid transparent",
+              borderBottom: "2px solid transparent",
               transition: "all 0.15s ease"
             }}
           >
@@ -289,14 +274,14 @@ export function GovHeader() {
             href="/#contact"
             style={{
               textDecoration: "none",
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: 500,
               color: "#475569",
               display: "flex",
               alignItems: "center",
               gap: 6,
               paddingBottom: 4,
-              borderBottom: "2.5px solid transparent",
+              borderBottom: "2px solid transparent",
               transition: "all 0.15s ease"
             }}
           >
@@ -305,17 +290,17 @@ export function GovHeader() {
         </nav>
 
         {/* Right CTA Login Pill Button */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             onClick={() => setShowStatePickerModal(true)}
             style={{
-              background: "#f0fdfa",
-              color: "#134e4a",
-              border: "1px solid #2dd4bf",
-              borderRadius: 9999,
-              padding: "7px 14px",
+              background: "#f8fafc",
+              color: "#0f2942",
+              border: "1px solid #cbd5e1",
+              borderRadius: 6,
+              padding: "6px 12px",
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 600,
               display: "flex",
               alignItems: "center",
               gap: 5,
@@ -329,20 +314,8 @@ export function GovHeader() {
 
           <Link
             href="/login"
-            style={{
-              textDecoration: "none",
-              background: "linear-gradient(135deg, #134e4a 0%, #0d9488 100%)",
-              color: "#ffffff",
-              padding: "8px 22px",
-              borderRadius: 9999,
-              fontSize: 13.5,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              boxShadow: "0 4px 12px rgba(19, 78, 74, 0.25)",
-              transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
-            }}
+            className="btn-primary"
+            style={{ padding: "6px 16px", fontSize: 13 }}
           >
             Login
           </Link>

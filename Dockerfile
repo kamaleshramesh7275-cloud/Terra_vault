@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     nginx \
     gettext-base \
+    poppler-utils \
     tesseract-ocr \
     tesseract-ocr-hin tesseract-ocr-mar tesseract-ocr-tam tesseract-ocr-tel \
     tesseract-ocr-kan tesseract-ocr-mal tesseract-ocr-ben tesseract-ocr-ori \

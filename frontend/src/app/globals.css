@@ -1,54 +1,54 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @import "tailwindcss";
 
 :root {
-  /* ── Vibrant, High-Contrast e-Governance Design System ──────────────── */
-  --color-bg:          #f1f5f9;   /* Crisp Slate Backdrop */
-  --color-surface:     #ffffff;   /* Pure White Solid Card */
-  --color-surface-2:   #f8fafc;   /* Elevated Light Surface */
-  --color-surface-3:   #e2e8f0;   /* Subtle Hover Fill */
-  --color-border:      #cbd5e1;   /* High-Contrast 1px Slate Border */
-  --color-border-bold: #94a3b8;   /* Interactive Border Focus */
+  /* ── Enterprise e-Governance & Land Cadastre Design System ─────────── */
+  --color-bg:          #f8fafc;   /* Clean light neutral slate background */
+  --color-surface:     #ffffff;   /* Pure white solid cards */
+  --color-surface-2:   #f1f5f9;   /* Subtle elevated slate */
+  --color-surface-3:   #e2e8f0;   /* Interaction & divider slate */
+  --color-border:      #e2e8f0;   /* Standard 1px high-precision border */
+  --color-border-bold: #cbd5e1;   /* Focus & active border */
 
-  /* ── Deep Saturated Teal & Mint Tones (Terra_vault Theme) ───────── */
-  --color-navy:        #0f3d3e;   /* Deep Forest Teal Navy */
-  --color-navy-light:  #134e4a;
-  --color-primary:     #134e4a;   /* Primary Teal */
-  --color-primary-light: #0d9488;
-  --color-primary-glow: rgba(20, 184, 166, 0.25);
+  /* ── Authoritative Institutional Colors (GovTech & Surveyor Slate) ──── */
+  --color-navy:        #0f2942;   /* National Deep Slate Navy */
+  --color-navy-light:  #1e3a5f;   /* Medium Deep Navy */
+  --color-primary:     #1e40af;   /* Institutional Ashoka Blue */
+  --color-primary-light: #2563eb;
+  --color-primary-glow: rgba(30, 64, 175, 0.15);
 
-  --color-emerald:     #0d9488;   /* Saturated Teal Green */
-  --color-emerald-light: #14b8a6;
-  --color-emerald-glow: rgba(45, 212, 191, 0.25);
+  --color-emerald:     #047857;   /* Cadastral Forest Green (Verified) */
+  --color-emerald-light: #059669;
+  --color-emerald-glow: rgba(4, 120, 87, 0.15);
 
-  --color-gold:        #d97706;   /* Amber Warning */
-  --color-gold-light:  #f59e0b;
-  --color-gold-glow:   rgba(245, 158, 11, 0.25);
+  --color-gold:        #b45309;   /* Official Amber / Pending */
+  --color-gold-light:  #d97706;
+  --color-gold-glow:   rgba(180, 83, 9, 0.15);
 
-  --color-red:         #dc2626;   /* Vivid Dispute Red */
-  --color-red-light:   #ef4444;
-  --color-red-glow:    rgba(239, 68, 68, 0.25);
+  --color-red:         #b91c1c;   /* Disputed / Anomaly Red */
+  --color-red-light:   #dc2626;
+  --color-red-glow:    rgba(185, 28, 28, 0.15);
 
-  --color-purple:      #0f766e;   /* Digital Twin & AI Accent */
-  --color-purple-light: #14b8a6;
+  --color-purple:      #4338ca;   /* Vector Cadastre & GIS Accent */
+  --color-purple-light: #6366f1;
 
-  /* ── High-Contrast Sharp Typography Colors ────────────────────────── */
-  --color-text:        #0f172a;   /* 100% Solid Black-Slate */
-  --color-text-body:   #1e293b;   /* High-Contrast 90% Body */
-  --color-text-muted:  #334155;   /* Crisp 75% Slate Text */
-  --color-text-dim:    #475569;   /* Never Faded 60% Label */
+  /* ── High-Legibility Solid Typography ──────────────────────────────── */
+  --color-text:        #0f172a;   /* 100% Solid Slate Navy (High Contrast) */
+  --color-text-body:   #334155;   /* Crisp 80% Body Slate */
+  --color-text-muted:  #64748b;   /* Clean 60% Secondary/Meta Text */
+  --color-text-dim:    #94a3b8;   /* Subtle 45% Labels */
 
-  /* ── Typography Fonts ─────────────────────────────────────────────── */
+  /* ── Institutional Fonts ───────────────────────────────────────────── */
   --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-head:  'Outfit', 'Inter', sans-serif;
+  --font-head:  'Outfit', 'Plus Jakarta Sans', 'Inter', sans-serif;
 
-  /* ── Multi-Layer Shadows with Color Depth ─────────────────────────── */
-  --shadow-sm:   0 1px 2px rgba(15, 61, 62, 0.05);
-  --shadow-card: 0 4px 12px -2px rgba(15, 61, 62, 0.06), 0 2px 6px -1px rgba(15, 61, 62, 0.04);
-  --shadow-hover: 0 12px 28px -4px rgba(15, 61, 62, 0.12), 0 6px 12px -2px rgba(15, 61, 62, 0.06);
-  --shadow-glow-blue: 0 0 16px rgba(20, 184, 166, 0.3);
-  --shadow-glow-green: 0 0 16px rgba(45, 212, 191, 0.3);
+  /* ── Crisp Structural Shadows (No Neon Glows) ──────────────────────── */
+  --shadow-sm:   0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 4px 12px -2px rgba(15, 23, 42, 0.12), 0 2px 6px -2px rgba(15, 23, 42, 0.06);
+  --shadow-glow-blue: 0 2px 8px rgba(30, 64, 175, 0.15);
+  --shadow-glow-green: 0 2px 8px rgba(4, 120, 87, 0.15);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,84 +57,77 @@ html, body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 14.5px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Crisp Custom Scrollbars ───────────────────────────────────────── */
-::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #64748b; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* ── Modern Premium Cards ─────────────────────────────────────────── */
+/* ── Enterprise Cards ──────────────────────────────────────────────── */
 .glass-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   box-shadow: var(--shadow-card);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .glass-card:hover {
-  transform: translateY(-2px);
-  border-color: #cbd5e1;
+  border-color: var(--color-border-bold);
   box-shadow: var(--shadow-hover);
 }
 
-/* ── High-Contrast Gradient Typography ────────────────────────────── */
+/* ── Authoritative Typography ──────────────────────────────────────── */
 .gradient-text {
-  background: linear-gradient(135deg, #0a192f 0%, #1d4ed8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #0f2942;
   font-weight: 800;
   font-family: var(--font-head);
 }
 
 .gradient-text-gold {
-  background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #b45309;
   font-weight: 800;
   font-family: var(--font-head);
 }
 
 .gradient-text-emerald {
-  background: linear-gradient(135deg, #047857 0%, #10b981 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #047857;
   font-weight: 800;
   font-family: var(--font-head);
 }
 
-/* ── Vibrant Action Buttons ────────────────────────────────────────── */
+/* ── Enterprise Action Buttons ─────────────────────────────────────── */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 20px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  padding: 8px 18px;
+  background: #1e40af;
   color: #ffffff !important;
-  font-weight: 700;
-  font-size: 13px;
-  border-radius: 7px;
-  border: 1px solid #1e40af;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  font-weight: 600;
+  font-size: 13.5px;
+  border-radius: 6px;
+  border: 1px solid #1e3a8a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.15s ease;
   text-decoration: none;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
-  transform: translateY(-1px);
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.25);
 }
 
-.btn-primary:active { transform: translateY(0); }
+.btn-primary:active { transform: translateY(1px); }
 
 .btn-secondary {
   display: inline-flex;
@@ -333,37 +326,32 @@ body {
   overflow: hidden !important;
 }
 
-/* ── Tamil Nilam GI Viewer Design Tokens & System ──────────────────── */
+/* ── National Cadastral & GI Viewer Design Tokens & System ─────────── */
 :root {
-  --tn-teal-dark: #0f3d3e;
-  --tn-teal-hero: #164e4b;
-  --tn-teal-primary: #134e4a;
-  --tn-teal-mid: #0d9488;
-  --tn-teal-accent: #14b8a6;
-  --tn-teal-light: #2dd4bf;
-  --tn-teal-glow: #00ffcc;
-  --tn-teal-bg-soft: #f0fdfa;
-  --tn-text-navy: #0f3d3e;
+  --tn-teal-dark: #0f2942;
+  --tn-teal-hero: #133e68;
+  --tn-teal-primary: #1e40af;
+  --tn-teal-mid: #0284c7;
+  --tn-teal-accent: #0ea5e9;
+  --tn-teal-light: #38bdf8;
+  --tn-teal-glow: rgba(56, 189, 248, 0.2);
+  --tn-teal-bg-soft: #f0f9ff;
+  --tn-text-navy: #0f2942;
 }
 
 .tn-hero-bg {
-  background: radial-gradient(circle at 80% 20%, #1e5653 0%, #164e4b 45%, #0f3d3e 100%);
-  background-image: 
-    radial-gradient(rgba(45, 212, 191, 0.15) 1px, transparent 1px),
-    radial-gradient(circle at 80% 20%, #1e5653 0%, #164e4b 45%, #0f3d3e 100%);
-  background-size: 24px 24px, 100% 100%;
+  background: linear-gradient(135deg, #0b1e33 0%, #0f2942 50%, #17385c 100%);
+  border-bottom: 1px solid #1e3a5f;
 }
 
 .tn-pill-badge {
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
   border-radius: 9999px;
-  padding: 8px 16px;
-  font-size: 13.5px;
-  font-weight: 500;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -371,101 +359,97 @@ body {
 }
 
 .tn-pill-badge:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(45, 212, 191, 0.5);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .tn-btn-launch {
   background: #ffffff;
-  color: #0f3d3e;
-  border-radius: 9999px;
-  padding: 12px 26px;
-  font-size: 15px;
+  color: #0f2942;
+  border-radius: 6px;
+  padding: 11px 24px;
+  font-size: 14px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.18s ease;
   text-decoration: none;
 }
 
 .tn-btn-launch:hover {
-  background: #f0fdfa;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
-  color: #134e4a;
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: #1e40af;
 }
 
 .tn-btn-outline {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  border: 1.5px solid rgba(255, 255, 255, 0.45);
-  border-radius: 9999px;
-  padding: 12px 24px;
-  font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 11px 22px;
+  font-size: 14px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   text-decoration: none;
 }
 
 .tn-btn-outline:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.16);
   border-color: #ffffff;
   color: #ffffff;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .tn-glass-card {
-  background: rgba(15, 61, 62, 0.85);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(45, 212, 191, 0.35);
-  border-radius: 18px;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
 }
 
 .tn-floating-tag {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(6px);
-  color: #0f3d3e;
+  background: #ffffff;
+  color: #0f2942;
   font-weight: 700;
   font-size: 12px;
-  border-radius: 9999px;
+  border-radius: 6px;
   padding: 5px 12px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .tn-back-to-top {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #134e4a;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #0f2942;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #2dd4bf;
-  box-shadow: 0 4px 14px rgba(19, 78, 74, 0.35);
+  border: 1px solid #1e3a5f;
+  box-shadow: 0 4px 10px rgba(15, 41, 66, 0.3);
   cursor: pointer;
   z-index: 999;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s ease;
 }
 
 .tn-back-to-top:hover {
-  background: #0f3d3e;
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(19, 78, 74, 0.45);
+  background: #1e40af;
+  transform: translateY(-2px);
 }
 
 

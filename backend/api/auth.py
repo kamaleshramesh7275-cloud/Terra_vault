@@ -245,6 +245,86 @@ async def sync_firebase_profile(
     }
 
 
+DEMO_ACCOUNTS: Dict[str, Dict[str, Any]] = {
+    "citizen@terravault.gov.in": {
+        "username": "pattadar_citizen",
+        "role": "CITIZEN",
+        "name": "Thiru. S. Arumugam (Pattadar)",
+        "district": "Coimbatore",
+        "taluk": "Kinathukadavu",
+        "firka": "Kinathukadavu Firka",
+        "village_code": "630401"
+    },
+    "vao.kinathukadavu@tn.gov.in": {
+        "username": "vao_kinathukadavu",
+        "role": "VAO",
+        "name": "K. Selvaraj (Village Administrative Officer)",
+        "district": "Coimbatore",
+        "taluk": "Kinathukadavu",
+        "firka": "Kinathukadavu Firka",
+        "village_code": "630401"
+    },
+    "ri.kinathukadavu@tn.gov.in": {
+        "username": "ri_kinathukadavu",
+        "role": "RI",
+        "name": "M. Thangavel (Revenue Inspector)",
+        "district": "Coimbatore",
+        "taluk": "Kinathukadavu",
+        "firka": "Kinathukadavu Firka",
+        "village_code": "630401"
+    },
+    "tahsildar.kinathukadavu@tn.gov.in": {
+        "username": "tahsildar_kinathukadavu",
+        "role": "TAHSILDAR",
+        "name": "R. Soundararajan (Tahsildar)",
+        "district": "Coimbatore",
+        "taluk": "Kinathukadavu",
+        "firka": "Kinathukadavu Firka",
+        "village_code": "630401"
+    },
+    "rdo.pollachi@tn.gov.in": {
+        "username": "rdo_pollachi",
+        "role": "RDO",
+        "name": "Dr. P. Meenakshi, IAS (Revenue Divisional Officer)",
+        "district": "Coimbatore",
+        "taluk": "Kinathukadavu",
+        "firka": "Pollachi Division",
+        "village_code": "630401"
+    },
+    "collector.coimbatore@tn.gov.in": {
+        "username": "collector_coimbatore",
+        "role": "DISTRICT_COLLECTOR",
+        "name": "Thiru Kranthi Kumar Pati, IAS (District Collector)",
+        "district": "Coimbatore",
+        "taluk": "Coimbatore HQ",
+        "firka": "Apex District Command",
+        "village_code": "630401"
+    },
+    "commercial.bank@sbi.co.in": {
+        "username": "commercial_bank",
+        "role": "BUSINESS",
+        "name": "State Bank of India (Mortgage & Title Audit Desk)",
+        "district": "Coimbatore",
+        "taluk": "Commercial Branch",
+        "firka": "Institutional Banking",
+        "village_code": "630401"
+    },
+    "admin@terravault.gov.in": {
+        "username": "admin",
+        "role": "ADMIN",
+        "name": "Terra_vault System Administrator",
+        "district": "National HQ",
+        "taluk": "Apex Tech Center",
+        "firka": "DILRMP Command",
+        "village_code": "000000"
+    }
+}
+
+# Also map username keys for quick lookup
+for _email, _info in list(DEMO_ACCOUNTS.items()):
+    DEMO_ACCOUNTS[_info["username"]] = _info
+
+
 @router.get("/roles")
 def list_revenue_roles():
     """Returns statutory revenue hierarchy and metadata."""
@@ -255,18 +335,46 @@ def list_revenue_roles():
         {"role": "TAHSILDAR", "title": "Tahsildar / Sub-Tahsildar", "desc": "Statutory Patta Orders & Blockchain Seal"},
         {"role": "RDO", "title": "Revenue Divisional Officer (RDO)", "desc": "1st Appellate Authority & Dispute Freezes"},
         {"role": "DISTRICT_COLLECTOR", "title": "District Collector Desk", "desc": "Apex Command, Fraud Overrides & Security Audits"},
+        {"role": "BUSINESS", "title": "Commercial / Banking Title Desk", "desc": "Institutional Mortgage Clearance & Bulk Title Verification"},
+        {"role": "ADMIN", "title": "System Administrator", "desc": "Full System Access, Blockchain Audits & User Management"}
     ]
 
 
 @router.post("/token", response_model=Token)
 async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
-    user = (await db.execute(select(User).where(User.username == form.username))).scalar_one_or_none()
-    if not user or not user.hashed_password or not _verify_password(form.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Incorrect username or password",
-                            headers={"WWW-Authenticate": "Bearer"})
-    token = _create_token({"sub": user.username, "role": user.role},
-                          timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    return Token(access_token=token, token_type="bearer", role=user.role)
+    # 1. Check DB first
+    user = (await db.execute(select(User).where((User.username == form.username) | (User.email == form.username)))).scalar_one_or_none()
+    if user and user.hashed_password and _verify_password(form.password, user.hashed_password):
+        token = _create_token({
+            "sub": user.username,
+            "role": user.role,
+            "district": user.district or "Coimbatore",
+            "taluk": user.taluk or "Kinathukadavu",
+            "village_code": user.village_code or "630401"
+        }, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        return Token(access_token=token, token_type="bearer", role=user.role)
+
+    # 2. Check Demo Accounts fallback (Uniform password: TerraVault@2026)
+    clean_user = form.username.lower().strip()
+    if clean_user in DEMO_ACCOUNTS and (form.password == "TerraVault@2026" or form.password == "password123"):
+        demo = DEMO_ACCOUNTS[clean_user]
+        token = _create_token({
+            "sub": demo["username"],
+            "email": clean_user if "@" in clean_user else f"{demo['username']}@terravault.gov.in",
+            "name": demo["name"],
+            "role": demo["role"],
+            "district": demo["district"],
+            "taluk": demo["taluk"],
+            "firka": demo["firka"],
+            "village_code": demo["village_code"]
+        }, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        return Token(access_token=token, token_type="bearer", role=demo["role"])
+
+    raise HTTPException(
+        status_code=401,
+        detail="Incorrect username or password. For demo testing, use password: TerraVault@2026",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
 
 
 @router.post("/persona-token")
@@ -274,14 +382,17 @@ async def get_persona_token(role: str = "TAHSILDAR", username: Optional[str] = N
     """Generates JWT token with territorial claims for demo persona testing."""
     role_upper = role.upper()
     role_map = {
-        "CITIZEN": {"sub": username or "pattadar_citizen", "district": "Coimbatore", "taluk": "Kinathukadavu", "village_code": "630401"},
-        "VAO": {"sub": username or "vao_kinathukadavu", "district": "Coimbatore", "taluk": "Kinathukadavu", "firka": "Kinathukadavu Firka", "village_code": "630401"},
-        "RI": {"sub": username or "ri_kinathukadavu", "district": "Coimbatore", "taluk": "Kinathukadavu", "firka": "Kinathukadavu Firka"},
-        "TAHSILDAR": {"sub": username or "tahsildar_kinathukadavu", "district": "Coimbatore", "taluk": "Kinathukadavu"},
-        "RDO": {"sub": username or "rdo_pollachi", "district": "Coimbatore", "division": "Pollachi Division"},
-        "DISTRICT_COLLECTOR": {"sub": username or "collector_coimbatore", "district": "Coimbatore"},
+        "CITIZEN": {"sub": username or "pattadar_citizen", "email": "citizen@terravault.gov.in", "name": "Thiru. S. Arumugam (Pattadar)", "district": "Coimbatore", "taluk": "Kinathukadavu", "village_code": "630401"},
+        "VAO": {"sub": username or "vao_kinathukadavu", "email": "vao.kinathukadavu@tn.gov.in", "name": "K. Selvaraj (VAO)", "district": "Coimbatore", "taluk": "Kinathukadavu", "firka": "Kinathukadavu Firka", "village_code": "630401"},
+        "RI": {"sub": username or "ri_kinathukadavu", "email": "ri.kinathukadavu@tn.gov.in", "name": "M. Thangavel (RI)", "district": "Coimbatore", "taluk": "Kinathukadavu", "firka": "Kinathukadavu Firka", "village_code": "630401"},
+        "TAHSILDAR": {"sub": username or "tahsildar_kinathukadavu", "email": "tahsildar.kinathukadavu@tn.gov.in", "name": "R. Soundararajan (Tahsildar)", "district": "Coimbatore", "taluk": "Kinathukadavu", "firka": "Kinathukadavu Firka", "village_code": "630401"},
+        "RDO": {"sub": username or "rdo_pollachi", "email": "rdo.pollachi@tn.gov.in", "name": "Dr. P. Meenakshi, IAS (RDO)", "district": "Coimbatore", "division": "Pollachi Division", "taluk": "Kinathukadavu", "village_code": "630401"},
+        "COLLECTOR": {"sub": username or "collector_coimbatore", "email": "collector.coimbatore@tn.gov.in", "name": "Thiru Kranthi Kumar Pati, IAS (Collector)", "district": "Coimbatore", "taluk": "Coimbatore HQ", "village_code": "630401"},
+        "DISTRICT_COLLECTOR": {"sub": username or "collector_coimbatore", "email": "collector.coimbatore@tn.gov.in", "name": "Thiru Kranthi Kumar Pati, IAS (Collector)", "district": "Coimbatore", "taluk": "Coimbatore HQ", "village_code": "630401"},
+        "BUSINESS": {"sub": username or "commercial_bank", "email": "commercial.bank@sbi.co.in", "name": "State Bank of India Audit Desk", "district": "Coimbatore", "taluk": "Commercial Branch", "village_code": "630401"},
+        "ADMIN": {"sub": username or "admin", "email": "admin@terravault.gov.in", "name": "Terra_vault System Administrator", "district": "National HQ", "taluk": "Apex Command", "village_code": "000000"},
     }
-    claims = role_map.get(role_upper, role_map["TAHSILDAR"])
+    claims = role_map.get(role_upper, role_map["TAHSILDAR"]).copy()
     claims["role"] = role_upper
     
     token = _create_token(claims, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))

@@ -1,6 +1,8 @@
 """
 Terra_vault — FastAPI Backend Entry Point
 """
+import asyncio
+from datetime import datetime
 from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
@@ -14,6 +16,7 @@ from core.elasticsearch_client import es_client
 from core.minio_client import ensure_bucket
 
 log = structlog.get_logger()
+SERVER_START_TIME = datetime.utcnow()
 
 
 @asynccontextmanager
@@ -122,5 +125,16 @@ app.include_router(digilocker.router,   prefix="/api/digilocker",   tags=["digil
 
 
 @app.get("/health", tags=["health"])
-async def health():
-    return {"status": "ok", "service": "terra_vault"}
+@app.get("/ping", tags=["health"])
+@app.get("/api/keep-alive", tags=["health"])
+async def keep_alive():
+    """Lightweight 24/7 Keep-Alive heartbeat endpoint for UptimeRobot / Cron pings."""
+    uptime_sec = int((datetime.utcnow() - SERVER_START_TIME).total_seconds())
+    return {
+        "status": "alive",
+        "service": "terra_vault",
+        "environment": settings.ENVIRONMENT,
+        "uptime_seconds": uptime_sec,
+        "uptime_human": f"{uptime_sec // 3600}h {(uptime_sec % 3600) // 60}m {uptime_sec % 60}s",
+        "timestamp": datetime.utcnow().isoformat() + "Z"
+    }

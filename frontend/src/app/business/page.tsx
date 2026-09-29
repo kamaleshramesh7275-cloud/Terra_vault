@@ -5,6 +5,7 @@ import {
   Lock, Search, ExternalLink, AlertTriangle, ArrowRight, Download, Award
 } from "lucide-react";
 import { MOCK_COIMBATORE_PARCELS, CoimbatoreParcel } from "@/lib/mockData";
+import { StatutoryPowerBadge } from "@/components/StatutoryPowerBadge";
 
 export default function BusinessPortalPage() {
   const [activeTab, setActiveTab] = useState<"bank" | "sro" | "sez">("bank");
@@ -111,6 +112,9 @@ export default function BusinessPortalPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 40 }}>
+      {/* Statutory Authority & Power Limits Envelope */}
+      <StatutoryPowerBadge activeRole="BUSINESS" />
+
       {/* ── Header Banner ─────────────────────────────────────────────────── */}
       <div style={{
         background: "linear-gradient(135deg, #0f2942 0%, #1e3a8a 100%)",

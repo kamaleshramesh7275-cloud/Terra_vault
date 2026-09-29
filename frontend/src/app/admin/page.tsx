@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Shield, Users, RefreshCw, Settings, CheckCircle2, Plus, X } from "lucide-react";
+import { StatutoryPowerBadge } from "@/components/StatutoryPowerBadge";
 
 const ROLE_BADGE: Record<string, string> = {
   admin: "badge-disputed",
@@ -127,7 +128,10 @@ export default function AdminPage() {
   };
 
   return (
-    <div>
+    <div style={{ maxWidth: 1200, margin: "0 auto", paddingBottom: 50 }}>
+      {/* Statutory Authority & Power Limits Envelope */}
+      <StatutoryPowerBadge activeRole="ADMIN" />
+
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontFamily: "var(--font-head)", fontSize: 26, fontWeight: 700, marginBottom: 6 }}>
           <Shield size={22} style={{ display: "inline", marginRight: 10 }} /> Admin Panel

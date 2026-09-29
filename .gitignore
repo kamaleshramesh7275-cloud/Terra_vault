@@ -18,9 +18,12 @@ ml_models/
 *.zip
 data/*.zip
 
-# Temporary Test Specimen Outputs
+# Temporary Test Specimen & Local DBs
 test_specimen/
 scratch/
+*.db
+*.sqlite
+terravault*.db
 
 # Environment Variables & Secrets
 .env

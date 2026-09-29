@@ -13,6 +13,8 @@ import {
   isFirebaseConfigured
 } from "../lib/firebase";
 import { api } from "../lib/api";
+import { ShieldAlert, ArrowLeft, RefreshCw, Lock, MapPin, Building2 } from "lucide-react";
+import Link from "next/link";
 
 const PUBLIC_ROUTES = [
   "/",
@@ -75,7 +77,7 @@ const AuthContext = createContext<UserContextType>({
   logout: async () => {},
 });
 
-const ROLE_HOME_MAP: Record<string, string> = {
+export const ROLE_HOME_MAP: Record<string, string> = {
   citizen: "/citizen",
   vao: "/portal/vao",
   ri: "/portal/ri",
@@ -83,17 +85,20 @@ const ROLE_HOME_MAP: Record<string, string> = {
   rdo: "/portal/rdo",
   collector: "/portal/collector",
   district_collector: "/portal/collector",
-  admin: "/portal/collector",
+  admin: "/admin",
   business: "/business",
 };
 
-const ROLE_RESTRICTED_PREFIXES: Record<string, string[]> = {
+export const ROLE_RESTRICTED_PREFIXES: Record<string, string[]> = {
   citizen: ["/portal", "/admin", "/review", "/upload"],
-  vao: ["/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin"],
+  vao: ["/portal/ri", "/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin"],
   ri: ["/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin"],
   tahsildar: ["/portal/rdo", "/portal/collector", "/admin"],
   rdo: ["/portal/collector", "/admin"],
   business: ["/portal", "/admin", "/review", "/upload"],
+  admin: [],
+  collector: [],
+  district_collector: []
 };
 
 export function AuthGuard({ children }: { children: ReactNode }) {
@@ -105,6 +110,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   const [role, setRole] = useState("CITIZEN");
   const [jurisdiction, setJurisdiction] = useState<TerritorialJurisdiction>(defaultJurisdiction);
   const [permissions, setPermissions] = useState<string[]>([]);
+  const [accessDenied, setAccessDenied] = useState<boolean>(false);
   const isFirebaseLive = isFirebaseConfigured();
 
   const syncBackendUser = async (firebaseUser: FirebaseUser | null, fallbackRole?: string) => {
@@ -113,7 +119,6 @@ export function AuthGuard({ children }: { children: ReactNode }) {
         const token = await firebaseUser.getIdToken();
         localStorage.setItem("tv_token", token);
 
-        // Sync profile with backend
         try {
           const syncRes = await api.syncProfile({
             firebase_uid: firebaseUser.uid,
@@ -134,7 +139,6 @@ export function AuthGuard({ children }: { children: ReactNode }) {
             setPermissions(syncRes.permissions);
           }
         } catch {
-          // Backend offline or local mode
           const savedRole = fallbackRole || localStorage.getItem("tv_role") || "CITIZEN";
           setRole(savedRole.toUpperCase());
         }
@@ -150,7 +154,6 @@ export function AuthGuard({ children }: { children: ReactNode }) {
         setCurrentUser(uObj);
         localStorage.setItem("tv_user", JSON.stringify(uObj));
       } else {
-        // Handle stored local session or persona testing
         const storedToken = localStorage.getItem("tv_token");
         const storedRole = localStorage.getItem("tv_role") || "citizen";
         const storedUser = localStorage.getItem("tv_user");
@@ -162,8 +165,8 @@ export function AuthGuard({ children }: { children: ReactNode }) {
         } else if (storedToken) {
           setCurrentUser({
             username: `${storedRole}_official`,
-            email: `${storedRole}@terravault.tn.gov.in`,
-            displayName: `${storedRole.toUpperCase()} Officer`
+            email: `${storedRole}@terravault.gov.in`,
+            displayName: `${storedRole.toUpperCase()} Official`
           });
         }
         setRole(storedRole.toUpperCase());
@@ -184,7 +187,6 @@ export function AuthGuard({ children }: { children: ReactNode }) {
         await syncBackendUser(fbUser);
       });
     } else {
-      // Offline / Local sandbox mode
       syncBackendUser(null);
     }
 
@@ -198,21 +200,22 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       r === "/" ? pathname === "/" : pathname === r || pathname.startsWith(`${r}/`)
     );
 
-    const token = localStorage.getItem("tv_token");
-    const activeRole = role.toLowerCase();
+    const token = typeof window !== "undefined" ? localStorage.getItem("tv_token") : null;
+    const activeRole = (localStorage.getItem("tv_role") || role).toLowerCase();
 
     if (!isPublic && !token && !currentUser) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
 
-    // Role-based route guard
+    // Role-based route guard check
     const restricted = ROLE_RESTRICTED_PREFIXES[activeRole] || [];
     const isRestricted = restricted.some((pfx) => pathname === pfx || pathname.startsWith(`${pfx}/`));
+
     if (isRestricted) {
-      const home = ROLE_HOME_MAP[activeRole] || "/citizen";
-      router.replace(home);
-      return;
+      setAccessDenied(true);
+    } else {
+      setAccessDenied(false);
     }
   }, [pathname, ready, role, currentUser, router]);
 
@@ -272,6 +275,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       localStorage.removeItem("tv_role");
       setCurrentUser(null);
       setRole("CITIZEN");
+      setAccessDenied(false);
       setIsLoading(false);
       router.replace("/login");
     }
@@ -279,6 +283,71 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   if (!ready && !PUBLIC_ROUTES.includes(pathname)) {
     return null;
+  }
+
+  // Institutional 403 Statutory Access Restriction Screen
+  if (accessDenied) {
+    const activeRoleKey = role.toUpperCase();
+    const assignedHome = ROLE_HOME_MAP[role.toLowerCase()] || "/citizen";
+
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full bg-white rounded-xl border border-slate-300 shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-red-800 to-red-950 p-6 text-white flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-red-700/80 border border-red-500/50 flex items-center justify-center shrink-0 shadow-inner">
+              <ShieldAlert className="h-7 w-7 text-red-100" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-red-900 border border-red-700 text-[11px] font-bold uppercase tracking-wider text-red-200">
+                  403 Statutory Restriction
+                </span>
+                <span className="text-xs text-red-200">DILRMP RBAC Engine</span>
+              </div>
+              <h1 className="text-lg font-bold text-white mt-1">
+                Statutory Authority Limit Exceeded
+              </h1>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-slate-700 leading-relaxed">
+              Under the statutory revenue governance framework, your current logged-in role (<strong className="text-slate-900 font-bold">{activeRoleKey}</strong>) does not have executive jurisdiction to access this specific module: <code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-900 border border-slate-200 font-mono text-xs">{pathname}</code>.
+            </p>
+
+            <div className="rounded-lg bg-amber-50/80 border border-amber-200 p-4 space-y-2 text-xs text-amber-900">
+              <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                <Lock className="h-4 w-4 text-amber-700" />
+                <span>Statutory Jurisdiction Boundary Policy:</span>
+              </div>
+              <p>
+                Each revenue cadre (Citizen, VAO, RI, Tahsildar, RDO, Collector) operates within strictly delegated administrative powers under the Revenue Administration Code. Cross-cadre operations are prohibited to preserve chain-of-custody integrity.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200">
+              <Link
+                href={assignedHome}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-sm transition"
+              >
+                <Building2 className="h-4 w-4" />
+                <span>Go to Your Assigned Portal ({activeRoleKey})</span>
+              </Link>
+
+              <Link
+                href="/login"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 rounded-lg text-xs font-semibold transition"
+              >
+                <RefreshCw className="h-4 w-4 text-slate-600" />
+                <span>Switch Reviewer Role</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

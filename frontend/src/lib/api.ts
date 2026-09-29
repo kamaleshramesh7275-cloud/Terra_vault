@@ -929,6 +929,34 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  // ── Authentication & RBAC Hierarchy ──────────────────────────────────────────
+  login: (username: string, password: string) => {
+    const formData = new URLSearchParams();
+    formData.append("username", username);
+    formData.append("password", password);
+    const url = API_BASE ? `${API_BASE}/api/auth/token` : "/api/auth/token";
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData.toString()
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Authentication failed" }));
+        throw new Error(err.detail || "Authentication failed");
+      }
+      return res.json();
+    });
+  },
+
+  getPersonaToken: (role: string = "CITIZEN", username?: string) =>
+    apiFetch<any>(`/api/auth/persona-token?role=${encodeURIComponent(role)}${username ? `&username=${encodeURIComponent(username)}` : ""}`, {
+      method: "POST"
+    }),
+
+  getRoles: () => apiFetch<any[]>("/api/auth/roles").catch(() => []),
+
+  getMe: () => apiFetch<any>("/api/auth/me").catch(() => null),
 };
 
 
