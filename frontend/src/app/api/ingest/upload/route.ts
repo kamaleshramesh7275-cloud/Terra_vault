@@ -592,7 +592,7 @@ function extractLandFieldsFromText(
     area_unit: areaUnit,
     detected_script: detectedScript,
     village_lgd_code: fallbackProfile.lgd,
-    is_extracted_from_ocr: Boolean(tbMatch || engBuyer || tsMatch),
+    is_extracted_from_ocr: Boolean(matchedByFilename || tbMatch || tsMatch || (ownerName && ownerName !== fallbackProfile.owner)),
   };
 }
 
