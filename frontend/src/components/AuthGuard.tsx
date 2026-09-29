@@ -91,14 +91,14 @@ export const ROLE_HOME_MAP: Record<string, string> = {
 
 export const ROLE_RESTRICTED_PREFIXES: Record<string, string[]> = {
   citizen: ["/portal", "/admin", "/review", "/upload"],
-  vao: ["/portal/ri", "/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin"],
-  ri: ["/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin"],
-  tahsildar: ["/portal/rdo", "/portal/collector", "/admin"],
-  rdo: ["/portal/collector", "/admin"],
+  vao: ["/portal/ri", "/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin", "/business"],
+  ri: ["/portal/vao", "/portal/tahsildar", "/portal/rdo", "/portal/collector", "/admin", "/business"],
+  tahsildar: ["/portal/vao", "/portal/ri", "/portal/rdo", "/portal/collector", "/admin", "/business"],
+  rdo: ["/portal/vao", "/portal/ri", "/portal/tahsildar", "/portal/collector", "/admin", "/business", "/upload"],
+  collector: ["/portal/vao", "/portal/ri", "/portal/tahsildar", "/portal/rdo", "/business"],
+  district_collector: ["/portal/vao", "/portal/ri", "/portal/tahsildar", "/portal/rdo", "/business"],
   business: ["/portal", "/admin", "/review", "/upload"],
-  admin: [],
-  collector: [],
-  district_collector: []
+  admin: []
 };
 
 export function AuthGuard({ children }: { children: ReactNode }) {
