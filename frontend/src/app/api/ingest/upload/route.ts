@@ -550,32 +550,46 @@ export async function POST(req: NextRequest) {
 
     // ── 1. Try forwarding to backend FastAPI ML service if reachable ───────────
     const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://127.0.0.1:8000";
+    let isBackendAvailable = false;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-      const fwdFormData = new FormData();
-      const fileBlob = new Blob([buffer], { type: file.type || "application/octet-stream" });
-      fwdFormData.append("file", fileBlob, fileName);
-      if (state) fwdFormData.append("state", state);
-      if (district) fwdFormData.append("district", district);
-
-      const fastApiResponse = await fetch(`${backendUrl}/api/ingest/upload`, {
-        method: "POST",
-        body: fwdFormData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (fastApiResponse.ok) {
-        const data = await fastApiResponse.json();
-        if (data?.record?.id) {
-          globalThis.tvRecordsStore?.set(data.record.id, data.record);
-        }
-        return NextResponse.json(data, { status: 200 });
-      }
+      const pingCtrl = new AbortController();
+      const pingTimer = setTimeout(() => pingCtrl.abort(), 350);
+      const pingRes = await fetch(`${backendUrl}/health`, { signal: pingCtrl.signal });
+      clearTimeout(pingTimer);
+      if (pingRes.ok) isBackendAvailable = true;
     } catch {
-      // Backend not running / timed out -> Proceed to high-fidelity server-side extraction
+      isBackendAvailable = false;
+    }
+
+    if (isBackendAvailable) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        const fwdFormData = new FormData();
+        const fileBlob = new Blob([buffer], { type: file.type || "application/octet-stream" });
+        const safeName = fileName.replace(/[^\x20-\x7E]/g, "_");
+        fwdFormData.append("file", fileBlob, safeName);
+        if (state) fwdFormData.append("state", state);
+        if (district) fwdFormData.append("district", district);
+
+        const fastApiResponse = await fetch(`${backendUrl}/api/ingest/upload`, {
+          method: "POST",
+          body: fwdFormData,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (fastApiResponse.ok) {
+          const data = await fastApiResponse.json();
+          if (data?.record?.id) {
+            globalThis.tvRecordsStore?.set(data.record.id, data.record);
+          }
+          return NextResponse.json(data, { status: 200 });
+        }
+      } catch {
+        // Backend not responding -> Proceed to high-fidelity server-side extraction
+      }
     }
 
     // ── 2. Real System OCR & Text Extraction ───────────────────────────────────
