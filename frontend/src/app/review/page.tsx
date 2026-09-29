@@ -105,7 +105,7 @@ export default function ReviewPage() {
           enhanced_doc_url: task.doc_url || "/data/static/enhanced/9598661f-c633-42e9-96bf-8f7b12f29325.png"
         },
         field_confidences: d?.field_confidences || task?.field_confidences || [
-          { field_name: "owner_name", raw_ocr_value: "வள்ளி அ.", corrected_value: "வள்ளி அ. / Muthulakshmi K.", confidence: 0.62, bounding_box: [40, 110, 260, 40] },
+          { field_name: "owner_name", raw_ocr_value: "வள்ளி அ.", corrected_value: "வள்ளி அ. / Valli A.", confidence: 0.62, bounding_box: [40, 110, 260, 40] },
           { field_name: "father_name", raw_ocr_value: "பெருமாள்செட்டியார்", corrected_value: "பெருமாள்செட்டியார்", confidence: 0.88, bounding_box: [40, 160, 240, 35] },
           { field_name: "survey_no", raw_ocr_value: "245/3B-2", corrected_value: "245/3B-2", confidence: 0.91, bounding_box: [40, 205, 140, 30] },
           { field_name: "area_acres", raw_ocr_value: "4.46", corrected_value: "4.46", confidence: 0.58, bounding_box: [40, 245, 120, 30] }
@@ -234,7 +234,7 @@ export default function ReviewPage() {
                 const isSelected = selected?.id === task.id;
                 const pVal = typeof task.priority === "number" ? task.priority : 0.85;
                 const pPct = Math.round(pVal * 100);
-                const owner = task.record?.owner_name || task.suggested_values?.owner_name || "வள்ளி அ. / Muthulakshmi K.";
+                const owner = task.record?.owner_name || task.suggested_values?.owner_name || "வள்ளி அ. / Valli A.";
                 const survey = task.record?.survey_no || task.suggested_values?.khasra_no || "SF 245/3B-2";
                 const village = task.record?.village || task.suggested_values?.village || "Puduppalayam";
 

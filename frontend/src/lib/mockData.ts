@@ -444,14 +444,14 @@ export const MOCK_REVIEW_QUEUE = [
     created_at: "2026-08-31T07:30:00Z",
     doc_url: "/data/static/enhanced/9598661f-c633-42e9-96bf-8f7b12f29325.png",
     flags: [
-      { field: "owner_name", severity: "error", message: "Faded Tamil script in Pattadar name field (வள்ளி அ. / Muthulakshmi)" },
+      { field: "owner_name", severity: "error", message: "Faded Tamil script in Pattadar name field (வள்ளி அ. / Valli A.)" },
       { field: "area_acres", severity: "warning", message: "Extent boundary requires verification (4.46 Acres vs 4.45 Acres)" }
     ],
     record: {
       id: "rec-cbe-005",
       survey_no: "245/3B-2",
       patta_no: "7947",
-      owner_name: "வள்ளி அ. / Muthulakshmi K.",
+      owner_name: "வள்ளி அ. / Valli A.",
       father_name: "பெருமாள்செட்டியார் (Perumal Chettiar)",
       village: "Puduppalayam (புதுப்பாளையம்)",
       taluk: "Kinathukadavu",
@@ -462,7 +462,7 @@ export const MOCK_REVIEW_QUEUE = [
       raw_doc_url: "http://127.0.0.1:8000/static/enhanced/9598661f-c633-42e9-96bf-8f7b12f29325.png"
     },
     field_confidences: [
-      { field_name: "owner_name", raw_ocr_value: "வள்ளி அ.", corrected_value: "வள்ளி அ. / Muthulakshmi K.", confidence: 0.62, bounding_box: [40, 110, 260, 40] },
+      { field_name: "owner_name", raw_ocr_value: "வள்ளி அ.", corrected_value: "வள்ளி அ. / Valli A.", confidence: 0.62, bounding_box: [40, 110, 260, 40] },
       { field_name: "father_name", raw_ocr_value: "பெருமாள்செட்டியார்", corrected_value: "பெருமாள்செட்டியார்", confidence: 0.88, bounding_box: [40, 160, 240, 35] },
       { field_name: "survey_no", raw_ocr_value: "245/3B-2", corrected_value: "245/3B-2", confidence: 0.91, bounding_box: [40, 205, 140, 30] },
       { field_name: "patta_no", raw_ocr_value: "7947", corrected_value: "7947", confidence: 0.94, bounding_box: [200, 205, 100, 30] },

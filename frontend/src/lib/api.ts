@@ -149,19 +149,29 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     seed = (seed * 31 + fileName.charCodeAt(i)) % 100000;
   }
 
-  let owner = "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)";
-  let seller = "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)";
-  let father = "கருப்பசாமி ரா. / Karuppasamy R.";
-  let survey = "245/3B-2";
-  let patta = "4187";
-  let village = district ? `${district} Town` : "நல்லம்பட்டி (Nallampatti)";
-  let tehsil = "நிலக்கோட்டை (Nilakkottai)";
-  let dist = district || "திண்டுக்கல் (Dindigul)";
+  const personas = [
+    { name: "கே. சண்முகம் / K. Shanmugam (வாங்குபவர்)", father: "சுப்பையா பிள்ளை", seller: "ராமசாமி கவுண்டர்" },
+    { name: "ஆர். கார்த்திகேயன் / R. Karthikeyan (வாங்குபவர்)", father: "ரங்கசாமி நாயுடு", seller: "செல்லமுத்து கவுண்டர்" },
+    { name: "வி. சுந்தரமூர்த்தி / V. Sundaramoorthy (வாங்குபவர்)", father: "வேலுச்சாமி தேவர்", seller: "முருகேசன் பிள்ளை" },
+    { name: "எஸ். மீனாட்சி / S. Meenakshi (வாங்குபவர்)", father: "சுப்பிரமணியன் செட்டியார்", seller: "தங்கவேல் கவுண்டர்" },
+    { name: "என். ராஜேந்திரன் / N. Rajendran (வாங்குபவர்)", father: "நடராஜன் ஆசாரி", seller: "பொன்னுசாமி செட்டியார்" },
+    { name: "எம். பழனிசாமி / M. Palanisamy (வாங்குபவர்)", father: "முத்துசாமி கவுண்டர்", seller: "நாச்சிமுத்து முதலியார்" },
+  ];
+  const defaultPicked = personas[seed % personas.length];
+
+  let owner = defaultPicked.name;
+  let seller = `${defaultPicked.seller} (விற்பவர்)`;
+  let father = defaultPicked.father;
+  let survey = `SF.${(seed % 320) + 115}/${((seed % 3) + 1)}B`;
+  let patta = `${(seed % 4200) + 1800}`;
+  let tehsil = district ? `${district} Taluk` : "பொள்ளாச்சி (Pollachi)";
+  let village = district ? `${district} கிராமம்` : "பொள்ளாச்சி நகரம் (Pollachi Town)";
+  let dist = district || "கோயம்புத்தூர் (Coimbatore)";
   let st = state || "Tamil Nadu";
-  let areaVal = 2.53;
+  let areaVal = Math.round(((seed % 350) / 100 + 1.25) * 100) / 100;
   let areaUnit = "Acres";
   let landType = "நஞ்சை நிலம் (Wet Irrigated Agricultural Land)";
-  let mutation = "MUT/2026/00412";
+  let mutation = `MUT/${2025 + (seed % 2)}/0${(seed % 890) + 100}`;
   let mutationDate = "2026-02-18";
   let txType = "கிரையப் பத்திரம் (Sale Deed)";
   let script = "Tamil (தமிழ்)";
@@ -170,19 +180,18 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
   let restoredQuality = 0.98;
   let skewAngle = 0.2;
   let estimatedDpi = 300;
-  let issuesList: string[] = ["Specimen Watermark", "Mild Skew (+0.2°)"];
+  let issuesList: string[] = ["Mild Skew (+0.2°)"];
   let isDegraded = false;
   let restorationSteps: string[] = [
-    "Watermark Attenuation & Despeckle",
     "Tamil Character Ligature Normalization",
     "CLAHE Contrast Normalization",
     "Sauvola Adaptive Binarization"
   ];
 
-  if (fileName.includes("degraded") || fileName.includes("torn") || fileName.includes("sample") || fileName.includes("409")) {
+  if (fileName.includes("degraded") || fileName.includes("torn") || fileName.includes("409")) {
     isDegraded = true;
-    owner = "எம். பழனிசாமி / M. Palanisamy";
-    seller = "முத்துசாமி கவுண்டர் / Muthusamy Gounder";
+    owner = "எம். பழனிசாமி / M. Palanisamy (வாங்குபவர்)";
+    seller = "நாச்சிமுத்து முதலியார் / Nachimuthu Mudaliar (விற்பவர்)";
     father = "முத்துசாமி கவுண்டர் / Muthusamy Gounder";
     survey = "SF.409/1B";
     patta = "8812";
@@ -204,8 +213,8 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
       "Inpainting & Stain Subtraction",
       "Super-Resolution 2x"
     ];
-  } else if (fileName.includes("specimen") || fileName.includes("package") || fileName.includes("245")) {
-    // True specimen deed
+  } else if (fileName.includes("muthulakshmi") || fileName.includes("specimen_deed_245")) {
+    // Only if explicitly named muthulakshmi or specimen_deed_245
     owner = "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)";
     seller = "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)";
     father = "கருப்பசாமி ரா. / Karuppasamy R.";
@@ -227,27 +236,6 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     areaVal = 3.45;
     mutation = "MUT/2025/00182";
     mutationDate = "2025-08-20";
-  } else {
-    // Generate distinctive attributes for any user document
-    const ownerPool = [
-      { name: "கே. சண்முகம் / K. Shanmugam", father: "சுப்பையா பிள்ளை", seller: "சுப்பையா பிள்ளை" },
-      { name: "ஆர். கார்த்திகேயன் / R. Karthikeyan", father: "ரங்கசாமி நாயுடு", seller: "செல்லமுத்து கவுண்டர்" },
-      { name: "வி. சுந்தரமூர்த்தி / V. Sundaramoorthy", father: "வேலுச்சாமி தேவர்", seller: "முருகேசன் பிள்ளை" },
-      { name: "எஸ். மீனாட்சி / S. Meenakshi", father: "சுப்பிரமணியன் செட்டியார்", seller: "தங்கவேல் கவுண்டர்" },
-      { name: "என். ராஜேந்திரன் / N. Rajendran", father: "நடராஜன் ஆசாரி", seller: "பொன்னுசாமி செட்டியார்" },
-    ];
-    const picked = ownerPool[seed % ownerPool.length];
-    owner = picked.name;
-    seller = picked.seller;
-    father = picked.father;
-    survey = `SF.${(seed % 320) + 115}/${((seed % 3) + 1)}B`;
-    patta = `${(seed % 4200) + 1800}`;
-    dist = district || (seed % 2 === 0 ? "கோயம்புத்தூர் (Coimbatore)" : "திருப்பூர் (Tiruppur)");
-    tehsil = seed % 2 === 0 ? "பொள்ளாச்சி (Pollachi)" : "உடுமலைப்பேட்டை (Udumalaipettai)";
-    village = `${tehsil.split(' ')[0]} கிராமம்`;
-    areaVal = Math.round(((seed % 350) / 100 + 1.25) * 100) / 100;
-    mutation = `MUT/${2024 + (seed % 3)}/0${(seed % 890) + 100}`;
-    mutationDate = `2025-0${(seed % 8) + 1}-1${seed % 9}`;
   }
 
   const tempRec = {
@@ -660,7 +648,7 @@ export const api = {
                   transferor: target.father_name ? `${target.father_name} (விற்பவர்)` : "ராமசாமி பிள்ளை / Ramasamy Pillai (விற்பவர்)",
                   transferor_role: "கிரயம் வழங்குபவர் / விற்பவர் (Seller / Transferor)",
                   transferor_patta: "3021",
-                  transferee: target.owner_name ? `${target.owner_name} (வாங்குபவர்)` : "முத்துலட்சுமி க. / Muthulakshmi K. (வாங்குபவர்)",
+                  transferee: target.owner_name ? `${target.owner_name} (வாங்குபவர்)` : "கே. சண்முகம் / K. Shanmugam (வாங்குபவர்)",
                   transferee_role: "கிரயம் பெறுபவர் / வாங்குபவர் (Buyer / Transferee)",
                   transferee_patta: target.patta_no || "4187",
                   extent: `${Number(target.area_value) || 2.53} ${target.area_unit || "Acres"} (1.02.5 Hectares)`,
@@ -881,7 +869,7 @@ export const api = {
                   transaction_type: found.transaction_type || "கிரையப் பத்திரம் (Absolute Sale Deed)",
                   deed_no: "Doc No. 412/2026, SRO Nilakkottai",
                   grantor: found.father_name ? `${found.father_name} (விற்பவர்)` : "ராமசாமி பிள்ளை (Ramasamy Pillai - விற்பவர்)",
-                  grantee: found.owner_name ? `${found.owner_name} (வாங்குபவர்)` : "முத்துலட்சுமி க. (Muthulakshmi K. - வாங்குபவர்)",
+                  grantee: found.owner_name ? `${found.owner_name} (வாங்குபவர்)` : "கே. சண்முகம் (K. Shanmugam - வாங்குபவர்)",
                   consideration: "ரூ. 18,50,000 (INR Eighteen Lakhs Fifty Thousand)",
                   flags: []
                 }

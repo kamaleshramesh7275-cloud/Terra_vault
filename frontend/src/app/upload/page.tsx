@@ -474,8 +474,8 @@ export default function UploadPage() {
           ? rawDistrict
           : (effectiveVillage ? inferDistrict(effectiveVillage) : (district || "Erode"));
 
-        const finalSurvey = surveyNo !== "N/A" ? surveyNo : "245/3B-2";
-        const finalPatta = pattaNo !== "N/A" ? pattaNo : "4115";
+        const finalSurvey = surveyNo !== "N/A" ? surveyNo : "SF.101/1A";
+        const finalPatta = pattaNo !== "N/A" ? pattaNo : "1001";
         const finalVillage = effectiveVillage || effectiveDistrict;
 
         const resolvedGeo = resolveGeographicCoordinates({
