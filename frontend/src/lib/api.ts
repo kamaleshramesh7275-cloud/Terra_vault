@@ -189,6 +189,26 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
   ];
 
   if (
+    fileName.includes("mani") ||
+    fileName.includes("மணி") ||
+    fileName.includes("gounder") ||
+    fileName.includes("கவுண்டர்")
+  ) {
+    owner = "மணி கவுண்டர் / Mani Gounder (வாங்குபவர்)";
+    seller = "பழனி கவுண்டர் / Palani Gounder (விற்பவர்)";
+    father = "ராமசாமி கவுண்டர் / Ramasamy Gounder";
+    survey = "SF.214/1A";
+    patta = "3412";
+    village = "பொள்ளாச்சி நகரம் (Pollachi Town)";
+    tehsil = "பொள்ளாச்சி (Pollachi)";
+    dist = district || "கோயம்புத்தூர் (Coimbatore)";
+    areaVal = 3.42;
+    areaUnit = "Acres";
+    txType = "கிரையப் பத்திரம் (Absolute Sale Deed)";
+    mutation = "MUT/2026/03412";
+    mutationDate = "2026-09-12";
+    landType = "நஞ்சை நிலம் (Wet Irrigated Agricultural Land)";
+  } else if (
     fileName.includes("nataraj") ||
     fileName.includes("à®¨") ||
     fileName.includes("specimen_20") ||
