@@ -9,6 +9,7 @@ import {
 import { api } from "@/lib/api";
 import { inferDistrict, resolveGeographicCoordinates } from "@/lib/geoResolver";
 import { getStateMetadata } from "@/lib/stateRegistry";
+import { healIndicMojibake } from "@/lib/indicEncoding";
 
 type Step = "select" | "options" | "uploading" | "done";
 
@@ -440,13 +441,15 @@ export default function UploadPage() {
       {/* ── STEP: Done ── */}
       {step === "done" && uploadResult && (() => {
         const rec = completedRecord || uploadResult?.record || uploadResult;
-        const ownerName = rec?.owner_name && rec.owner_name !== "N/A" ? rec.owner_name : "N/A (Not Detected)";
-        const fatherName = rec?.father_name && rec.father_name !== "N/A" ? rec.father_name : "N/A";
+        const rawOwner = rec?.owner_name && rec.owner_name !== "N/A" ? rec.owner_name : "N/A (Not Detected)";
+        const ownerName = healIndicMojibake(rawOwner);
+        const rawFather = rec?.father_name && rec.father_name !== "N/A" ? rec.father_name : "N/A";
+        const fatherName = healIndicMojibake(rawFather);
         const surveyNo  = rec?.survey_no || rec?.khasra_no || "N/A";
         const pattaNo   = rec?.patta_no || rec?.khata_no || "N/A";
-        const villageVal = rec?.village || district || "N/A";
-        const tehsilVal = rec?.tehsil || "N/A";
-        const districtVal = rec?.district || district || "N/A";
+        const villageVal = healIndicMojibake(rec?.village || district || "N/A");
+        const tehsilVal = healIndicMojibake(rec?.tehsil || "N/A");
+        const districtVal = healIndicMojibake(rec?.district || district || "N/A");
         const stateVal = rec?.state || state || "N/A";
         const lgdCode = rec?.village_lgd_code || "N/A";
         const areaVal = rec?.area_value ? `${rec.area_value} ${rec.area_unit || "Acres"}` : "N/A";

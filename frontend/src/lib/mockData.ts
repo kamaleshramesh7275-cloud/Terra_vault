@@ -25,6 +25,7 @@ export interface CoimbatoreParcel {
   encumbrance_status: string;
   blockchain_hash: string;
   polygon: [number, number][];
+  status?: string;
   mutation_history: {
     step: number;
     date: string;
@@ -34,6 +35,7 @@ export interface CoimbatoreParcel {
     transferee: string;
     extent: string;
     status: string;
+    [key: string]: any;
   }[];
   inheritance_tree: {
     root: {

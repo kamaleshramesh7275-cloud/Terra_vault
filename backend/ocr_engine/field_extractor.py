@@ -11,6 +11,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
+try:
+    from ocr_engine.encoding_utils import heal_indic_mojibake
+except ImportError:
+    try:
+        from .encoding_utils import heal_indic_mojibake
+    except ImportError:
+        def heal_indic_mojibake(raw: str) -> str:
+            return raw or ""
+
 log = structlog.get_logger(__name__)
 
 # ── LGD data (loaded once at import) ─────────────────────────────────────────
@@ -274,6 +283,7 @@ class FieldExtractor:
 
     def extract(self, ocr_text: str, avg_ocr_confidence: float = 0.8) -> LandRecordFields:
         result = LandRecordFields()
+        ocr_text = heal_indic_mojibake(ocr_text)
         norm_text = self._normalize_indic_text(ocr_text)
         search_corpus = ocr_text + "\n" + norm_text
 
@@ -460,5 +470,9 @@ class FieldExtractor:
                 ef.flags.append({"reason": f"Required field '{fname}' not found in OCR text", "severity": "error"})
             elif ef.confidence < 0.6:
                 ef.flags.append({"reason": f"Low OCR confidence ({ef.confidence:.2f})", "severity": "warn"})
+
+        for f in [result.owner_name, result.father_name, result.village, result.tehsil, result.district]:
+            if f.value:
+                f.value = heal_indic_mojibake(f.value)
 
         return result

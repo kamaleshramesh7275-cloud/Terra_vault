@@ -804,7 +804,7 @@ export const DICTIONARY: Record<string, Record<string, string>> = {
     as: "দ্ৰুত নেভিগেচন",
     ur: "فوری نیویگیشن",
   },
-  "3D Digital Twin": {
+  "3D Digital Twin Nav": {
     hi: "3D डिजिटल ट्विन",
     ta: "3D டிஜிட்டல் இரட்டை (Digital Twin)",
     te: "3D డిజిటల్ ట్విన్",
