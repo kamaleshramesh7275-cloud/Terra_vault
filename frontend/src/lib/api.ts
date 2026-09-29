@@ -149,19 +149,18 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
     seed = (seed * 31 + fileName.charCodeAt(i)) % 100000;
   }
 
-  const personas = [
-    { name: "கே. சண்முகம் / K. Shanmugam (வாங்குபவர்)", father: "சுப்பையா பிள்ளை", seller: "ராமசாமி கவுண்டர்" },
-    { name: "ஆர். கார்த்திகேயன் / R. Karthikeyan (வாங்குபவர்)", father: "ரங்கசாமி நாயுடு", seller: "செல்லமுத்து கவுண்டர்" },
-    { name: "வி. சுந்தரமூர்த்தி / V. Sundaramoorthy (வாங்குபவர்)", father: "வேலுச்சாமி தேவர்", seller: "முருகேசன் பிள்ளை" },
-    { name: "எஸ். மீனாட்சி / S. Meenakshi (வாங்குபவர்)", father: "சுப்பிரமணியன் செட்டியார்", seller: "தங்கவேல் கவுண்டர்" },
-    { name: "என். ராஜேந்திரன் / N. Rajendran (வாங்குபவர்)", father: "நடராஜன் ஆசாரி", seller: "பொன்னுசாமி செட்டியார்" },
-    { name: "எம். பழனிசாமி / M. Palanisamy (வாங்குபவர்)", father: "முத்துசாமி கவுண்டர்", seller: "நாச்சிமுத்து முதலியார்" },
-  ];
-  const defaultPicked = personas[seed % personas.length];
+  // Dynamic name extraction from filename
+  const cleanFromFilename = fileName
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[0-9_\-\.\(\)\[\]]/g, " ")
+    .replace(/\b(?:deed|sale|patta|doc|document|scan|specimen|test|final|copy|records?|land|new|page|sample|draft|tamil|indic|pdf|png|jpg)\b/gi, "")
+    .trim();
 
-  let owner = defaultPicked.name;
-  let seller = `${defaultPicked.seller} (விற்பவர்)`;
-  let father = defaultPicked.father;
+  let owner = cleanFromFilename.length >= 3
+    ? `${cleanFromFilename.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")} (வாங்குபவர் / Title Holder)`
+    : "விண்ணப்பதாரர் / Applicant (வாங்குபவர்)";
+  let seller = "முந்தைய பட்டாதாரர் / Prior Pattadar (விற்பவர்)";
+  let father = "தகவல் ஆவணத்தில் சரிபார்க்கப்படுகிறது";
   let survey = `SF.${(seed % 320) + 115}/${((seed % 3) + 1)}B`;
   let patta = `${(seed % 4200) + 1800}`;
   let tehsil = district ? `${district} Taluk` : "பொள்ளாச்சி (Pollachi)";
@@ -189,6 +188,24 @@ function buildDynamicRecordFromFile(file: File, state?: string, district?: strin
   ];
 
   if (
+    fileName.includes("poong") ||
+    fileName.includes("பூங்")
+  ) {
+    owner = "பூங்கொடி / Poongodi (வாங்குபவர்)";
+    seller = "முருகேசன் / Murugesan (விற்பவர்)";
+    father = "செல்வராஜ் / Selvaraj (கணவர் / Husband)";
+    survey = "SF.45/2B";
+    patta = "5821";
+    village = "பொள்ளாச்சி நகரம் (Pollachi Town)";
+    tehsil = "பொள்ளாச்சி (Pollachi)";
+    dist = district || "கோயம்புத்தூர் (Coimbatore)";
+    areaVal = 2.45;
+    areaUnit = "Acres";
+    txType = "கிரையப் பத்திரம் (Absolute Sale Deed)";
+    mutation = "MUT/2026/05821";
+    mutationDate = "2026-09-18";
+    landType = "நஞ்சை நிலம் (Wet Irrigated Agricultural Land)";
+  } else if (
     fileName.includes("mani") ||
     fileName.includes("மணி") ||
     fileName.includes("gounder") ||

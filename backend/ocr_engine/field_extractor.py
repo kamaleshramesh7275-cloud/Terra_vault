@@ -55,13 +55,13 @@ PATTERNS = {
         r"ப\s*ட்\s*ட\s*ா\s*எ\s*ண்\s*[:\-.]*\s*(\d+)",
     ],
     "survey_no": [
-        r"(?:ச\s*[\u0bc7\u0bc8\u0bc6/]*\s*ர்\s*[\u0bc7\u0bc8\u0bc6/]*\s*வ\s*[\u0bc7\u0bc8\u0bc6/]*\s*எ\s*ண்|ப\s*ு\s*ல\s*எ\s*ண்)(?:\s*/\s*உ\s*ட்\s*ப\s*ி\s*ர\s*ி\s*வ\s*ு)?\s*[:\-.]*\s*([0-9/\-A-Za-z\s]{1,20}?)(?=[,\n;\t]|\s*ப\s*ர\s*ப்|\s*வ\s*ி\s*ஸ\s*்\s*த\s*ீ|\s*வ\s*ை\s*க|\s*ப\s*ட்|$|\n)",
-        r"\b(?:survey\s*no\.?|sf\.?\s*no\.?|khasra\s*no\.?)\s*[:\-.]*\s*([0-9/\-A-Za-z\s]+?)(?=[,\n;]|$)",
+        r"(?:ச\s*[\u0bc7\u0bc8\u0bc6/]*\s*ர்\s*[\u0bc7\u0bc8\u0bc6/]*\s*வ\s*[\u0bc7\u0bc8\u0bc6/]*\s*எ\s*ண்|ப\s*ு\s*ல\s*எ\s*ண்|எ\s*ஸ்\s*\.\s*எ\s*ப்\s*\.?\s*எ\s*ண்)(?:\s*/\s*உ\s*ட்\s*ப\s*ி\s*ர\s*ி\s*வ\s*ு)?\s*[:\-.]*\s*([0-9/\-A-Za-z\s]{1,20}?)(?=[,\n;\t]|\s*ப\s*ர\s*ப்|\s*வ\s*ி\s*ஸ\s*்\s*த\s*ீ|\s*வ\s*ை\s*க|\s*ப\s*ட்|$|\n)",
+        r"\b(?:survey\s*no\.?|sf\.?\s*no\.?|s\.?\s*f\.?\s*no\.?|s\.?\s*no\.?|rs\s*no\.?|khasra\s*no\.?)\s*[:\-.]*\s*([0-9/\-A-Za-z\s]+?)(?=[,\n;]|$)",
         r"\bसर्वे\s*(?:नं\.?)?\s*[:\-]?\s*([A-Za-z0-9/\-]+)\b",
     ],
     "patta_no": [
-        r"ப\s*ட்\s*ட\s*ா\s*எ\s*ண்\s*[:\-.]*\s*(\d+)",
-        r"\b(?:patta\s*no\.?|khata\s*no\.?)\s*[:\-.]*\s*(\d+)\b",
+        r"(?:ப\s*ட்\s*ட\s*ா\s*எ\s*ண்|சி\s*ட்\s*டா\s*எ\s*ண்|ப\s*\.\s*எ\s*ண்)\s*[:\-.]*\s*(\d+)",
+        r"\b(?:patta\s*no\.?|chitta\s*no\.?|khata\s*no\.?)\s*[:\-.]*\s*(\d+)\b",
     ],
     "mutation_no": [
         r"\b(?:mutation|mut)\s*(?:no\.?|number)?\s*[:\-]?\s*([A-Za-z0-9/\-]{3,})\b",
@@ -78,26 +78,34 @@ PATTERNS = {
     ],
 }
 
-# ── Paired Owner & Father/Husband patterns (Tamil deeds) ─────────────────────
+# ── Paired Owner & Father/Husband patterns (Tamil & Indic deeds) ─────────────
 PAIRED_OWNER_FATHER_PATTERNS = [
-    # 1. Tamil Buyer / Purchaser + Father / Husband (புதிய பட்டாதாரர் / வாங்குபவர் / கிரயம் பெறுபவர்)
-    r"(?:பு\s*தி\s*ய\s*ப\s*ட்\s*டா\s*தா\s*ர\s*ர்|வா\s*ங்\s*கு\s*ப\s*வ\s*ர்|கிர\s*யம்\s*[\u0bc6\u0bc7]*\s*[ெபெ\.]*\s*று\s*ப\s*வ\s*ர்|ப\s*ற்\s*ற\s*வ\s*ர்|பெ\s*ற்\s*ற\s*வ\s*ர்|வி\s*ண்\s*ண\s*ப்\s*ப\s*தா\s*ர\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*[\u0ba8\u0bcd\u0ba4\s]*\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc80]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb10]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
-    # 2. Tamil General Pattadar / Title holder
+    # 1. Tamil Buyer / Purchaser + Father / Husband (புதிய பட்டாதாரர் / வாங்குபவர் / கிரயம் பெறுபவர் / எழுதி வாங்கிக் கொண்டவர்)
+    r"(?:பு\s*தி\s*ய\s*ப\s*ட்\s*டா\s*தா\s*ர\s*ர்|வா\s*ங்\s*கு\s*ப\s*வ\s*ர்|கிர\s*யம்\s*[\u0bc6\u0bc7]*\s*[ெபெ\.]*\s*று\s*ப\s*வ\s*ர்|கிர\s*யம்\s*(?:எ\s*ழு\s*தி\s*)?வா\s*ங்\s*கி\s*க்\s*கொ\s*ண்\s*ட\s*வ\s*ர்|ப\s*ற்\s*ற\s*வ\s*ர்|பெ\s*ற்\s*ற\s*வ\s*ர்|வி\s*ண்\s*ண\s*ப்\s*ப\s*தா\s*ர\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*(?:தி\s*ரு\s*ம\s*தி\.?|தி\s*ரு\.?|செ\s*ல்\s*வ\s*ி\.?)?\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*[\u0ba8\u0bcd\u0ba4\s]*\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc80]+|க\s*ண\s*வ\s*ர்|க\s*/\s*பெ\.?|த\s*/\s*பெ\.?)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb10]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
+    # 2. Woman title holder with husband: e.g. "திருமதி. பூங்கொடி கணவர் / க/பெ [பெயர்]"
+    r"(?:தி\s*ரு\s*ம\s*தி\.?|செ\s*ல்\s*வ\s*ி\.?|தி\s*ரு\.?)\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*(?:க\s*ண\s*வ\s*ர்|க\s*/\s*பெ\.?|ம\s*னை\s*வ\s*ி|த\s*ந்\s*தை|த\s*/\s*பெ\.?)\s*[:\-.]*\s*(?:ம\s*றை\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
+    # 3. Direct name followed by க/பெ or த/பெ (e.g. பூங்கொடி க/பெ செல்வராஜ், வயது 35)
+    r"([\u0B80-\u0BFF\.\sA-Za-z]{3,40}?)\s*(?:,\s*)?(?:க\s*/\s*பெ\.?|த\s*/\s*பெ\.?|க\s*ண\s*வ\s*ர்\s*பெ\s*யர்|த\s*ந்\s*தை\s*பெ\s*யர்)\s*[:\-.]*\s*(?:ம\s*றை\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
+    # 4. English Buyer: Name S/O, D/O, W/O Father/Husband
+    r"(?:purchaser|buyer|transferee|in favou?r of|property owner|owner name|pattadar|khatedar|holder)?\s*[:\-.]*\s*(?:Mrs\.?|Mr\.?|Smt\.?|Ms\.?)?\s*([A-Za-z][A-Za-z\s\.]{2,40}?)[,\s]+(?:S/o|D/o|W/o|s/o|d/o|w/o|Son of|Daughter of|Wife of|Husband of)\s*(?:Late\s*)?([A-Za-z][A-Za-z\s\.]{2,40}?)(?=[,\n;]|\s*aged|\s*residing|$)",
+    # 5. Tamil General Pattadar / Title holder
     r"(?:பட்\s*டா\s*தா\s*ரர்\s*பெ\s*யர்|உரி\s*மை\s*யா\s*ளர்\s*பெ\s*யர்)\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*தந்தை|\s*வயது|$)",
-    # 3. Tamil Seller / Prior Owner + Father (fallback only)
+    # 6. Tamil Seller / Prior Owner + Father (fallback only)
     r"(?:மு\s*ந்\s*தை\s*ய\s*ப\s*ட்\s*டா\s*தா\s*ர\s*ர்|வி\s*ற்\s*ப\s*வ\s*ர்|கிர\s*யம்\s*வ\s*ழ\s*ங்\s*கு\s*ப\s*வ\s*ர்|செ\s*ய்\s*த\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)\s*,\s*(?:த\s*[\u0ba8\u0bcd\u0ba4\s]*\s*[\u0bc8\u0ba4\u0bcd\u0ba4\u0bc80]+|க\s*ண\s*வ\s*ர்)\s*[:\-.]*\s*(?:ம\s*[\u0bc8\u0bb1\u0bc8\u0bb10]\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*வ\s*ய\s*து|\(இனி|$)",
 ]
 
 # ── Indian relationship-prefix patterns for owner name extraction ──────────────
 OWNER_NAME_PATTERNS = [
-    # 1. Tamil Buyer / Purchaser (வாங்குபவர் / கிரயம் பெறுபவர்)
-    r"(?:வா\s*ங்\s*கு\s*ப\s*வ\s*ர்|கிர\s*யம்\s*ெ\s*ப\s*று\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\s]{2,40}?)(?=\s*,\s*த\s*ந்|\s*த\s*ந்|\s*க\s*ண|\s*வ\s*ய\s*து|\(இனி|\n)",
-    # 2. Tamil Seller / Prior Owner (விற்பவர் / கிரயம் வழங்குபவர்)
+    # 1. Tamil Buyer / Purchaser (வாங்குபவர் / கிரயம் பெறுபவர் / எழுதி வாங்கிக் கொண்டவர்)
+    r"(?:வா\s*ங்\s*கு\s*ப\s*வ\s*ர்|கிர\s*யம்\s*ெ\s*ப\s*று\s*ப\s*வ\s*ர்|கிர\s*யம்\s*(?:எ\s*ழு\s*தி\s*)?வா\s*ங்\s*கி\s*க்\s*கொ\s*ண்\s*ட\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*(?:தி\s*ரு\s*ம\s*தி\.?|தி\s*ரு\.?|செ\s*ல்\s*வ\s*ி\.?)?\s*([\u0B80-\u0BFF\.\s]{2,40}?)(?=\s*,\s*த\s*ந்|\s*த\s*ந்|\s*க\s*ண|\s*வ\s*ய\s*து|\(இனி|\n)",
+    # 2. Direct Honorifics
+    r"(?:தி\s*ரு\s*ம\s*தி\.?|செ\s*ல்\s*வ\s*ி\.?|தி\s*ரு\.?)\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,40}?)(?=[,\n;]|\s*க\s*/\s*பெ|\s*த\s*/\s*பெ|\s*க\s*ண\s*வ\s*ர்|\s*த\s*ந்\s*தை|\s*வ\s*ய\s*து)",
+    # 3. Tamil Seller / Prior Owner (விற்பவர் / கிரயம் வழங்குபவர்)
     r"(?:வி\s*ற்\s*ப\s*வ\s*ர்|கிர\s*யம்\s*வ\s*ழ\s*ங்\s*கு\s*ப\s*வ\s*ர்)\s*(?:\([^)]*\))?\s*[:\-.]*\s*([\u0B80-\u0BFF\.\s]{2,40}?)(?=\s*,\s*த\s*ந்|\s*த\s*ந்|\s*வ\s*ய\s*து|\(இனி|\n)",
-    # 3. Tamil General Pattadar / Title holder
-    r"(?:உரி\s*மை\s*யா\s*ளர்\s*பெ\s*யர்|பட்\s*டா\s*தா\s*ரர்\s*பெ\s*யர்)\s*[:\-.]*\s*([\u0B80-\u0BFF\.\s]{2,40}?)(?=[,\n;]|\s+தந்தை|\s+வயது|$)",
+    # 4. Tamil General Pattadar / Title holder
+    r"(?:உரி\s*மை\s*யா\s*ளர்\s*பெ\s*யர்|பட்\s*டா\s*தா\s*ரர்\s*பெ\s*யர்|பெ\s*யர்\s*[:\-.]*)\s*([\u0B80-\u0BFF\.\s]{2,40}?)(?=[,\n;]|\s+தந்தை|\s+வயது|$)",
     # English: capture name before the S/O / D/O / W/O token
-    r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})\s+(?:S/O|D/O|W/O|s/o|d/o|w/o|Son of|Daughter of|Wife of)",
+    r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})\s+(?:S/O|D/O|W/O|s/o|d/o|w/o|Son of|Daughter of|Wife of|Husband of)",
     # English: capture name after "Name:" / "Owner:" label
     r"(?:owner|name|khatedar|pattadar|holder|purchaser|buyer)\s*[:\-]\s*([A-Za-z][A-Za-z\s]{2,50}?)(?=\s*(?:S/O|D/O|W/O|Village|Khasra|$))",
     # Hindi: name before पुत्र / पुत्री / पत्नी
@@ -107,9 +115,9 @@ OWNER_NAME_PATTERNS = [
 ]
 
 FATHER_NAME_PATTERNS = [
-    r"த\s*ந்\s*தை\s*[:\-.]*\s*(?:ம\s*றை\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\s*வ\s*ி\s*வ\s*ச\s*ா\s*ய\s*ி|\s*வ\s*ச\s*ி\s*ப்|\n|$)",
-    r"க\s*ண\s*வ\s*ர்\s*[:\-.]*\s*([\u0B80-\u0BFF\.\sA-Za-z]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\n|$)",
-    r"(?:father|husband|spouse)\s*[:\-.]*\s*([A-Za-z][A-Za-z\s]{2,40}?)(?=[,\n;]|$)",
+    r"(?:த\s*ந்\s*தை|த\s*/\s*பெ\.?)\s*[:\-.]*\s*(?:ம\s*றை\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\s*வ\s*ி\s*வ\s*ச\s*ா\s*ய\s*ி|\s*வ\s*ச\s*ி\s*ப்|\n|$)",
+    r"(?:க\s*ண\s*வ\s*ர்|க\s*/\s*பெ\.?|ம\s*னை\s*வ\s*ி)\s*[:\-.]*\s*(?:ம\s*றை\s*ந்\s*த\s*)?([\u0B80-\u0BFF\.\sA-Za-z]{2,35}?)(?=\s*,\s*வ\s*ய\s*து|\s*வ\s*ய\s*து|\n|$)",
+    r"(?:father|husband|spouse|w/o|s/o|d/o)\s*[:\-.]*\s*([A-Za-z][A-Za-z\s]{2,40}?)(?=[,\n;]|$)",
     r"(?:पिता|पति)\s*[:\-.]*\s*([\u0900-\u097F]+(?:\s+[\u0900-\u097F]+){0,3})",
 ]
 
