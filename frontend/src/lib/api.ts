@@ -396,7 +396,7 @@ export const api = {
       if (state) form.append("state", state);
       if (district) form.append("district", district);
       const token = typeof window !== "undefined" ? localStorage.getItem("tv_token") : null;
-      const url = API_BASE ? `${API_BASE}/api/ingest/upload` : `/api/ingest/upload`;
+      const url = `/api/ingest/upload`;
       const res = await fetch(url, {
         method: "POST",
         body: form,
@@ -437,7 +437,7 @@ export const api = {
   qualityCheck: async (file: File) => {
     const form = new FormData();
     form.append("file", file);
-    const url = API_BASE ? `${API_BASE}/api/ingest/quality-check` : `/api/ingest/quality-check`;
+    const url = `/api/ingest/quality-check`;
     try {
       const r = await fetch(url, { method: "POST", body: form });
       if (r.ok) {
